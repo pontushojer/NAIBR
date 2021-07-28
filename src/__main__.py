@@ -1,14 +1,14 @@
 from __future__ import print_function,division
 import os,sys,time,json,pysam,collections
-sys.path.insert(0, 'src')
+
 if len(sys.argv) < 2:
-	raise ValueError('No input config file') 
+	raise ValueError('No input config file')
 import multiprocessing as mp
-from get_reads import *
-from global_vars import *
-from estimate_params import estimate_lmin_lmax
-from utils import *
-from rank import *
+from .get_reads import *
+from .global_vars import *
+from .estimate_params import estimate_lmin_lmax
+from .utils import *
+from .rank import *
 
 
 def run_NAIBR_user(cand):
@@ -22,6 +22,7 @@ def run_NAIBR_user(cand):
 		return scores
 	scores = predict_NAs(reads_by_LR,LRs_by_pos,discs_by_barcode,cands,p_len,p_rate,coverage,False)
 	return scores
+
 
 def run_NAIBR(chrom):
 	'''

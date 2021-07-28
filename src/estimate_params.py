@@ -1,9 +1,9 @@
 from __future__ import print_function,division
 import os,sys,subprocess,pysam,collections,time,gc
 import multiprocessing as mp
-from utils import *
+from .utils import *
 import numpy as np
-from global_vars import *
+from .global_vars import *
 
 def estimate_lmin_lmax():
 	reads = pysam.AlignmentFile(BAM_FILE,"rb")

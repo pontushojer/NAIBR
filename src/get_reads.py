@@ -2,9 +2,9 @@ from __future__ import print_function,division
 from future.utils import iteritems
 import os,sys,subprocess,pysam,collections,time,gc,json,random,copy
 import multiprocessing as mp
-from utils import *
-from global_vars import *
-from distributions import get_distributions
+from .utils import *
+from .global_vars import *
+from .distributions import get_distributions
 
 
 def inblacklist(cand):

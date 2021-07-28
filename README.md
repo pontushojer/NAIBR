@@ -1,23 +1,29 @@
+# NAIBR - Novel Adjacency Identification with Barcoded Reads
+
+NB! This is a re-factoring of the code from https://github.com/raphael-group/NAIBR to make the tool a bit more user-friendly.
+
 ## Overview
 
 NAIBR (Novel Adjacency Identification with Barcoded Reads) identifies novel adjacencies created by structural variation events such as deletions, duplications, inversions, and complex rearrangements using linked-read whole-genome sequencing data produced by 10X Genomics. Please refer to the [publication](https://doi.org/10.1093/bioinformatics/btx712) for details about the method.
 
 
-NAIBR takes as in put a BAM file produced by 10X Genomic's Long Ranger pipeline and outputs a BEDPE file containing predicted novel adjacencies and a likelihood score for each adjacency.
+NAIBR takes as in put a phased BAM, such as those produced by 10X Genomic's 
+Long Ranger pipeline, and outputs a BEDPE file containing predicted novel 
+adjacencies and a likelihood score for each adjacency.
 
 ## Installing NAIBR
 ```
-git clone https://github.com/raphael-group/NAIBR.git
+git clone https://github.com/pontushojer/NAIBR.git
+cd NAIBR
+pip install .
 ```
-
-NAIBR is written in python 2.7 and requires the following dependencies: pysam, numpy, scipy, subprocess, and matplotlib
 
 ## Running NAIBR
 
 NAIBR can be run using the following command:
 
 ```
-python NAIBR.py <configfile>
+naibr <configfile>
 ```
 
 A template config file can be found in example/example.config. The following parameters can be set in the config file:
@@ -40,13 +46,14 @@ NAIBR outputs a BEDPE file containing all novel scored novel adjacencies. Predic
 Example files are provided in the 'example' directory. Running
 
 ```
-python NAIBR.py example/example.config
+naibr example/example.config
 ```
 
 will produce the file 'example/NAIBR_SVs.bedpe'.
 
 ### Citing NAIBR
-Elyanow, Rebecca, Hsin-Ta Wu, and Benjamin J. Raphael. "Identifying structural variants using linked-read sequencing data." Bioinformatics (2017).
+Elyanow, Rebecca, Hsin-Ta Wu, and Benjamin J. Raphael. *Identifying 
+structural variants using linked-read sequencing data.* Bioinformatics (2017).
 ```
 @article{elyanow2017identifying,
   title={Identifying structural variants using linked-read sequencing data},

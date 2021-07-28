@@ -1,9 +1,9 @@
 from __future__ import print_function,division
 from future.utils import iteritems
 import os,sys,pysam,collections,time,gc,random,itertools
-from utils import *
+from .utils import *
 import numpy as np
-from global_vars import *
+from .global_vars import *
 import matplotlib as mpl
 mpl.use('Agg')
 import matplotlib.pyplot as plt

@@ -2,9 +2,9 @@ from __future__ import print_function,division
 import os,sys,subprocess,pysam,collections,time,gc,math,json,copy
 import scipy.stats,operator,itertools
 import multiprocessing as mp
-from utils import *
+from .utils import *
 import numpy as np
-from global_vars import *
+from .global_vars import *
 import linecache
 
 

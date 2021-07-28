@@ -1,6 +1,6 @@
 from __future__ import print_function,division
 from future.utils import iteritems
-from global_vars import *
+from .global_vars import *
 import math,mpmath,copy
 import numpy as np
 import linecache
