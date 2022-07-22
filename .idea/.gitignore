@@ -1,0 +1,7 @@
+# Default ignored files
+/shelf/
+/workspace.xml
+
+/src/naibr.egg-info/
+/.idea/
+/.vscode/
