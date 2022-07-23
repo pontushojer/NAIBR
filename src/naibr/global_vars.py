@@ -50,7 +50,7 @@ if 'outdir' in constants:
 	if not os.path.exists(DIR):
 		os.makedirs(DIR)
 else:
-	DIR='.'
+	DIR= '..'
 
 
 if 'd' in constants:
