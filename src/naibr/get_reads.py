@@ -1,7 +1,10 @@
 from __future__ import print_function, division
 from future.utils import iteritems
-import os, sys, subprocess, pysam, collections, time, gc, json, random, copy
-import multiprocessing as mp
+import pysam
+import collections
+import time
+import copy
+
 from .utils import *
 from .global_vars import *
 from .distributions import get_distributions
@@ -16,10 +19,10 @@ def inblacklist(cand):
     if not BLACKLIST:
         return False
     for s, e in BLACKLIST[cand.chrm]:
-        if cand.i > s and cand.i < e:
+        if s < cand.i < e:
             return True
     for s, e in BLACKLIST[cand.nextchrm]:
-        if cand.j > s and cand.j < e:
+        if s < cand.j < e:
             return True
     return False
 
@@ -39,24 +42,15 @@ def make_barcodeDict(chrom):
     global barcode_count
     global discs_by_barcode
     barcode_count = 0
-    num_disc = 0
-    num_reads = []
     reads = pysam.AlignmentFile(BAM_FILE, "rb")
-    count = 0
-    r = LMAX
     lengths = reads.lengths[list(reads.references).index(chrom)]
     reads_by_LR = collections.defaultdict(list)
     discs_by_barcode = collections.defaultdict(list)
     discs = collections.defaultdict(list)
     interchrom_discs = collections.defaultdict(list)
     barcode_to_num = dict()
-    disc_mate_pairs = dict()
-    split_reads = collections.defaultdict(list)
     LRs_by_pos = collections.defaultdict(list)
     iterator = reads.fetch(chrom)
-    starttime = time.time()
-    prevtime = starttime
-    count = 0
     for read in iterator:
         cov += read.query_alignment_length
         ## DEBUG
@@ -77,9 +71,9 @@ def make_barcodeDict(chrom):
                     interchrom_discs[
                         (
                             peread.chrm,
-                            int(peread.i / r) * r,
+                            int(peread.i / LMAX) * LMAX,
                             peread.nextchrm,
-                            int(peread.j / r) * r,
+                            int(peread.j / LMAX) * LMAX,
                             peread.orient,
                         )
                     ].append(peread)
@@ -127,18 +121,21 @@ def signj(disc):
 
 
 def add_disc(peread, discs):
-    r = LMAX
-    for a in [int(-r / 2), 0, int(r / 2)]:
-        for b in [int(-r / 2), 0, int(r / 2)]:
-            if (a == 0 or int((peread.i + a) / r) * r != int(peread.i / r) * r) and (
-                b == 0 or int((peread.j + b) / r) * r != int(peread.j / r) * r
+    for a in [int(-LMAX / 2), 0, int(LMAX / 2)]:
+        for b in [int(-LMAX / 2), 0, int(LMAX / 2)]:
+            if (
+                a == 0
+                or int((peread.i + a) / LMAX) * LMAX != int(peread.i / LMAX) * LMAX
+            ) and (
+                b == 0
+                or int((peread.j + b) / LMAX) * LMAX != int(peread.j / LMAX) * LMAX
             ):
                 discs[
                     (
                         peread.chrm,
-                        int((peread.i + a) / r) * r,
+                        int((peread.i + a) / LMAX) * LMAX,
                         peread.nextchrm,
-                        int((peread.j + b) / r) * r,
+                        int((peread.j + b) / LMAX) * LMAX,
                         peread.orient,
                     )
                 ].append(peread)
@@ -177,8 +174,6 @@ def coordinates(s, e, orient):
 
 
 def disc_intersection(items):
-    positions_i = collections.defaultdict(int)
-    positions_j = collections.defaultdict(int)
     intersection = [0, float("Inf"), 0, float("Inf")]
     items.sort(key=lambda x: x.i)
     for disc in items:
@@ -194,9 +189,8 @@ def disc_intersection(items):
 
 def get_candidates(discs, reads_by_LR):
     candidates = []
-    r = LMAX
     p_len, p_rate, barcode_overlap = get_distributions(reads_by_LR)
-    if p_len == None or p_rate == None:
+    if p_len is None or p_rate is None:
         return None, None, None
     num_cands = 0
     for key, items in iteritems(discs):
@@ -244,22 +238,12 @@ def make_barcodeDict_user(candidate):
     global barcode_count
     global discs_by_barcode
     barcode_count = 0
-    num_disc = 0
-    num_reads = []
-    r = LMAX
     reads = pysam.AlignmentFile(BAM_FILE, "rb")
-    count = 0
-    lengths = 0
     reads_by_LR = collections.defaultdict(list)
     discs_by_barcode = collections.defaultdict(list)
     barcode_to_num = dict()
-    disc_mate_pairs = dict()
-    split_reads = collections.defaultdict(list)
     LRs_by_pos = collections.defaultdict(list)
     lengths = sum(reads.lengths)
-    starttime = time.time()
-    prevtime = starttime
-    count = 0
 
     chrm1, break1, chrm2, break2, orientation = candidate
     if break1 > break2 or chrm1 > chrm2:
@@ -271,7 +255,6 @@ def make_barcodeDict_user(candidate):
     for chrm, s, e in window:
         lengths += e - s
         iterator = reads.fetch(chrm, max(0, s), e)
-        count = 0
         for read in iterator:
             cov += read.query_alignment_length
             if pass_checks(read):
@@ -329,7 +312,6 @@ def pass_checks(read):
         has_barcode = read.has_tag("BX")
         primary = not read.is_secondary and not read.is_supplementary
         is_first = first_read(read)
-        haplotyped = read.has_tag("HP")
     except:
         return False
     return good_mapq and not_dup and is_chrom and has_barcode and primary and is_first
