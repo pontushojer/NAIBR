@@ -13,12 +13,12 @@ def inblacklist(cand):
     Returns: True if candidate novel adjacency overlaps with
     interval in blacklist
     """
-    if not blacklist:
+    if not BLACKLIST:
         return False
-    for s, e in blacklist[cand.chrm]:
+    for s, e in BLACKLIST[cand.chrm]:
         if cand.i > s and cand.i < e:
             return True
-    for s, e in blacklist[cand.nextchrm]:
+    for s, e in BLACKLIST[cand.nextchrm]:
         if cand.j > s and cand.j < e:
             return True
     return False
@@ -43,7 +43,7 @@ def make_barcodeDict(chrom):
     num_reads = []
     reads = pysam.AlignmentFile(BAM_FILE, "rb")
     count = 0
-    r = lmax
+    r = LMAX
     lengths = reads.lengths[list(reads.references).index(chrom)]
     reads_by_LR = collections.defaultdict(list)
     discs_by_barcode = collections.defaultdict(list)
@@ -83,12 +83,25 @@ def make_barcodeDict(chrom):
                             peread.orient,
                         )
                     ].append(peread)
-            elif read.is_proper_pair and fragment_length(read) > lmin:
+            elif read.is_proper_pair and fragment_length(read) > LMIN:
                 reads_by_LR[(peread.chrm, barcode)].append(
                     (peread.start, peread.nextend, peread.hap, peread.mapq)
                 )
-                if barcode not in LRs_by_pos[(peread.chrm, int(peread.mid() / R) * R)]:
-                    LRs_by_pos[(peread.chrm, int(peread.mid() / R) * R)].append(barcode)
+                if (
+                    barcode
+                    not in LRs_by_pos[
+                        (
+                            peread.chrm,
+                            int(peread.mid() / MAX_LINKED_DIST) * MAX_LINKED_DIST,
+                        )
+                    ]
+                ):
+                    LRs_by_pos[
+                        (
+                            peread.chrm,
+                            int(peread.mid() / MAX_LINKED_DIST) * MAX_LINKED_DIST,
+                        )
+                    ].append(barcode)
     return (
         reads_by_LR,
         LRs_by_pos,
@@ -101,20 +114,20 @@ def make_barcodeDict(chrom):
 
 def signi(disc):
     if disc.orient[0] == "+":
-        return disc.i + lmin, disc.i + lmax
+        return disc.i + LMIN, disc.i + LMAX
     else:
-        return disc.i - lmax, disc.i - lmin
+        return disc.i - LMAX, disc.i - LMIN
 
 
 def signj(disc):
     if disc.orient[1] == "+":
-        return disc.j + lmin, disc.j + lmax
+        return disc.j + LMIN, disc.j + LMAX
     else:
-        return disc.j - lmax, disc.j - lmin
+        return disc.j - LMAX, disc.j - LMIN
 
 
 def add_disc(peread, discs):
-    r = lmax
+    r = LMAX
     for a in [int(-r / 2), 0, int(r / 2)]:
         for b in [int(-r / 2), 0, int(r / 2)]:
             if (a == 0 or int((peread.i + a) / r) * r != int(peread.i / r) * r) and (
@@ -181,7 +194,7 @@ def disc_intersection(items):
 
 def get_candidates(discs, reads_by_LR):
     candidates = []
-    r = lmax
+    r = LMAX
     p_len, p_rate, barcode_overlap = get_distributions(reads_by_LR)
     if p_len == None or p_rate == None:
         return None, None, None
@@ -223,7 +236,7 @@ def make_barcodeDict_user(candidate):
     Returns: dict barcoded reads, dict of reads overlapping ref positions,
     discordant reads, total coverage
     """
-    w = max_len - MAX_LINKED_DIST
+    w = MAX_LEN - MAX_LINKED_DIST
     cov = 0
     global discs
     global reads_by_barcode
@@ -233,7 +246,7 @@ def make_barcodeDict_user(candidate):
     barcode_count = 0
     num_disc = 0
     num_reads = []
-    r = lmax
+    r = LMAX
     reads = pysam.AlignmentFile(BAM_FILE, "rb")
     count = 0
     lengths = 0
@@ -270,7 +283,7 @@ def make_barcodeDict_user(candidate):
                     discs_by_barcode[
                         (peread.chrm, peread.nextchrm, peread.barcode)
                     ].append(peread)
-                elif read.is_proper_pair and fragment_length(read) > lmin:
+                elif read.is_proper_pair and fragment_length(read) > LMIN:
                     reads_by_LR[(peread.chrm, barcode)].append(
                         (peread.start, peread.nextend, peread.hap, peread.mapq)
                     )

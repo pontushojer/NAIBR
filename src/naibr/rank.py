@@ -121,12 +121,12 @@ def near_i(x, candidate):
     neari = (
         (
             candidate.orient[0] == "+"
-            and end - lmax < candidate.i
+            and end - LMAX < candidate.i
             and end + MAX_LINKED_DIST > candidate.i
         )
         or (
             candidate.orient[0] == "-"
-            and start + lmax > candidate.i
+            and start + LMAX > candidate.i
             and start - MAX_LINKED_DIST < candidate.i
         )
     ) and candidate.chrm == chrm
@@ -140,12 +140,12 @@ def near_j(x, candidate):
     nearj = (
         (
             candidate.orient[1] == "+"
-            and end - lmax < candidate.j
+            and end - LMAX < candidate.j
             and end + MAX_LINKED_DIST > candidate.j
         )
         or (
             candidate.orient[1] == "-"
-            and start + lmax > candidate.j
+            and start + LMAX > candidate.j
             and start - MAX_LINKED_DIST < candidate.j
         )
     ) and candidate.nextchrm == chrm
@@ -188,8 +188,8 @@ def linked_reads(barcode, chrm, candidate):
         if curr_LR[0] == 0 or start - curr_LR[2] > MAX_LINKED_DIST:
             if (
                 curr_LR[0] != 0
-                and len(curr_LR[3]) >= min_reads
-                and curr_LR[2] - curr_LR[1] >= min_len
+                and len(curr_LR[3]) >= MIN_READS
+                and curr_LR[2] - curr_LR[1] >= MIN_LEN
             ):
                 LRs.append(curr_LR)
             curr_LR = [chrm, start, end, [mapq], [hap], barcode]
@@ -206,8 +206,8 @@ def linked_reads(barcode, chrm, candidate):
             curr_LR[4].append(hap)
     if (
         curr_LR[0] != 0
-        and len(curr_LR[3]) >= min_reads
-        and curr_LR[2] - curr_LR[1] >= min_len
+        and len(curr_LR[3]) >= MIN_READS
+        and curr_LR[2] - curr_LR[1] >= MIN_LEN
     ):
         LRs.append(curr_LR)
     for i in range(1, len(LRs)):

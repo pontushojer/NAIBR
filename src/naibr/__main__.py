@@ -70,9 +70,9 @@ def run_NAIBR(chrom):
 
 def main():
     starttime = time.time()
-    if len(candidates) > 0:
+    if len(CANDIDATES) > 0:
         print("user defined candidates")
-        with open(candidates) as f:
+        with open(CANDIDATES) as f:
             cands = f.read().split("\n")
             cands = [x.split("\t") for x in cands]
             cands = [x for x in cands if x]

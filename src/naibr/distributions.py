@@ -85,8 +85,8 @@ def linked_reads(reads, chrom):
         if curr_LR[0] == 0 or start - curr_LR[2] > MAX_LINKED_DIST:
             if (
                 curr_LR[0] != 0
-                and curr_LR[3] >= min_reads
-                and curr_LR[2] - curr_LR[1] >= min_len
+                and curr_LR[3] >= MIN_READS
+                and curr_LR[2] - curr_LR[1] >= MIN_LEN
             ):
                 LRs.append(curr_LR)
             curr_LR = [chrom, start, end, 1]
@@ -95,8 +95,8 @@ def linked_reads(reads, chrom):
             curr_LR[3] += 1
     if (
         curr_LR[0] != 0
-        and curr_LR[3] >= min_reads
-        and curr_LR[2] - curr_LR[1] >= min_len
+        and curr_LR[3] >= MIN_READS
+        and curr_LR[2] - curr_LR[1] >= MIN_LEN
     ):
         LRs.append(curr_LR)
     return LRs

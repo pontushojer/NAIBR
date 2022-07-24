@@ -192,7 +192,7 @@ class PERead:
             j = self.nextend
         else:
             j = self.nextstart
-        return self.chrm != self.nextchrm or (j - i) > min_sv
+        return self.chrm != self.nextchrm or (j - i) > MIN_SV
 
     def mid(self):
         return int((self.end + self.start) / 2)
@@ -371,9 +371,9 @@ def orient(read):
 
 def is_close(index, read_pos, orient):
     if orient == "+":
-        return abs(index - read_pos) <= lmax
+        return abs(index - read_pos) <= LMAX
     else:
-        return abs(index - read_pos) <= lmax
+        return abs(index - read_pos) <= LMAX
 
 
 def is_convergent(read, mate):
@@ -434,7 +434,7 @@ def collapse(a, c):
             l.append(
                 [chrom1, int(s1), chrom2, int(s2), split, disc, orient, haps, score]
             )
-    r = int(lmax / 100) * 100 * 5
+    r = int(LMAX / 100) * 100 * 5
     l.sort(key=lambda x: x[-1], reverse=True)
     l2 = []
     nas = collections.defaultdict(list)

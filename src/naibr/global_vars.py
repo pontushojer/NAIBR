@@ -101,28 +101,28 @@ def estimate_lmin_lmax():
     return lmin, max(100, lmax)
 
 
-lmin, lmax = estimate_lmin_lmax()
+LMIN, LMAX = estimate_lmin_lmax()
 
 
 if "min_sv" in constants:
-    min_sv = int(constants["min_sv"])
+    MIN_SV = int(constants["min_sv"])
 else:
-    min_sv = 2 * lmax
+    MIN_SV = 2 * LMAX
 
 if "min_len" in constants:
-    min_len = int(constants["min_len"])
+    MIN_LEN = int(constants["min_len"])
 else:
-    min_len = 2 * lmax
+    MIN_LEN = 2 * LMAX
 
 if "max_len" in constants:
-    max_len = int(constants["max_len"])
+    MAX_LEN = int(constants["max_len"])
 else:
-    max_len = 200000
+    MAX_LEN = 200000
 
 if "min_reads" in constants:
-    min_reads = int(constants["min_reads"])
+    MIN_READS = int(constants["min_reads"])
 else:
-    min_reads = 2
+    MIN_READS = 2
 
 
 if "min_discs" in constants:
@@ -131,17 +131,17 @@ else:
     MIN_DISCS = 2
 
 if "candidates" in constants:
-    candidates = constants["candidates"]
-    if not os.path.exists(candidates):
-        candidates = ""
+    CANDIDATES = constants["candidates"]
+    if not os.path.exists(CANDIDATES):
+        CANDIDATES = ""
 else:
-    candidates = ""
+    CANDIDATES = ""
 
 
 if "blacklist" in constants and os.path.exists(constants["blacklist"]):
     if not os.path.exists(constants["blacklist"]):
-        blacklist = None
+        BLACKLIST = None
     else:
-        blacklist = parse_blacklist(constants["blacklist"])
+        BLACKLIST = parse_blacklist(constants["blacklist"])
 else:
-    blacklist = None
+    BLACKLIST = None
