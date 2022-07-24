@@ -196,10 +196,15 @@ def get_candidates(discs, reads_by_LR):
             cand.i = i
             cand.j = j
             barcode_overlaps = barcode_overlap[
-                (cand.chrm, int(cand.i / d) * d, cand.nextchrm, int(cand.j / d) * d)
+                (
+                    cand.chrm,
+                    int(cand.i / MAX_LINKED_DIST) * MAX_LINKED_DIST,
+                    cand.nextchrm,
+                    int(cand.j / MAX_LINKED_DIST) * MAX_LINKED_DIST,
+                )
             ]
             if not inblacklist(cand) and (
-                (cand.chrm == cand.nextchrm and cand.j - cand.i < d)
+                (cand.chrm == cand.nextchrm and cand.j - cand.i < MAX_LINKED_DIST)
                 or barcode_overlaps >= MIN_BC_OVERLAP
             ):
                 already_appended = sum(
@@ -218,7 +223,7 @@ def make_barcodeDict_user(candidate):
     Returns: dict barcoded reads, dict of reads overlapping ref positions,
     discordant reads, total coverage
     """
-    w = max_len - d
+    w = max_len - MAX_LINKED_DIST
     cov = 0
     global discs
     global reads_by_barcode
@@ -271,11 +276,19 @@ def make_barcodeDict_user(candidate):
                     )
                     if (
                         barcode
-                        not in LRs_by_pos[(peread.chrm, int(peread.mid() / R) * R)]
+                        not in LRs_by_pos[
+                            (
+                                peread.chrm,
+                                int(peread.mid() / MAX_LINKED_DIST) * MAX_LINKED_DIST,
+                            )
+                        ]
                     ):
-                        LRs_by_pos[(peread.chrm, int(peread.mid() / R) * R)].append(
-                            barcode
-                        )
+                        LRs_by_pos[
+                            (
+                                peread.chrm,
+                                int(peread.mid() / MAX_LINKED_DIST) * MAX_LINKED_DIST,
+                            )
+                        ].append(barcode)
     cand = copy.copy(peread)
     cand.chrm = chrm1.strip("chr")
     cand.i = break1

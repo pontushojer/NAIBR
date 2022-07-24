@@ -122,12 +122,12 @@ def near_i(x, candidate):
         (
             candidate.orient[0] == "+"
             and end - lmax < candidate.i
-            and end + d > candidate.i
+            and end + MAX_LINKED_DIST > candidate.i
         )
         or (
             candidate.orient[0] == "-"
             and start + lmax > candidate.i
-            and start - d < candidate.i
+            and start - MAX_LINKED_DIST < candidate.i
         )
     ) and candidate.chrm == chrm
     return neari
@@ -141,12 +141,12 @@ def near_j(x, candidate):
         (
             candidate.orient[1] == "+"
             and end - lmax < candidate.j
-            and end + d > candidate.j
+            and end + MAX_LINKED_DIST > candidate.j
         )
         or (
             candidate.orient[1] == "-"
             and start + lmax > candidate.j
-            and start - d < candidate.j
+            and start - MAX_LINKED_DIST < candidate.j
         )
     ) and candidate.nextchrm == chrm
     return nearj
@@ -185,7 +185,7 @@ def linked_reads(barcode, chrm, candidate):
     curr_LR = [0, 0, 0, [], [], 0]
     LRs = []
     for start, end, hap, mapq in reads:
-        if curr_LR[0] == 0 or start - curr_LR[2] > d:
+        if curr_LR[0] == 0 or start - curr_LR[2] > MAX_LINKED_DIST:
             if (
                 curr_LR[0] != 0
                 and len(curr_LR[3]) >= min_reads
@@ -211,7 +211,7 @@ def linked_reads(barcode, chrm, candidate):
     ):
         LRs.append(curr_LR)
     for i in range(1, len(LRs)):
-        if LRs[i][1] - LRs[i - 1][2] < d:
+        if LRs[i][1] - LRs[i - 1][2] < MAX_LINKED_DIST:
             span.append((max(LRs[i - 1][-2]), max(LRs[i][-2])))
     return LRs, span
 
@@ -246,14 +246,43 @@ def get_LRs(candidate, barcodes):
 def get_CSMs(i):
     candidate = candidates[i]
     break1_barcodes = set(
-        LRs_by_pos[(candidate.chrm, int(candidate.i / R) * R)]
-        + LRs_by_pos[(candidate.chrm, int(candidate.i / R) * R - R)]
-        + LRs_by_pos[(candidate.chrm, int(candidate.i / R) * R + R)]
+        LRs_by_pos[
+            (candidate.chrm, int(candidate.i / MAX_LINKED_DIST) * MAX_LINKED_DIST)
+        ]
+        + LRs_by_pos[
+            (
+                candidate.chrm,
+                int(candidate.i / MAX_LINKED_DIST) * MAX_LINKED_DIST - MAX_LINKED_DIST,
+            )
+        ]
+        + LRs_by_pos[
+            (
+                candidate.chrm,
+                int(candidate.i / MAX_LINKED_DIST) * MAX_LINKED_DIST + MAX_LINKED_DIST,
+            )
+        ]
     )
     break2_barcodes = set(
-        list(LRs_by_pos[(candidate.nextchrm, int(candidate.j / R) * R)])
-        + LRs_by_pos[(candidate.nextchrm, int(candidate.j / R) * R - R)]
-        + LRs_by_pos[(candidate.nextchrm, int(candidate.j / R) * R + R)]
+        list(
+            LRs_by_pos[
+                (
+                    candidate.nextchrm,
+                    int(candidate.j / MAX_LINKED_DIST) * MAX_LINKED_DIST,
+                )
+            ]
+        )
+        + LRs_by_pos[
+            (
+                candidate.nextchrm,
+                int(candidate.j / MAX_LINKED_DIST) * MAX_LINKED_DIST - MAX_LINKED_DIST,
+            )
+        ]
+        + LRs_by_pos[
+            (
+                candidate.nextchrm,
+                int(candidate.j / MAX_LINKED_DIST) * MAX_LINKED_DIST + MAX_LINKED_DIST,
+            )
+        ]
     )
     CSMs, spans = get_LRs(candidate, break1_barcodes.intersection(break2_barcodes))
     key = (candidate.i, candidate.j, candidate.orient)

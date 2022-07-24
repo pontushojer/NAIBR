@@ -54,9 +54,9 @@ else:
 
 
 if "d" in constants:
-    d = int(constants["d"])
+    MAX_LINKED_DIST = int(constants["d"])
 else:
-    d = 10000
+    MAX_LINKED_DIST = 10_000
 
 if "threads" in constants:
     NUM_THREADS = int(constants["threads"])
@@ -145,5 +145,3 @@ if "blacklist" in constants and os.path.exists(constants["blacklist"]):
         blacklist = parse_blacklist(constants["blacklist"])
 else:
     blacklist = None
-
-R = d

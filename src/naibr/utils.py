@@ -395,7 +395,7 @@ def get_orientation(read, mate):
 
 
 def rnd(num):
-    return int(num / R) * R
+    return int(num / MAX_LINKED_DIST) * MAX_LINKED_DIST
 
 
 def flatten(l):

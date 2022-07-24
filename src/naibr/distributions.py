@@ -82,7 +82,7 @@ def linked_reads(reads, chrom):
     curr_LR = [0, 0, 0, 0]
     LRs = []
     for start, end, hap, mapq in reads:
-        if curr_LR[0] == 0 or start - curr_LR[2] > d:
+        if curr_LR[0] == 0 or start - curr_LR[2] > MAX_LINKED_DIST:
             if (
                 curr_LR[0] != 0
                 and curr_LR[3] >= min_reads
@@ -109,8 +109,18 @@ def get_overlap(barcode_LRs):
             LR1, LR2 = [LR2, LR1]
         chr1, start1, end1, count1 = LR1
         chr2, start2, end2, count2 = LR2
-        index1 = set([int(start1 / d) * d, int(end1 / d) * d])
-        index2 = set([int(start2 / d) * d, int(end2 / d) * d])
+        index1 = set(
+            [
+                int(start1 / MAX_LINKED_DIST) * MAX_LINKED_DIST,
+                int(end1 / MAX_LINKED_DIST) * MAX_LINKED_DIST,
+            ]
+        )
+        index2 = set(
+            [
+                int(start2 / MAX_LINKED_DIST) * MAX_LINKED_DIST,
+                int(end2 / MAX_LINKED_DIST) * MAX_LINKED_DIST,
+            ]
+        )
         for id1 in index1:
             for id2 in index2:
                 barcode_overlap[(chr1, id1, chr2, id2)] += 1
