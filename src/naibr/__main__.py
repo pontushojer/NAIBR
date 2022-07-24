@@ -1,9 +1,12 @@
 from __future__ import print_function, division
-import os, sys, time, json, pysam, collections
+import sys
+import time
+import pysam
+import collections
 
 if len(sys.argv) < 2:
     raise ValueError("No input config file")
-import multiprocessing as mp
+
 from .get_reads import *
 from .global_vars import *
 from .utils import *
@@ -19,7 +22,7 @@ def run_NAIBR_user(cand):
         cand
     )
     p_len, p_rate, overlap = get_distributions(reads_by_LR)
-    if p_len == None:
+    if p_len is None:
         return scores
     scores = predict_NAs(
         reads_by_LR, LRs_by_pos, discs_by_barcode, cands, p_len, p_rate, coverage, False
@@ -42,7 +45,7 @@ def run_NAIBR(chrom):
     scores = 0
     if len(reads_by_LR) > 0:
         cands, p_len, p_rate = get_candidates(discs, reads_by_LR)
-        if cands == None:
+        if cands is None:
             print("No candidates from %s" % chrom)
             return (
                 reads_by_LR,
@@ -109,7 +112,7 @@ def main():
                 coverage.append(cov_chrom)
                 scores += scores_chrom
         cands, p_len, p_rate = get_candidates(discs, reads_by_LR)
-        if cands != None:
+        if cands is not None:
             print("ranking %i interchromosomal candidates" % len(cands))
             scores += predict_NAs(
                 reads_by_LR,
