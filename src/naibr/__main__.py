@@ -6,7 +6,6 @@ if len(sys.argv) < 2:
 import multiprocessing as mp
 from .get_reads import *
 from .global_vars import *
-from .estimate_params import estimate_lmin_lmax
 from .utils import *
 from .rank import *
 
