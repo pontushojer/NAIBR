@@ -31,9 +31,9 @@ else:
 
 
 if "k" in constants:
-    k = int(constants["k"])
+    MIN_BC_OVERLAP = int(constants["k"])
 else:
-    k = 3
+    MIN_BC_OVERLAP = 3
 
 if "bam_file" in constants:
     BAM_FILE = constants["bam_file"]

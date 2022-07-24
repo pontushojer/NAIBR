@@ -200,7 +200,7 @@ def get_candidates(discs, reads_by_LR):
             ]
             if not inblacklist(cand) and (
                 (cand.chrm == cand.nextchrm and cand.j - cand.i < d)
-                or barcode_overlaps >= k
+                or barcode_overlaps >= MIN_BC_OVERLAP
             ):
                 already_appended = sum(
                     [1 for x in candidates if x.i == cand.i and x.j == cand.j]
