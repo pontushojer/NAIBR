@@ -69,8 +69,30 @@ def run_NAIBR(chrom):
 
 def main():
     starttime = time.time()
+
+    print("======== NAIBR ========")
+    print("------- CONFIGS -------")
+    print("FILES")
+    print(f"  bam_file = {BAM_FILE}")
+    print(f"  candidates = {CANDIDATES}")
+    print(f"  blacklist = {BLACKLIST_FILE}")
+    print(f"  outdir = {DIR}")
+    print("PARAMETERS")
+    print(f"  d =         {MAX_LINKED_DIST:>9,} (maximum distance between read-pairs in a linked-read)")
+    print(f"  min_mapq =  {MIN_MAPQ:>9}")
+    print(f"  k =         {MIN_BC_OVERLAP:>9} (minimum number of barcode overlaps supporting a candidate NA)")
+    print(f"  min_sv =    {MIN_SV:>9,} (minimum size of structural variant)")
+    print(f"  sd_mult =   {SD_MULT:>9} (stddev multiplier for lmax/lmin calculcation)")
+    print(f"  min_len =   {MIN_LEN:>9,}")
+    print(f"  max_len =   {MAX_LEN:>9,}")
+    print(f"  min_reads = {MIN_READS:>9}")
+    print(f"  min_discs = {MIN_DISCS:>9}")
+    print(f"  threads =   {NUM_THREADS:>9}")
+    print(f"  DEBUG =     {str(DEBUG).rjust(9)}")
+    print("-----------------------")
+
     if len(CANDIDATES) > 0:
-        print("user defined candidates")
+        print("Using user defined candidates")
         with open(CANDIDATES) as f:
             cands = f.read().split("\n")
             cands = [x.split("\t") for x in cands]

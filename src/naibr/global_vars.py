@@ -133,18 +133,15 @@ if "min_discs" in constants:
 else:
     MIN_DISCS = 2
 
-if "candidates" in constants:
+if "candidates" in constants and os.path.exists(constants["candidates"]):
     CANDIDATES = constants["candidates"]
-    if not os.path.exists(CANDIDATES):
-        CANDIDATES = ""
 else:
     CANDIDATES = ""
 
 
 if "blacklist" in constants and os.path.exists(constants["blacklist"]):
-    if not os.path.exists(constants["blacklist"]):
-        BLACKLIST = None
-    else:
-        BLACKLIST = parse_blacklist(constants["blacklist"])
+    BLACKLIST_FILE = constants["blacklist"]
+    BLACKLIST = parse_blacklist(constants["blacklist"])
 else:
+    BLACKLIST_FILE = ""
     BLACKLIST = None
