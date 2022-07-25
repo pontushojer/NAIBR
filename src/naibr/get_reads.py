@@ -34,7 +34,7 @@ def make_barcodeDict(chrom):
     Returns: dict barcoded reads, dict of reads overlapping ref positions,
     discordant reads, candidate NAs, total coverage
     """
-    print("getting candidates for chrom %s" % chrom)
+    print("Getting candidates for chromosome %s" % chrom)
     cov = 0
     global discs
     global reads_by_barcode
@@ -51,10 +51,11 @@ def make_barcodeDict(chrom):
     barcode_to_num = dict()
     LRs_by_pos = collections.defaultdict(list)
     iterator = reads.fetch(chrom)
-    for read in iterator:
+    t0 = time.time()
+    for nr, read in enumerate(iterator, start=1):
         cov += read.query_alignment_length
         ## DEBUG
-        if DEBUG and cov > 100000000:
+        if DEBUG and cov > 100_000_000:
             break
         if pass_checks(read):
             peread = PERead(read)
@@ -80,6 +81,11 @@ def make_barcodeDict(chrom):
                 norm_mid = int(peread.mid() / MAX_LINKED_DIST) * MAX_LINKED_DIST
                 if peread.barcode not in LRs_by_pos[(peread.chrm, norm_mid)]:
                     LRs_by_pos[(peread.chrm, norm_mid)].append(peread.barcode)
+
+        if nr % 1_000_000 == 0:
+            print(f"Processed {nr:,} reads ({time.time()-t0:.4f} s for last million).")
+            t0 = time.time()
+
     return (
         reads_by_LR,
         LRs_by_pos,
