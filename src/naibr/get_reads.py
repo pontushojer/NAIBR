@@ -146,9 +146,7 @@ def largest_overlap(items):
 
 
 def coordinates(s, e, orient):
-    if orient == "+":
-        return s
-    return e
+    return s if orient == "+" else e
 
 
 def disc_intersection(items):
@@ -170,7 +168,7 @@ def get_candidates(discs, reads_by_LR):
     p_len, p_rate, barcode_overlap = get_distributions(reads_by_LR)
     if p_len is None or p_rate is None:
         return None, None, None
-    num_cands = 0
+
     for key, items in discs.items():
         orient = key[4]
         si, ei, sj, ej = disc_intersection(items)
@@ -180,21 +178,14 @@ def get_candidates(discs, reads_by_LR):
             cand = copy.copy(items[0])
             cand.i = i
             cand.j = j
-            barcode_overlaps = barcode_overlap[
-                (
-                    cand.chrm,
-                    int(cand.i / MAX_LINKED_DIST) * MAX_LINKED_DIST,
-                    cand.nextchrm,
-                    int(cand.j / MAX_LINKED_DIST) * MAX_LINKED_DIST,
-                )
-            ]
+            norm_i = int(cand.i / MAX_LINKED_DIST) * MAX_LINKED_DIST
+            norm_j = int(cand.j / MAX_LINKED_DIST) * MAX_LINKED_DIST
+            barcode_overlaps = barcode_overlap[(cand.chrm, norm_i, cand.nextchrm, norm_j)]
             if not inblacklist(cand) and (
                 (cand.chrm == cand.nextchrm and cand.j - cand.i < MAX_LINKED_DIST)
                 or barcode_overlaps >= MIN_BC_OVERLAP
             ):
-                already_appended = sum([1 for x in candidates if x.i == cand.i and x.j == cand.j])
-                if not already_appended:
-                    num_cands += 1
+                if not any(x.i == cand.i and x.j == cand.j for x in candidates):
                     candidates.append(cand)
     return candidates, p_len, p_rate
 
