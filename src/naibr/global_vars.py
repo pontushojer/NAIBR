@@ -12,9 +12,9 @@ def parse_blacklist(fname):
         data = f.read().split("\n")
         blacklist = collections.defaultdict(list)
         for line in data:
-            l = line.split("\t")
-            if len(l) > 2:
-                blacklist[l[0].strip("chr")].append([int(l[1]), int(l[-1])])
+            l = line.strip().split("\t")
+            assert len(l) == 3
+            blacklist[l[0].strip("chr")].append([int(l[1]), int(l[2])])
     return blacklist
 
 
