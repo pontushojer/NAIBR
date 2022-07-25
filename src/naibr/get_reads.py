@@ -57,7 +57,6 @@ def make_barcodeDict(chrom):
         if DEBUG and cov > 100000000:
             break
         if pass_checks(read):
-            barcode = read.get_tag("BX")
             peread = PERead(read)
             if peread.disc:
                 peread.add_disc(read)
@@ -77,12 +76,12 @@ def make_barcodeDict(chrom):
                         )
                     ].append(peread)
             elif read.is_proper_pair and fragment_length(read) > LMIN:
-                reads_by_LR[(peread.chrm, barcode)].append(
+                reads_by_LR[(peread.chrm, peread.barcode)].append(
                     (peread.start, peread.nextend, peread.hap, peread.mapq)
                 )
                 norm_mid = int(peread.mid() / MAX_LINKED_DIST) * MAX_LINKED_DIST
-                if barcode not in LRs_by_pos[(peread.chrm, norm_mid)]:
-                    LRs_by_pos[(peread.chrm, norm_mid)].append(barcode)
+                if peread.barcode not in LRs_by_pos[(peread.chrm, norm_mid)]:
+                    LRs_by_pos[(peread.chrm, norm_mid)].append(peread.barcode)
     return (
         reads_by_LR,
         LRs_by_pos,
@@ -245,7 +244,6 @@ def make_barcodeDict_user(candidate):
         for read in iterator:
             cov += read.query_alignment_length
             if pass_checks(read):
-                barcode = read.get_tag("BX")
                 peread = PERead(read)
                 if peread.disc:
                     peread.add_disc(read)
@@ -253,12 +251,12 @@ def make_barcodeDict_user(candidate):
                         (peread.chrm, peread.nextchrm, peread.barcode)
                     ].append(peread)
                 elif read.is_proper_pair and fragment_length(read) > LMIN:
-                    reads_by_LR[(peread.chrm, barcode)].append(
+                    reads_by_LR[(peread.chrm, peread.barcode)].append(
                         (peread.start, peread.nextend, peread.hap, peread.mapq)
                     )
                     norm_mid = int(peread.mid() / MAX_LINKED_DIST) * MAX_LINKED_DIST
-                    if barcode not in LRs_by_pos[(peread.chrm, norm_mid)]:
-                        LRs_by_pos[(peread.chrm, norm_mid)].append(barcode)
+                    if peread.barcode not in LRs_by_pos[(peread.chrm, norm_mid)]:
+                        LRs_by_pos[(peread.chrm, norm_mid)].append(peread.barcode)
 
     cand = copy.copy(peread)
     cand.chrm = chrm1.strip("chr")
