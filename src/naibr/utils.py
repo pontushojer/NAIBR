@@ -156,7 +156,6 @@ class PERead:
             read.reference_start,
             read.reference_end,
             read.get_tag("BX"),
-            read.is_reverse,
             read.mapping_quality,
         ]
         m = [
@@ -165,10 +164,9 @@ class PERead:
             0,
             0,
             0,
-            0,
         ]
-        [chr1, read_start, read_end, barcode1, isrev1, mapq1] = r
-        [chr2, mate_start, mate_end, barcode2, isrev2, mapq2] = m
+        chr1, read_start, read_end, barcode1, mapq1 = r
+        chr2, mate_start, mate_end, barcode2, mapq2 = m
         self.barcode = barcode1
         self.chrm = chr1
         self.nextchrm = chr2
@@ -183,14 +181,8 @@ class PERead:
         self.disc = self.is_disc() and not read.is_proper_pair
 
     def is_disc(self):
-        if self.orient[0] == "+":
-            i = self.end
-        else:
-            i = self.start
-        if self.orient[1] == "+":
-            j = self.nextend
-        else:
-            j = self.nextstart
+        i = self.end if self.orient[0] == "+" else self.start
+        j = self.nextend if self.orient[1] == "+" else self.nextstart
         return self.chrm != self.nextchrm or (j - i) > MIN_SV
 
     def mid(self):
@@ -199,14 +191,12 @@ class PERead:
     def add_disc(self, read):
         chrom1 = read.reference_name.strip("chr")
         chrom2 = read.next_reference_name.strip("chr")
-        if read.is_reverse:
-            i = read.reference_start
-        else:
-            i = read.reference_end
-        if read.mate_is_reverse:
-            j = read.next_reference_start
-        else:
-            j = read.next_reference_start + read.reference_length
+        i = read.reference_start if read.is_reverse else read.reference_end
+        j = (
+            read.next_reference_start
+            if read.mate_is_reverse
+            else read.next_reference_start + read.reference_length
+        )
         hap = get_hap(read)
         mapq = read.mapping_quality
         orient = get_orient(read)
@@ -250,7 +240,9 @@ class PERead:
 def first_read(read):
     chrom = read.reference_name
     mate_chrom = read.next_reference_name
-    return (chrom == mate_chrom and read.reference_start < read.next_reference_start) or chrom < mate_chrom
+    return (
+        chrom == mate_chrom and read.reference_start < read.next_reference_start
+    ) or chrom < mate_chrom
 
 
 def closest_LR(LR1, LR2, i):
