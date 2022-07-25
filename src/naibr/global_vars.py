@@ -1,17 +1,20 @@
 ### GLOBALS ####
 from __future__ import print_function
-import os, json, sys, collections, pysam
+import os
+import sys
+import collections
+import pysam
 import numpy as np
 
 
 def parse_blacklist(fname):
     with open(fname) as f:
         data = f.read().split("\n")
-    blacklist = collections.defaultdict(list)
-    for line in data:
-        l = line.split("\t")
-        if len(l) > 2:
-            blacklist[l[0].strip("chr")].append([int(l[1]), int(l[-1])])
+        blacklist = collections.defaultdict(list)
+        for line in data:
+            l = line.split("\t")
+            if len(l) > 2:
+                blacklist[l[0].strip("chr")].append([int(l[1]), int(l[-1])])
     return blacklist
 
 
