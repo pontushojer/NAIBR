@@ -1,12 +1,11 @@
 from __future__ import print_function, division
 from future.utils import iteritems
-import os, sys, pysam, collections, time, gc, random, itertools
+import os
+import collections
+import itertools
 from .utils import *
 import numpy as np
-from .global_vars import *
 import matplotlib as mpl
-
-mpl.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 from pylab import rc
@@ -16,6 +15,10 @@ import scipy.special as special
 import scipy.optimize as optimize
 import numpy as np
 import mpmath
+
+from .global_vars import *
+
+mpl.use("Agg")
 
 
 class negBin(object):
@@ -61,7 +64,7 @@ def plot_distribution(p, distr, xlab, ylab, title):
     fname = "_".join(title.split(" "))
     nbins = 50
     fig, ax = plt.subplots()
-    n, bins, patches = plt.hist(distr, nbins, normed=True, facecolor="blue", alpha=0.70)
+    n, bins, patches = plt.hist(distr, nbins, density=True, facecolor="blue", alpha=0.70)
     rc("axes", linewidth=1)
     y = [p(b) for b in bins]
     plt.plot(bins, y, color="r", linewidth=5)
@@ -106,21 +109,17 @@ def get_overlap(barcode_LRs):
     global barcode_overlap
     for LR1, LR2 in itertools.combinations(barcode_LRs, 2):
         if LR1[0] > LR2[0] or LR1[1] > LR2[1]:
-            LR1, LR2 = [LR2, LR1]
+            LR1, LR2 = LR2, LR1
         chr1, start1, end1, count1 = LR1
         chr2, start2, end2, count2 = LR2
-        index1 = set(
-            [
-                int(start1 / MAX_LINKED_DIST) * MAX_LINKED_DIST,
-                int(end1 / MAX_LINKED_DIST) * MAX_LINKED_DIST,
-            ]
-        )
-        index2 = set(
-            [
-                int(start2 / MAX_LINKED_DIST) * MAX_LINKED_DIST,
-                int(end2 / MAX_LINKED_DIST) * MAX_LINKED_DIST,
-            ]
-        )
+        index1 = {
+            int(start1 / MAX_LINKED_DIST) * MAX_LINKED_DIST,
+            int(end1 / MAX_LINKED_DIST) * MAX_LINKED_DIST,
+        }
+        index2 = {
+            int(start2 / MAX_LINKED_DIST) * MAX_LINKED_DIST,
+            int(end2 / MAX_LINKED_DIST) * MAX_LINKED_DIST,
+        }
         for id1 in index1:
             for id2 in index2:
                 barcode_overlap[(chr1, id1, chr2, id2)] += 1
