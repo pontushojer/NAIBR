@@ -248,12 +248,9 @@ class PERead:
 
 
 def first_read(read):
-    cond1 = read.reference_name < read.next_reference_name
-    cond2 = (
-        read.reference_name == read.next_reference_name
-        and read.reference_start < read.next_reference_start
-    )
-    return cond1 or cond2
+    chrom = read.reference_name
+    mate_chrom = read.next_reference_name
+    return (chrom == mate_chrom and read.reference_start < read.next_reference_start) or chrom < mate_chrom
 
 
 def closest_LR(LR1, LR2, i):
@@ -269,7 +266,9 @@ def closest_LR(LR1, LR2, i):
 
 
 def is_proper_chrom(chrom):
-    return "Un" not in chrom and "random" not in chrom and "hs37d5" not in chrom
+    if chrom is not None:
+        return "Un" not in chrom and "random" not in chrom and "hs37d5" not in chrom
+    return False
 
 
 def get_orient(read):

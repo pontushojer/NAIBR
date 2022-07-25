@@ -303,15 +303,23 @@ def make_barcodeDict_user(candidate):
 
 
 def pass_checks(read):
-    try:
-        good_mapq = read.mapping_quality >= MIN_MAPQ
-        not_dup = not read.is_duplicate
-        is_chrom = is_proper_chrom(read.reference_name) and is_proper_chrom(
-            read.next_reference_name
-        )
-        has_barcode = read.has_tag("BX")
-        primary = not read.is_secondary and not read.is_supplementary
-        is_first = first_read(read)
-    except:
+    if read.mapping_quality < MIN_MAPQ:
         return False
-    return good_mapq and not_dup and is_chrom and has_barcode and primary and is_first
+
+    if read.is_duplicate:
+        return False
+
+    if read.is_secondary or read.is_supplementary:
+        return False
+
+    if not (is_proper_chrom(read.reference_name) and
+            is_proper_chrom(read.next_reference_name)):
+        return False
+
+    if not read.has_tag("BX"):
+        return False
+
+    if not first_read(read):
+        return False
+
+    return True
