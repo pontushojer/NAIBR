@@ -64,9 +64,9 @@ def make_barcodeDict(chrom):
                     interchrom_discs[
                         (
                             peread.chrm,
-                            int(peread.i / LMAX) * LMAX,
+                            roundto(peread.i, LMAX),
                             peread.nextchrm,
-                            int(peread.j / LMAX) * LMAX,
+                            roundto(peread.j, LMAX),
                             peread.orient,
                         )
                     ].append(peread)
@@ -113,19 +113,13 @@ def signj(disc):
 
 def add_disc(peread, discs):
     for a in [int(-LMAX / 2), 0, int(LMAX / 2)]:
+        norm_ia = roundto(peread.i + a, LMAX)
+        norm_i = roundto(peread.i, LMAX)
         for b in [int(-LMAX / 2), 0, int(LMAX / 2)]:
-            if (a == 0 or int((peread.i + a) / LMAX) * LMAX != int(peread.i / LMAX) * LMAX) and (
-                b == 0 or int((peread.j + b) / LMAX) * LMAX != int(peread.j / LMAX) * LMAX
-            ):
-                discs[
-                    (
-                        peread.chrm,
-                        int((peread.i + a) / LMAX) * LMAX,
-                        peread.nextchrm,
-                        int((peread.j + b) / LMAX) * LMAX,
-                        peread.orient,
-                    )
-                ].append(peread)
+            norm_jb = roundto(peread.j + b, LMAX)
+            norm_j = roundto(peread.j, LMAX)
+            if (a == 0 or norm_ia != norm_i) and (b == 0 or norm_jb != norm_j):
+                discs[(peread.chrm, norm_ia, peread.nextchrm, norm_jb, peread.orient)].append(peread)
     return discs
 
 
@@ -187,8 +181,8 @@ def get_candidates(discs, reads_by_LR):
             cand = copy.copy(items[0])
             cand.i = i
             cand.j = j
-            norm_i = int(cand.i / MAX_LINKED_DIST) * MAX_LINKED_DIST
-            norm_j = int(cand.j / MAX_LINKED_DIST) * MAX_LINKED_DIST
+            norm_i = roundto(cand.i, MAX_LINKED_DIST)
+            norm_j = roundto(cand.j, MAX_LINKED_DIST)
             barcode_overlaps = barcode_overlap[(cand.chrm, norm_i, cand.nextchrm, norm_j)]
             if not inblacklist(cand) and (
                 (cand.chrm == cand.nextchrm and cand.j - cand.i < MAX_LINKED_DIST)

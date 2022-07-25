@@ -194,8 +194,8 @@ def get_LRs(candidate, barcodes):
 
 def get_CSMs(i):
     candidate = candidates[i]
-    candidate_i_norm = int(candidate.i / MAX_LINKED_DIST) * MAX_LINKED_DIST
-    candidate_j_norm = int(candidate.j / MAX_LINKED_DIST) * MAX_LINKED_DIST
+    candidate_i_norm = roundto(candidate.i, MAX_LINKED_DIST)
+    candidate_j_norm = roundto(candidate.j, MAX_LINKED_DIST)
     break1_barcodes = set(
         LRs_by_pos[(candidate.chrm, candidate_i_norm)]
         + LRs_by_pos[(candidate.chrm, candidate_i_norm - MAX_LINKED_DIST)]

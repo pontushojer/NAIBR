@@ -384,14 +384,16 @@ def collapse(a, c):
     nas = collections.defaultdict(list)
     for chrom1, s1, chrom2, s2, split, disc, orient, haps, score in l:
         already_appended = False
+        norm_s1 = roundto(s1, r)
+        norm_s2 = roundto(s2, r)
         for i in [-r, 0, r]:
             for j in [-r, 0, r]:
-                if (chrom1, int(s1 / r) * r + i, chrom2, int(s2 / r) * r + j) in nas:
-                    ch1, ds1, ch2, ds2 = nas[(chrom1, int(s1 / r) * r + i, chrom2, int(s2 / r) * r + j)][0:4]
+                if (chrom1, norm_s1 + i, chrom2, norm_s2 + j) in nas:
+                    ch1, ds1, ch2, ds2 = nas[(chrom1, norm_s1 + i, chrom2, norm_s2 + j)][0:4]
                     if abs(ds1 - s1) < r and abs(ds2 - s2) < r:
                         already_appended = True
         if not already_appended:
-            nas[(chrom1, int(s1 / r) * r, chrom2, int(s2 / r) * r)] = [
+            nas[(chrom1, norm_s1, chrom2, norm_s2)] = [
                 chrom1,
                 s1,
                 chrom2,
@@ -449,3 +451,8 @@ def parallel_execute(function, input_list):
     else:
         data = map(function, input_list)
     return data
+
+
+def roundto(number: int, step: int) -> int:
+    """Round number to down the nearset multiple of step"""
+    return number - number % step
