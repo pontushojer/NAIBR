@@ -56,11 +56,7 @@ class NA:
             if hap[0] != 0 and hap[1] != 0 and self.pairs[(0, 0)] >= self.spans[(0, 0)]:
                 s += max(0, self.score[(0, 0)])
                 d += self.disc[(0, 0)]
-            if (
-                s > best_score
-                and self.pairs[hap] > 0
-                and self.pairs[hap] >= self.spans[hap]
-            ):
+            if s > best_score and self.pairs[hap] > 0 and self.pairs[hap] >= self.spans[hap]:
                 best_score = s
                 best_haps = hap
         pairs = sum([self.pairs[x] for x in self.pairs.keys()])
@@ -240,9 +236,7 @@ class PERead:
 def first_read(read):
     chrom = read.reference_name
     mate_chrom = read.next_reference_name
-    return (
-        chrom == mate_chrom and read.reference_start < read.next_reference_start
-    ) or chrom < mate_chrom
+    return (chrom == mate_chrom and read.reference_start < read.next_reference_start) or chrom < mate_chrom
 
 
 def closest_LR(LR1, LR2, i):
@@ -361,9 +355,9 @@ def threshold(cov):
 
 
 def fragment_length(read):
-    return max(
-        read.reference_end, read.next_reference_start + read.reference_length
-    ) - min(read.reference_start, read.next_reference_start)
+    return max(read.reference_end, read.next_reference_start + read.reference_length) - min(
+        read.reference_start, read.next_reference_start
+    )
 
 
 def collapse(a, c):
@@ -384,9 +378,7 @@ def collapse(a, c):
         haps = linea[7].split(":")[-1]
         score = float(linea[8].split(":")[-1])
         if "Y" not in chrom1 and "Y" not in chrom2:
-            l.append(
-                [chrom1, int(s1), chrom2, int(s2), split, disc, orient, haps, score]
-            )
+            l.append([chrom1, int(s1), chrom2, int(s2), split, disc, orient, haps, score])
     r = int(LMAX / 100) * 100 * 5
     l.sort(key=lambda x: x[-1], reverse=True)
     l2 = []
@@ -396,9 +388,7 @@ def collapse(a, c):
         for i in [-r, 0, r]:
             for j in [-r, 0, r]:
                 if (chrom1, int(s1 / r) * r + i, chrom2, int(s2 / r) * r + j) in nas:
-                    ch1, ds1, ch2, ds2 = nas[
-                        (chrom1, int(s1 / r) * r + i, chrom2, int(s2 / r) * r + j)
-                    ][0:4]
+                    ch1, ds1, ch2, ds2 = nas[(chrom1, int(s1 / r) * r + i, chrom2, int(s2 / r) * r + j)][0:4]
                     if abs(ds1 - s1) < r and abs(ds2 - s2) < r:
                         already_appended = True
         if not already_appended:

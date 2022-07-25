@@ -18,15 +18,11 @@ def run_NAIBR_user(cand):
     use user input candidate novel adjacencies
     """
     scores = 0
-    reads_by_LR, LRs_by_pos, discs_by_barcode, cands, coverage = make_barcodeDict_user(
-        cand
-    )
+    reads_by_LR, LRs_by_pos, discs_by_barcode, cands, coverage = make_barcodeDict_user(cand)
     p_len, p_rate, overlap = get_distributions(reads_by_LR)
     if p_len is None:
         return scores
-    scores = predict_NAs(
-        reads_by_LR, LRs_by_pos, discs_by_barcode, cands, p_len, p_rate, coverage, False
-    )
+    scores = predict_NAs(reads_by_LR, LRs_by_pos, discs_by_barcode, cands, p_len, p_rate, coverage, False)
     return scores
 
 
@@ -79,9 +75,7 @@ def main():
             cands = f.read().split("\n")
             cands = [x.split("\t") for x in cands]
             cands = [x for x in cands if x]
-            cands = [
-                [x[0], int(x[1]), x[3], int(x[4]), x[-1]] for x in cands if len(x) >= 4
-            ]
+            cands = [[x[0], int(x[1]), x[3], int(x[4]), x[-1]] for x in cands if len(x) >= 4]
         scores = flatten(parallel_execute(run_NAIBR_user, cands))
         write_scores(scores)
 

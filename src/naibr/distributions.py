@@ -38,11 +38,7 @@ class negBin(object):
         r = par[1]
         n = len(data)
         f0 = sm / (r + sm) - p
-        f1 = (
-            np.sum(special.psi(data + r))
-            - n * special.psi(r)
-            + n * np.log(r / (r + sm))
-        )
+        f1 = np.sum(special.psi(data + r)) - n * special.psi(r) + n * np.log(r / (r + sm))
         return np.array([f0, f1])
 
     def fit(self, data, p=None, r=None):
@@ -64,9 +60,7 @@ def plot_distribution(p, distr, xlab, ylab, title):
     fname = "_".join(title.split(" "))
     nbins = 50
     fig, ax = plt.subplots()
-    n, bins, patches = plt.hist(
-        distr, nbins, density=True, facecolor="blue", alpha=0.70
-    )
+    n, bins, patches = plt.hist(distr, nbins, density=True, facecolor="blue", alpha=0.70)
     rc("axes", linewidth=1)
     y = [p(b) for b in bins]
     plt.plot(bins, y, color="r", linewidth=5)
@@ -88,21 +82,13 @@ def linked_reads(reads, chrom):
     LRs = []
     for start, end, hap, mapq in reads:
         if curr_LR[0] == 0 or start - curr_LR[2] > MAX_LINKED_DIST:
-            if (
-                curr_LR[0] != 0
-                and curr_LR[3] >= MIN_READS
-                and curr_LR[2] - curr_LR[1] >= MIN_LEN
-            ):
+            if curr_LR[0] != 0 and curr_LR[3] >= MIN_READS and curr_LR[2] - curr_LR[1] >= MIN_LEN:
                 LRs.append(curr_LR)
             curr_LR = [chrom, start, end, 1]
         else:
             curr_LR[2] = max(curr_LR[2], end)
             curr_LR[3] += 1
-    if (
-        curr_LR[0] != 0
-        and curr_LR[3] >= MIN_READS
-        and curr_LR[2] - curr_LR[1] >= MIN_LEN
-    ):
+    if curr_LR[0] != 0 and curr_LR[3] >= MIN_READS and curr_LR[2] - curr_LR[1] >= MIN_LEN:
         LRs.append(curr_LR)
     return LRs
 

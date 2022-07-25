@@ -42,35 +42,16 @@ class CandSplitMol:
         mapqdisc0 = self.mismap_prob(D)
         scoreHA = log(
             plen(lenA) * prate(rateA) * mapqiA * mapqjA * mapqdiscA
-            + plen(lenLi)
-            * prate(rateLiA)
-            * plen(lenLj)
-            * prate(rateLjA)
-            * mapqiA
-            * mapqjA
-            * mapqdiscA
+            + plen(lenLi) * prate(rateLiA) * plen(lenLj) * prate(rateLjA) * mapqiA * mapqjA * mapqdiscA
         )
         if chrm_i == chrm_j:
             scoreH0 = log(
                 plen(len0) * prate(rate0) * mapqi0 * mapqj0 * mapqdisc0
-                + plen(lenLi)
-                * prate(rateLi0)
-                * plen(lenLj)
-                * prate(rateLj0)
-                * mapqi0
-                * mapqj0
-                * mapqdisc0
+                + plen(lenLi) * prate(rateLi0) * plen(lenLj) * prate(rateLj0) * mapqi0 * mapqj0 * mapqdisc0
             )
         else:
             scoreH0 = log(
-                0
-                + plen(lenLi)
-                * prate(rateLi0)
-                * plen(lenLj)
-                * prate(rateLj0)
-                * mapqi0
-                * mapqj0
-                * mapqdisc0
+                0 + plen(lenLi) * prate(rateLi0) * plen(lenLj) * prate(rateLj0) * mapqi0 * mapqj0 * mapqdisc0
             )
         self.scoreHA = scoreHA
         self.scoreH0 = scoreH0
@@ -97,9 +78,7 @@ class CandSplitMol:
 def score_pair(i):
     key, CSMs, spans = get_CSMs(i)
     candidate = candidates[i]
-    candScore = NA(
-        candidate.chrm, candidate.nextchrm, candidate.i, candidate.j, candidate.orient
-    )
+    candScore = NA(candidate.chrm, candidate.nextchrm, candidate.i, candidate.j, candidate.orient)
     for CSM in CSMs:
         c = CandSplitMol()
         c.score_CSM(CSM, candScore)
@@ -113,14 +92,8 @@ def near_i(x, candidate):
     start = x[1]
     end = x[2]
     neari = (
-        (
-            candidate.orient[0] == "+"
-            and end - LMAX < candidate.i < end + MAX_LINKED_DIST
-        )
-        or (
-            candidate.orient[0] == "-"
-            and start + LMAX > candidate.i > start - MAX_LINKED_DIST
-        )
+        (candidate.orient[0] == "+" and end - LMAX < candidate.i < end + MAX_LINKED_DIST)
+        or (candidate.orient[0] == "-" and start + LMAX > candidate.i > start - MAX_LINKED_DIST)
     ) and candidate.chrm == chrm
     return neari
 
@@ -130,14 +103,8 @@ def near_j(x, candidate):
     start = x[1]
     end = x[2]
     nearj = (
-        (
-            candidate.orient[1] == "+"
-            and end - LMAX < candidate.j < end + MAX_LINKED_DIST
-        )
-        or (
-            candidate.orient[1] == "-"
-            and start + LMAX > candidate.j > start - MAX_LINKED_DIST
-        )
+        (candidate.orient[1] == "+" and end - LMAX < candidate.j < end + MAX_LINKED_DIST)
+        or (candidate.orient[1] == "-" and start + LMAX > candidate.j > start - MAX_LINKED_DIST)
     ) and candidate.nextchrm == chrm
     return nearj
 
@@ -176,11 +143,7 @@ def linked_reads(barcode, chrm, candidate):
     LRs = []
     for start, end, hap, mapq in reads:
         if curr_LR[0] == 0 or start - curr_LR[2] > MAX_LINKED_DIST:
-            if (
-                curr_LR[0] != 0
-                and len(curr_LR[3]) >= MIN_READS
-                and curr_LR[2] - curr_LR[1] >= MIN_LEN
-            ):
+            if curr_LR[0] != 0 and len(curr_LR[3]) >= MIN_READS and curr_LR[2] - curr_LR[1] >= MIN_LEN:
                 LRs.append(curr_LR)
             curr_LR = [chrm, start, end, [mapq], [hap], barcode]
         elif (
@@ -194,11 +157,7 @@ def linked_reads(barcode, chrm, candidate):
             curr_LR[2] = max(curr_LR[2], end)
             curr_LR[3].append(mapq)
             curr_LR[4].append(hap)
-    if (
-        curr_LR[0] != 0
-        and len(curr_LR[3]) >= MIN_READS
-        and curr_LR[2] - curr_LR[1] >= MIN_LEN
-    ):
+    if curr_LR[0] != 0 and len(curr_LR[3]) >= MIN_READS and curr_LR[2] - curr_LR[1] >= MIN_LEN:
         LRs.append(curr_LR)
     for i in range(1, len(LRs)):
         if LRs[i][1] - LRs[i - 1][2] < MAX_LINKED_DIST:
@@ -236,9 +195,7 @@ def get_LRs(candidate, barcodes):
 def get_CSMs(i):
     candidate = candidates[i]
     break1_barcodes = set(
-        LRs_by_pos[
-            (candidate.chrm, int(candidate.i / MAX_LINKED_DIST) * MAX_LINKED_DIST)
-        ]
+        LRs_by_pos[(candidate.chrm, int(candidate.i / MAX_LINKED_DIST) * MAX_LINKED_DIST)]
         + LRs_by_pos[
             (
                 candidate.chrm,

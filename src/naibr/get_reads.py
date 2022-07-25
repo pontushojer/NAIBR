@@ -60,9 +60,7 @@ def make_barcodeDict(chrom):
             peread = PERead(read)
             if peread.disc:
                 peread.add_disc(read)
-                discs_by_barcode[(peread.chrm, peread.nextchrm, peread.barcode)].append(
-                    peread
-                )
+                discs_by_barcode[(peread.chrm, peread.nextchrm, peread.barcode)].append(peread)
                 if peread.chrm == peread.nextchrm:
                     discs = add_disc(peread, discs)
                 else:
@@ -109,12 +107,8 @@ def signj(disc):
 def add_disc(peread, discs):
     for a in [int(-LMAX / 2), 0, int(LMAX / 2)]:
         for b in [int(-LMAX / 2), 0, int(LMAX / 2)]:
-            if (
-                a == 0
-                or int((peread.i + a) / LMAX) * LMAX != int(peread.i / LMAX) * LMAX
-            ) and (
-                b == 0
-                or int((peread.j + b) / LMAX) * LMAX != int(peread.j / LMAX) * LMAX
+            if (a == 0 or int((peread.i + a) / LMAX) * LMAX != int(peread.i / LMAX) * LMAX) and (
+                b == 0 or int((peread.j + b) / LMAX) * LMAX != int(peread.j / LMAX) * LMAX
             ):
                 discs[
                     (
@@ -200,9 +194,7 @@ def get_candidates(discs, reads_by_LR):
                 (cand.chrm == cand.nextchrm and cand.j - cand.i < MAX_LINKED_DIST)
                 or barcode_overlaps >= MIN_BC_OVERLAP
             ):
-                already_appended = sum(
-                    [1 for x in candidates if x.i == cand.i and x.j == cand.j]
-                )
+                already_appended = sum([1 for x in candidates if x.i == cand.i and x.j == cand.j])
                 if not already_appended:
                     num_cands += 1
                     candidates.append(cand)
@@ -247,9 +239,7 @@ def make_barcodeDict_user(candidate):
                 peread = PERead(read)
                 if peread.disc:
                     peread.add_disc(read)
-                    discs_by_barcode[
-                        (peread.chrm, peread.nextchrm, peread.barcode)
-                    ].append(peread)
+                    discs_by_barcode[(peread.chrm, peread.nextchrm, peread.barcode)].append(peread)
                 elif read.is_proper_pair and fragment_length(read) > LMIN:
                     reads_by_LR[(peread.chrm, peread.barcode)].append(
                         (peread.start, peread.nextend, peread.hap, peread.mapq)
@@ -285,10 +275,7 @@ def pass_checks(read):
     if read.is_secondary or read.is_supplementary:
         return False
 
-    if not (
-        is_proper_chrom(read.reference_name)
-        and is_proper_chrom(read.next_reference_name)
-    ):
+    if not (is_proper_chrom(read.reference_name) and is_proper_chrom(read.next_reference_name)):
         return False
 
     if not read.has_tag("BX"):

@@ -11,6 +11,7 @@ BLACKLIST = Path("tests/data/example_blacklist.bedpe").absolute()
 @dataclass
 class Configs:
     """Write configs for NAIBR"""
+
     bam_file: os.PathLike
     outdir: os.PathLike
     min_mapq: int = 40
@@ -40,7 +41,9 @@ def test_candidates(tmp_path):
         lines = f.readlines()
 
         assert len(lines) == 2
-        assert lines[1].strip().split("\t") == "21	18759465	21	18906782	28.0	0.0	--	1,1	557.5492778380541	PASS".split("\t")
+        assert lines[1].strip().split(
+            "\t"
+        ) == "21	18759465	21	18906782	28.0	0.0	--	1,1	557.5492778380541	PASS".split("\t")
 
 
 def test_novel(tmp_path):
@@ -53,7 +56,9 @@ def test_novel(tmp_path):
         lines = f.readlines()
 
         assert len(lines) == 2
-        assert lines[1].strip().split("\t") == "21	18841937	21	18859811	2.0	0.0	++	0,0	16.6543776425305	PASS".split("\t")
+        assert lines[1].strip().split(
+            "\t"
+        ) == "21	18841937	21	18859811	2.0	0.0	++	0,0	16.6543776425305	PASS".split("\t")
 
 
 def test_consistent(tmp_path):
