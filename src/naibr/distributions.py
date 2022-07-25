@@ -64,7 +64,9 @@ def plot_distribution(p, distr, xlab, ylab, title):
     fname = "_".join(title.split(" "))
     nbins = 50
     fig, ax = plt.subplots()
-    n, bins, patches = plt.hist(distr, nbins, density=True, facecolor="blue", alpha=0.70)
+    n, bins, patches = plt.hist(
+        distr, nbins, density=True, facecolor="blue", alpha=0.70
+    )
     rc("axes", linewidth=1)
     y = [p(b) for b in bins]
     plt.plot(bins, y, color="r", linewidth=5)
