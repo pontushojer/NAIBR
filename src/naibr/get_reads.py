@@ -60,7 +60,6 @@ def make_barcodeDict(chrom):
             barcode = read.get_tag("BX")
             peread = PERead(read)
             if peread.disc:
-                peread = PERead(read)
                 peread.add_disc(read)
                 discs_by_barcode[(peread.chrm, peread.nextchrm, peread.barcode)].append(
                     peread
@@ -261,7 +260,6 @@ def make_barcodeDict_user(candidate):
                 barcode = read.get_tag("BX")
                 peread = PERead(read)
                 if peread.disc:
-                    peread = PERead(read)
                     peread.add_disc(read)
                     discs_by_barcode[
                         (peread.chrm, peread.nextchrm, peread.barcode)
@@ -312,8 +310,10 @@ def pass_checks(read):
     if read.is_secondary or read.is_supplementary:
         return False
 
-    if not (is_proper_chrom(read.reference_name) and
-            is_proper_chrom(read.next_reference_name)):
+    if not (
+        is_proper_chrom(read.reference_name)
+        and is_proper_chrom(read.next_reference_name)
+    ):
         return False
 
     if not read.has_tag("BX"):
