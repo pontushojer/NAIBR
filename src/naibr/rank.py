@@ -1,11 +1,9 @@
 from __future__ import print_function, division
-import os, sys, subprocess, pysam, collections, time, gc, math, json, copy
-import scipy.stats, operator, itertools
+import os
+import math
 import multiprocessing as mp
 from .utils import *
-import numpy as np
 from .global_vars import *
-import linecache
 
 
 class CandSplitMol:
@@ -99,13 +97,9 @@ class CandSplitMol:
 def score_pair(i):
     key, CSMs, spans = get_CSMs(i)
     candidate = candidates[i]
-    # CSMs,spans = CSMs_by_cand[(candidate.i,candidate.j,candidate.orient)]
     candScore = NA(
         candidate.chrm, candidate.nextchrm, candidate.i, candidate.j, candidate.orient
     )
-    scoreHA = 0
-    scoreH0 = 0
-    scores = []
     for CSM in CSMs:
         c = CandSplitMol()
         c.score_CSM(CSM, candScore)
@@ -121,13 +115,11 @@ def near_i(x, candidate):
     neari = (
         (
             candidate.orient[0] == "+"
-            and end - LMAX < candidate.i
-            and end + MAX_LINKED_DIST > candidate.i
+            and end - LMAX < candidate.i < end + MAX_LINKED_DIST
         )
         or (
             candidate.orient[0] == "-"
-            and start + LMAX > candidate.i
-            and start - MAX_LINKED_DIST < candidate.i
+            and start + LMAX > candidate.i > start - MAX_LINKED_DIST
         )
     ) and candidate.chrm == chrm
     return neari
@@ -140,13 +132,11 @@ def near_j(x, candidate):
     nearj = (
         (
             candidate.orient[1] == "+"
-            and end - LMAX < candidate.j
-            and end + MAX_LINKED_DIST > candidate.j
+            and end - LMAX < candidate.j < end + MAX_LINKED_DIST
         )
         or (
             candidate.orient[1] == "-"
-            and start + LMAX > candidate.j
-            and start - MAX_LINKED_DIST < candidate.j
+            and start + LMAX > candidate.j > start - MAX_LINKED_DIST
         )
     ) and candidate.nextchrm == chrm
     return nearj
@@ -174,7 +164,7 @@ def discs(candidate, barcode):
 
 
 def crossing(start, end, i):
-    return start < i and end > i
+    return start < i < end
 
 
 def linked_reads(barcode, chrm, candidate):
@@ -289,12 +279,14 @@ def get_CSMs(i):
     return key, CSMs, spans
 
 
+# TODO - no longer used, remove?
 def parse_CSMs(all_CSMs):
     global CSMs_by_cand
     for key, CSMs, spans in all_CSMs:
         CSMs_by_cand[key] = [CSMs, spans]
 
 
+# TODO - no longer used, remove?
 def get_all_CSMs():
     global CSMs_by_cand
     CSMs_by_cand = dict()
@@ -316,13 +308,12 @@ def get_cand_score(cands):
     global candidates
     candidates = cands
 
+    scores = []
     if not is_interchrom or NUM_THREADS == 1:
-        map_fn = map
+        scores = map(score_pair, range(len(candidates)))
     elif is_interchrom and NUM_THREADS != 1:
         pool = mp.Pool(min(5, NUM_THREADS), maxtasksperchild=1)
-        map_fn = pool.map
-    scores = map_fn(score_pair, range(len(candidates)))
-    if is_interchrom and NUM_THREADS != 1:
+        scores = pool.map(score_pair, range(len(candidates)))
         pool.close()
         pool.join()
 
@@ -354,7 +345,7 @@ def predict_NAs(
     cov,
     interchrom,
 ):
-    global lmax, plen, prate, discs_by_barcode, LRs_by_pos, chrom_idx, is_interchrom
+    global plen, prate, discs_by_barcode, LRs_by_pos, is_interchrom
     global LRs_by_pos, reads_by_LR, discs_by_barcode
     LRs_by_pos, reads_by_LR, discs_by_barcode = (
         lrs_by_pos,
@@ -364,9 +355,7 @@ def predict_NAs(
     is_interchrom = interchrom
     plen = p_len
     prate = p_rate
-    scores = []
-
-    scores += get_cand_score(candidates)
+    scores = get_cand_score(candidates)
     scores = [x for x in scores if x]
     scores = collapse(scores, threshold(cov))
     return scores
