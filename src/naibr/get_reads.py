@@ -44,6 +44,7 @@ def make_barcodeDict(chrom):
     LRs_by_pos = collections.defaultdict(list)
     iterator = reads.fetch(chrom)
     t0 = time.time()
+    nr = 0
     for nr, read in enumerate(iterator, start=1):
         cov += read.query_alignment_length
         ## DEBUG
@@ -77,14 +78,15 @@ def make_barcodeDict(chrom):
         if nr % 1_000_000 == 0:
             print(f"Processed {nr:,} reads ({time.time()-t0:.4f} s for last million).")
             t0 = time.time()
-
+    chromsomes_coverage = cov / float(lengths)
+    print(f"Done reading chromosome {chrom}: coverage = {chromsomes_coverage:.3f}, reads = {nr:,}")
     return (
         reads_by_LR,
         LRs_by_pos,
         discs_by_barcode,
         discs,
         interchrom_discs,
-        cov / float(lengths),
+        chromsomes_coverage,
     )
 
 
