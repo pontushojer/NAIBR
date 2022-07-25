@@ -93,11 +93,12 @@ def main():
 
     if len(CANDIDATES) > 0:
         print("Using user defined candidates")
+        cands = []
         with open(CANDIDATES) as f:
-            cands = f.read().split("\n")
-            cands = [x.split("\t") for x in cands]
-            cands = [x for x in cands if x]
-            cands = [[x[0], int(x[1]), x[3], int(x[4]), x[-1]] for x in cands if len(x) >= 4]
+            for line in f:
+                els = line.strip().split("\t")
+                if len(els) > 4:
+                    cands.append([els[0], int(els[1]), els[3], int(els[4]), els[-1]])
         scores = flatten(parallel_execute(run_NAIBR_user, cands))
         write_scores(scores)
 
