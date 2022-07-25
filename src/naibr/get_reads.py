@@ -57,7 +57,7 @@ def make_barcodeDict(chrom):
         if DEBUG and cov > 100000000:
             break
         if pass_checks(read):
-            barcode = get_barcode(read)
+            barcode = read.get_tag("BX")
             peread = PERead(read)
             if peread.disc:
                 peread = PERead(read)
@@ -258,7 +258,7 @@ def make_barcodeDict_user(candidate):
         for read in iterator:
             cov += read.query_alignment_length
             if pass_checks(read):
-                barcode = get_barcode(read)
+                barcode = read.get_tag("BX")
                 peread = PERead(read)
                 if peread.disc:
                     peread = PERead(read)
