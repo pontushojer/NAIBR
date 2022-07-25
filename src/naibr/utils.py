@@ -1,11 +1,15 @@
 from __future__ import print_function, division
 from future.utils import iteritems
-from .global_vars import *
-import math, mpmath, copy
+import math
+import mpmath
+import copy
 import numpy as np
 import linecache
-import scipy.stats, collections
+import scipy.stats
+import collections
 import multiprocessing as mp
+
+from .global_vars import *
 
 
 class NA:
@@ -63,8 +67,7 @@ class NA:
         spans = sum([self.spans[x] for x in self.spans.keys()])
         discs = sum([self.disc[x] for x in self.disc.keys()])
         if (
-            best_score > -float("inf")
-            and total > best_score
+            -float("inf") < best_score < total
             and pairs >= spans
             and (
                 (self.score[(1, 1)] > 0 and self.score[(2, 2)] > 0)
@@ -164,10 +167,6 @@ class PERead:
             0,
             0,
         ]
-        # if r[1] > m[1] or r[0] > m[0]:
-        # 	[chr1,read_start,read_end,barcode1,isrev1,mapq1] = m
-        # 	[chr2,mate_start,mate_end,barcode2,isrev2,mapq2] = r
-        # else:
         [chr1, read_start, read_end, barcode1, isrev1, mapq1] = r
         [chr2, mate_start, mate_end, barcode2, isrev2, mapq2] = m
         self.barcode = barcode1
@@ -212,8 +211,8 @@ class PERead:
         mapq = read.mapping_quality
         orient = get_orient(read)
         if not first_read(read):
-            chrom1, chrom2 = swap(chrom1, chrom2)
-            i, j = swap(i, j)
+            chrom1, chrom2 = chrom2, chrom1
+            i, j = j, i
             orient = orient[::-1]
         self.chrm = chrom1
         self.nextchrm = chrom2
@@ -269,14 +268,6 @@ def closest_LR(LR1, LR2, i):
     return LR2
 
 
-def swap(a, b):
-    c = copy.copy(b)
-    d = copy.copy(a)
-    a = c
-    b = d
-    return a, b
-
-
 def is_proper_chrom(chrom):
     return "Un" not in chrom and "random" not in chrom and "hs37d5" not in chrom
 
@@ -294,20 +285,6 @@ def get_orient(read):
     return a
 
 
-def get_barcode(barcode):
-    thefilename = os.path.join(DIR, "LRS.txt")
-    line = linecache.getline(thefilename, barcode + 1)
-    b, line = line.split(":")
-    assert b == str(barcode)
-    line = line.split("\t")
-    line = [
-        [[int(z) for z in y.split(",")] for y in x.split(" ") if len(y.split(",")) == 4]
-        for x in line
-    ]
-    line = [x for x in line if len(x) > 0]
-    return line
-
-
 def NB(k, m, r):
     return (
         mpmath.gamma(k + r)
@@ -322,31 +299,17 @@ def Pois(k, lam):
 
 
 def get_hap(r):
-    if r.has_tag("HP"):
+    try:
         return r.get_tag("HP")
-    return 0
-
-
-def get_hapb(r):
-    if r.has_tag("PS"):
-        return r.get_tag("PS")
-    return 0
+    except KeyError:
+        return 0
 
 
 def get_barcode(r):
-    if r.has_tag("BX"):
+    try:
         return r.get_tag("BX")
-    return 0
-
-
-def to_chr(chrm):
-    return chrm
-    chrm = chrm.strip("chr")
-    # if chrm == '23':
-    # 	return 'X'
-    # elif chrm == 'Y':
-    # 	return '24'
-    # return str(chrm)
+    except KeyError:
+        return 0
 
 
 def plog(x, num):
@@ -414,7 +377,6 @@ def fragment_length(read):
 
 def collapse(a, c):
     l = []
-    hom = 0
     for linea in a:
         chrom1, s1, chrom2, s2 = linea[0:4]
         if chrom1 == "24":
