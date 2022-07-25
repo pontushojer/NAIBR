@@ -359,9 +359,9 @@ def fragment_length(read):
     )
 
 
-def collapse(a, c):
+def collapse(scores, threshold_value):
     l = []
-    for linea in a:
+    for linea in scores:
         chrom1, s1, chrom2, s2 = linea[0:4]
         if chrom1 == "24":
             chrom1 = "Y"
@@ -378,8 +378,12 @@ def collapse(a, c):
         score = float(linea[8].split(":")[-1])
         if "Y" not in chrom1 and "Y" not in chrom2:
             l.append([chrom1, int(s1), chrom2, int(s2), split, disc, orient, haps, score])
-    r = int(LMAX / 100) * 100 * 5
+    r = roundto(LMAX, 100) * 5
+
+    # Sort on decreasing score
     l.sort(key=lambda x: x[-1], reverse=True)
+
+    # Keep NAs so that no other NA overlaps breakpoint positions within a distance of r
     l2 = []
     nas = collections.defaultdict(list)
     for chrom1, s1, chrom2, s2, split, disc, orient, haps, score in l:
@@ -404,12 +408,18 @@ def collapse(a, c):
                 haps,
                 score,
             ]
+
+    # Set PASS/FAIL based on threshold
     for i, elem in nas.items():
-        if elem[-1] >= c:
+        if elem[-1] >= threshold_value:
             l2.append(elem + ["PASS"])
         else:
             l2.append(elem + ["FAIL"])
+
+    # Sort on descreasing score
     l2.sort(key=lambda x: (x[-2]), reverse=True)
+
+    # Make list of lines for writing to file
     l2 = ["\t".join([str(y) for y in x]) + "\n" for x in l2]
     return l2
 
