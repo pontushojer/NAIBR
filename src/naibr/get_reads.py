@@ -36,19 +36,12 @@ def make_barcodeDict(chrom):
     """
     print("Getting candidates for chromosome %s" % chrom)
     cov = 0
-    global discs
-    global reads_by_barcode
-    global barcode_to_num
-    global barcode_count
-    global discs_by_barcode
-    barcode_count = 0
     reads = pysam.AlignmentFile(BAM_FILE, "rb")
     lengths = reads.lengths[list(reads.references).index(chrom)]
     reads_by_LR = collections.defaultdict(list)
     discs_by_barcode = collections.defaultdict(list)
     discs = collections.defaultdict(list)
     interchrom_discs = collections.defaultdict(list)
-    barcode_to_num = dict()
     LRs_by_pos = collections.defaultdict(list)
     iterator = reads.fetch(chrom)
     t0 = time.time()
@@ -216,16 +209,9 @@ def make_barcodeDict_user(candidate):
     """
     w = MAX_LEN - MAX_LINKED_DIST
     cov = 0
-    global discs
-    global reads_by_barcode
-    global barcode_to_num
-    global barcode_count
-    global discs_by_barcode
-    barcode_count = 0
     reads = pysam.AlignmentFile(BAM_FILE, "rb")
     reads_by_LR = collections.defaultdict(list)
     discs_by_barcode = collections.defaultdict(list)
-    barcode_to_num = dict()
     LRs_by_pos = collections.defaultdict(list)
     lengths = sum(reads.lengths)
 
