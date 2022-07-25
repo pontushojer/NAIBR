@@ -1,5 +1,4 @@
 from __future__ import print_function, division
-from future.utils import iteritems
 import pysam
 import collections
 import time
@@ -133,13 +132,13 @@ def largest_overlap(items):
             positions_j[pos] += 1
     i = 0
     overlap_i = 0
-    for pos, overlap in iteritems(positions_i):
+    for pos, overlap in positions_i.items():
         if overlap > overlap_i:
             overlap_i = overlap
             i = pos
     j = 0
     overlap_j = 0
-    for pos, overlap in iteritems(positions_j):
+    for pos, overlap in positions_j.items():
         if overlap > overlap_j:
             overlap_j = overlap
             j = pos
@@ -172,7 +171,7 @@ def get_candidates(discs, reads_by_LR):
     if p_len is None or p_rate is None:
         return None, None, None
     num_cands = 0
-    for key, items in iteritems(discs):
+    for key, items in discs.items():
         orient = key[4]
         si, ei, sj, ej = disc_intersection(items)
         if si and sj and len(items) >= MIN_DISCS:

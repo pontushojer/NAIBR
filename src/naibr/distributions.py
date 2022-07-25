@@ -1,5 +1,4 @@
 from __future__ import print_function, division
-from future.utils import iteritems
 import os
 import collections
 import itertools
@@ -118,12 +117,12 @@ def get_distributions(reads_by_LR):
     global barcode_overlap, LRs_by_barcode
     LRs_by_barcode = collections.defaultdict(list)
     barcode_overlap = collections.defaultdict(int)
-    for key, reads in iteritems(reads_by_LR):
+    for key, reads in reads_by_LR.items():
         chrom, barcode = key
         barcode_LRS = linked_reads(reads, chrom)
         LRs += barcode_LRS
         LRs_by_barcode[barcode] += barcode_LRS
-    for barcode, barcode_LRS in iteritems(LRs_by_barcode):
+    for barcode, barcode_LRS in LRs_by_barcode.items():
         if len(barcode_LRS) > 1:
             get_overlap(barcode_LRS)
     if len(LRs) < 100:

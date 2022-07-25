@@ -1,5 +1,4 @@
 from __future__ import print_function, division
-from future.utils import iteritems
 import math
 import mpmath
 import copy
@@ -403,7 +402,7 @@ def collapse(a, c):
                 haps,
                 score,
             ]
-    for i, elem in iteritems(nas):
+    for i, elem in nas.items():
         if elem[-1] >= c:
             l2.append(elem + ["PASS"])
         else:

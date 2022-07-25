@@ -70,8 +70,8 @@ def run_NAIBR(chrom):
 def main():
     starttime = time.time()
 
-    print("======== NAIBR ========")
-    print("------- CONFIGS -------")
+    print("========= NAIBR =========")
+    print("-------- CONFIGS --------")
     print("FILES")
     print(f"  bam_file = {BAM_FILE}")
     print(f"  candidates = {CANDIDATES}")
@@ -89,7 +89,7 @@ def main():
     print(f"  min_discs = {MIN_DISCS:>9}")
     print(f"  threads =   {NUM_THREADS:>9}")
     print(f"  DEBUG =     {str(DEBUG).rjust(9)}")
-    print("-----------------------")
+    print("-------------------------")
 
     if len(CANDIDATES) > 0:
         print("Using user defined candidates")
