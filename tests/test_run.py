@@ -31,6 +31,12 @@ class Configs:
                 print(f"{k}={v}", file=f)
 
 
+def same_pairwise_elements(list1, list2):
+    assert len(list1) == len(list2)
+    for l1, l2 in zip(list1, list2):
+        assert l1 == l2
+
+
 def test_candidates(tmp_path):
     configs = Configs(bam_file=BAM, candidates=CANDIDATES, outdir=tmp_path)
     configs.write_to(tmp_path / "naibr.configs")
@@ -41,9 +47,26 @@ def test_candidates(tmp_path):
         lines = f.readlines()
 
         assert len(lines) == 2
-        assert lines[1].strip().split(
-            "\t"
-        ) == "21	18759465	21	18906782	28.0	0.0	--	1,1	557.5492778380541	PASS".split("\t")
+        same_pairwise_elements(
+            lines[1].strip().split("\t"),
+            "21	18759465	21	18906782	28.0	0.0	--	1,1	557.5492778380541	PASS".split("\t")
+        )
+
+
+def test_candidates_parallel(tmp_path):
+    configs = Configs(bam_file=BAM, candidates=CANDIDATES, outdir=tmp_path, threads=2)
+    configs.write_to(tmp_path / "naibr.configs")
+
+    subprocess.run(["naibr", tmp_path / "naibr.configs"])
+    output = tmp_path / "NAIBR_SVs.bedpe"
+    with open(output) as f:
+        lines = f.readlines()
+
+        assert len(lines) == 2
+        same_pairwise_elements(
+            lines[1].strip().split("\t"),
+            "21	18759465	21	18906782	28.0	0.0	--	1,1	557.5492778380541	PASS".split("\t")
+        )
 
 
 def test_novel(tmp_path):
@@ -56,9 +79,26 @@ def test_novel(tmp_path):
         lines = f.readlines()
 
         assert len(lines) == 2
-        assert lines[1].strip().split(
-            "\t"
-        ) == "21	18841937	21	18859811	2.0	0.0	++	0,0	16.6543776425305	PASS".split("\t")
+        same_pairwise_elements(
+            lines[1].strip().split("\t"),
+            "21	18841937	21	18859811	2.0	0.0	++	0,0	16.6543776425305	FAIL".split("\t")
+        )
+
+
+def test_novel_parallel(tmp_path):
+    configs = Configs(bam_file=BAM, outdir=tmp_path, threads=2)
+    configs.write_to(tmp_path / "naibr.configs")
+
+    subprocess.run(["naibr", tmp_path / "naibr.configs"])
+    output = tmp_path / "NAIBR_SVs.bedpe"
+    with open(output) as f:
+        lines = f.readlines()
+
+        assert len(lines) == 2
+        same_pairwise_elements(
+            lines[1].strip().split("\t"),
+            "21	18841937	21	18859811	2.0	0.0	++	0,0	16.6543776425305	FAIL".split("\t")
+        )
 
 
 def test_consistent(tmp_path):
@@ -84,4 +124,4 @@ def test_consistent(tmp_path):
     output_rerun = tmp_path / "rerun" / "NAIBR_SVs.bedpe"
     with open(output_rerun) as f:
         new_line = f.readlines()[1]
-        assert line == new_line
+        same_pairwise_elements(line, new_line)

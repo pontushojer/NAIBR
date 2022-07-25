@@ -36,7 +36,8 @@ def make_barcodeDict(chrom):
     print("Getting candidates for chromosome %s" % chrom)
     cov = 0
     reads = pysam.AlignmentFile(BAM_FILE, "rb")
-    lengths = reads.lengths[list(reads.references).index(chrom)]
+    reads_start = reads.lengths[list(reads.references).index(chrom)]
+    reads_end = 0
     reads_by_LR = collections.defaultdict(list)
     discs_by_barcode = collections.defaultdict(list)
     discs = collections.defaultdict(list)
@@ -46,6 +47,8 @@ def make_barcodeDict(chrom):
     t0 = time.time()
     nr = 0
     for nr, read in enumerate(iterator, start=1):
+        reads_start = min(reads_start, read.reference_start)
+        reads_end = max(reads_end, read.reference_end)
         cov += read.query_alignment_length
         ## DEBUG
         if DEBUG and cov > 100_000_000:
@@ -78,15 +81,19 @@ def make_barcodeDict(chrom):
         if nr % 1_000_000 == 0:
             print(f"Processed {nr:,} reads ({time.time()-t0:.4f} s for last million).")
             t0 = time.time()
-    chromsomes_coverage = cov / float(lengths)
-    print(f"Done reading chromosome {chrom}: coverage = {chromsomes_coverage:.3f}, reads = {nr:,}")
+
+    # TODO - think about how to handle coverage a bit more accurate.
+    #      - Use configuration to allow user input?
+    #      - Otherwise calculate accurately across each chromosome (or subsection).
+    coverage = cov / abs(reads_end-reads_start)
+    print(f"Done reading chromosome {chrom}: coverage = {coverage:.3f}, reads = {nr:,}")
     return (
         reads_by_LR,
         LRs_by_pos,
         discs_by_barcode,
         discs,
         interchrom_discs,
-        chromsomes_coverage,
+        coverage,
     )
 
 
@@ -205,7 +212,7 @@ def make_barcodeDict_user(candidate):
     reads_by_LR = collections.defaultdict(list)
     discs_by_barcode = collections.defaultdict(list)
     LRs_by_pos = collections.defaultdict(list)
-    lengths = sum(reads.lengths)
+    lengths = 0
 
     chrm1, break1, chrm2, break2, orientation = candidate
     if break1 > break2 or chrm1 > chrm2:
@@ -246,7 +253,11 @@ def make_barcodeDict_user(candidate):
         cand.nextchrm = chrm1.strip("chr")
         cand.j = break1
         cand.orient = orientation[::-1]
-    return reads_by_LR, LRs_by_pos, discs_by_barcode, [cand], cov / float(lengths)
+
+    coverage = cov / lengths
+    if DEBUG:
+        print(f"Candidate {candidate}: coverage = {coverage}")
+    return reads_by_LR, LRs_by_pos, discs_by_barcode, [cand], coverage
 
 
 def pass_checks(read):
