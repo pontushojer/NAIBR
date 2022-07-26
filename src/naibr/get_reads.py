@@ -231,7 +231,7 @@ def make_barcodeDict_user(candidate):
                 reads_by_LR[(peread.chrm, peread.barcode)].append(
                     (peread.start, peread.nextend, peread.hap, peread.mapq)
                 )
-                norm_mid = int(peread.mid() / MAX_LINKED_DIST) * MAX_LINKED_DIST
+                norm_mid = roundto(peread.mid(), MAX_LINKED_DIST)
                 if peread.barcode not in LRs_by_pos[(peread.chrm, norm_mid)]:
                     LRs_by_pos[(peread.chrm, norm_mid)].append(peread.barcode)
 
