@@ -22,11 +22,13 @@ def parse_blacklist(fname):
 def parse_configs(fname):
     configs = {}
     with open(fname) as f:
-        data = f.read().split("\n")
-        for line in data:
-            if line and line[0] != "#":
-                name, val = line.split("=")
-                configs[name] = val
+        for line in f:
+            line = line.strip()
+            if line == "" or line.startswith("#"):
+                continue
+
+            name, val = line.split("=")
+            configs[name] = val
     return configs
 
 
