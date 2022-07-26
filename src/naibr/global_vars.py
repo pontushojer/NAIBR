@@ -52,7 +52,7 @@ else:
              "pattern 'bam_file=/path/to/file.bam'")
 
 if "DEBUG" in constants:
-    DEBUG = constants["DEBUG"]
+    DEBUG = bool(constants["DEBUG"])
 else:
     DEBUG = False
 
