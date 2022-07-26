@@ -410,11 +410,16 @@ def collapse(scores, threshold_value):
             ]
 
     # Set PASS/FAIL based on threshold
+    n_pass = 0
     for i, elem in nas.items():
         if elem[-1] >= threshold_value:
             l2.append(elem + ["PASS"])
+            n_pass += 1
         else:
             l2.append(elem + ["FAIL"])
+
+    if len(l2) > 0:
+        print(f"Found {len(l2):,} SVs of which {n_pass:,} ({n_pass/len(l2):.1%}) passed the threshold")
 
     # Sort on descreasing score
     l2.sort(key=lambda x: (x[-2]), reverse=True)
