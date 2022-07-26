@@ -8,13 +8,14 @@ import numpy as np
 
 
 def parse_blacklist(fname):
+    blacklist = collections.defaultdict(list)
     with open(fname) as f:
-        data = f.read().split("\n")
-        blacklist = collections.defaultdict(list)
-        for line in data:
-            l = line.strip().split("\t")
-            assert len(l) == 3
-            blacklist[l[0].strip("chr")].append([int(l[1]), int(l[2])])
+        for line in f:
+            fields = line.strip().split("\t")
+            assert len(fields) == 3
+            chrom, start, end = fields
+            chrom = chrom.strip("chr")
+            blacklist[chrom].append([int(start), int(end)])
     return blacklist
 
 
