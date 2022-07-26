@@ -176,7 +176,7 @@ class PERead:
 def first_read(read):
     chrom = read.reference_name
     mate_chrom = read.next_reference_name
-    return (chrom == mate_chrom and read.reference_start < read.next_reference_start) or chrom < mate_chrom
+    return (read.reference_start < read.next_reference_start and chrom == mate_chrom) or chrom < mate_chrom
 
 
 def closest_LR(LR1, LR2, i):
