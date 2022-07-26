@@ -145,34 +145,18 @@ class PERead:
     ]
 
     def __init__(self, read):
-        read_hap = get_hap(read)
-        r = [
-            read.reference_name.strip("chr"),
-            read.reference_start,
-            read.reference_end,
-            read.get_tag("BX"),
-            read.mapping_quality,
-        ]
-        m = [
-            read.next_reference_name.strip("chr"),
-            read.next_reference_start,
-            0,
-            0,
-            0,
-        ]
-        chr1, read_start, read_end, barcode1, mapq1 = r
-        chr2, mate_start, mate_end, barcode2, mapq2 = m
-        self.barcode = barcode1
-        self.chrm = chr1
-        self.nextchrm = chr2
-        self.start = read_start
-        self.mapq = mapq1
+        self.barcode = read.get_tag("BX")
+        self.chrm = read.reference_name.strip("chr")
+        self.nextchrm = read.next_reference_name.strip("chr"),
+        self.start = read.reference_start
+        self.mapq = read.mapping_quality
         self.orient = get_orient(read)
-        self.end = read_end
-        self.hap = read_hap
-        self.mapq = mapq1
-        self.nextstart = mate_start
-        self.nextend = mate_start + (read_end - read_start)
+        self.end = read.reference_end
+        self.hap = get_hap(read)
+        # TODO - same mapq used for read 1 and 2, get mate mapq
+        self.nextmapq = read.mapping_quality
+        self.nextstart = read.next_reference_start
+        self.nextend = read.next_reference_start + (self.end - self.start)
         self.disc = self.is_disc() and not read.is_proper_pair
 
     def is_disc(self):
