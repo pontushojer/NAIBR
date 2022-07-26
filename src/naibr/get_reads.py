@@ -63,7 +63,6 @@ def make_barcodeDict(chrom):
 
         peread = PERead(read)
         if peread.disc:
-            peread.add_disc(read)
             discs_by_barcode[(peread.chrm, peread.nextchrm, peread.barcode)].append(peread)
             if peread.chrm == peread.nextchrm:
                 discs = add_disc(peread, discs)
@@ -227,7 +226,6 @@ def make_barcodeDict_user(candidate):
 
             peread = PERead(read)
             if peread.disc:
-                peread.add_disc(read)
                 discs_by_barcode[(peread.chrm, peread.nextchrm, peread.barcode)].append(peread)
             elif read.is_proper_pair and fragment_length(read) > LMIN:
                 reads_by_LR[(peread.chrm, peread.barcode)].append(

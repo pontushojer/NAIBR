@@ -128,70 +128,53 @@ class LinkedRead:
 class PERead:
     __slots__ = [
         "barcode",
-        "chrm",
         "orient",
+        "chrm",
         "start",
-        "disc",
-        "mapq",
         "end",
+        "mapq",
         "hap",
         "nextchrm",
         "nextstart",
         "nextend",
-        "nexthap",
         "nextmapq",
+        "nexthap",
         "i",
         "j",
+        "disc",
     ]
 
     def __init__(self, read):
         self.barcode = read.get_tag("BX")
-        self.chrm = read.reference_name.strip("chr")
-        self.nextchrm = read.next_reference_name.strip("chr"),
-        self.start = read.reference_start
-        self.mapq = read.mapping_quality
         self.orient = get_orient(read)
+
+        self.chrm = read.reference_name.strip("chr")
+        self.start = read.reference_start
         self.end = read.reference_end
+        self.mapq = read.mapping_quality
         self.hap = get_hap(read)
+
+        self.nextchrm = read.next_reference_name.strip("chr")
+        self.nextstart = read.next_reference_start
+        # TODO - why not next_reference_end? assumes that both reads same length?
+        self.nextend = read.next_reference_start + (self.end - self.start)
         # TODO - same mapq used for read 1 and 2, get mate mapq
         self.nextmapq = read.mapping_quality
-        self.nextstart = read.next_reference_start
-        self.nextend = read.next_reference_start + (self.end - self.start)
+        self.nexthap = self.hap
+
+        self.i = self.start if read.is_reverse else self.end
+        self.j = self.nextstart if read.mate_is_reverse else self.nextstart + read.reference_length
         self.disc = self.is_disc() and not read.is_proper_pair
 
+    def __repr__(self):
+        attributes = [f"{k}={v}" for k, v in vars(self).items()]
+        return f"PEread({', '.join(attributes)})"
+
     def is_disc(self):
-        i = self.end if self.orient[0] == "+" else self.start
-        j = self.nextend if self.orient[1] == "+" else self.nextstart
-        return self.chrm != self.nextchrm or (j - i) > MIN_SV
+        return self.chrm != self.nextchrm or (self.j - self.i) > MIN_SV
 
     def mid(self):
         return int((self.end + self.start) / 2)
-
-    def add_disc(self, read):
-        chrom1 = read.reference_name.strip("chr")
-        chrom2 = read.next_reference_name.strip("chr")
-        i = read.reference_start if read.is_reverse else read.reference_end
-        j = (
-            read.next_reference_start
-            if read.mate_is_reverse
-            else read.next_reference_start + read.reference_length
-        )
-        hap = get_hap(read)
-        mapq = read.mapping_quality
-        orient = get_orient(read)
-        if not first_read(read):
-            chrom1, chrom2 = chrom2, chrom1
-            i, j = j, i
-            orient = orient[::-1]
-        self.chrm = chrom1
-        self.nextchrm = chrom2
-        self.i = i
-        self.j = j
-        self.hap = hap
-        self.nexthap = hap
-        self.mapq = mapq
-        self.nextmapq = mapq
-        self.orient = orient
 
     def add_split(self, read):
         chrm, start, orient, cigar, mapq, hap = read.get_tag("SA").split(",")
