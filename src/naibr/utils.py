@@ -350,6 +350,10 @@ def flatten(l):
 
 
 def threshold(cov):
+    # In the publication the threshold relative coverage was determined by subsetting
+    # down to 10X coverage. Below that it is uncertain how accurate it is.
+    if cov < 10:
+        print(f"WARNING: Low coverage ({cov:.3f}X < 10X), the threshold value might not be accurate.")
     return 6.943 * cov - 37.33
 
 
