@@ -176,28 +176,6 @@ class PERead:
     def mid(self):
         return int((self.end + self.start) / 2)
 
-    def add_split(self, read):
-        chrm, start, orient, cigar, mapq, hap = read.get_tag("SA").split(",")
-        start = int(start)
-        mapq = int(mapq)
-        hap = int(hap[0])
-        if start > self.start or chrm.strip("chr") >= self.chrm:
-            self.nextchrm = chrm.strip("chr")
-            self.j = start
-            self.nexthap = hap
-            self.nextmapq = mapq
-            self.orient = get_orient(self.orient, orient == "-")
-        else:
-            self.nextchrm = self.chrm
-            self.j = self.i
-            self.nexthap = self.hap
-            self.nextmapq = self.mapq
-            self.chrm = chrm.strip("chr")
-            self.i = start
-            self.hap = hap
-            self.mapq = mapq
-            self.orient = get_orient(orient == "-", self.orient)
-
 
 def first_read(read):
     chrom = read.reference_name
