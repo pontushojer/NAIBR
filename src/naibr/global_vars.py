@@ -40,7 +40,6 @@ if "min_mapq" in constants:
 else:
     MIN_MAPQ = 40
 
-
 if "k" in constants:
     MIN_BC_OVERLAP = int(constants["k"])
 else:
@@ -49,7 +48,8 @@ else:
 if "bam_file" in constants:
     BAM_FILE = constants["bam_file"]
 else:
-    raise ValueError("Please add input Bam file to config file")
+    sys.exit("Missing path to BAM file in config file. Please include this with the "
+             "pattern 'bam_file=/path/to/file.bam'")
 
 if "DEBUG" in constants:
     DEBUG = constants["DEBUG"]
@@ -62,7 +62,6 @@ if "outdir" in constants:
         os.makedirs(DIR)
 else:
     DIR = ".."
-
 
 if "d" in constants:
     MAX_LINKED_DIST = int(constants["d"])
@@ -135,7 +134,6 @@ if "min_reads" in constants:
 else:
     MIN_READS = 2
 
-
 if "min_discs" in constants:
     MIN_DISCS = int(constants["min_discs"])
 else:
@@ -145,7 +143,6 @@ if "candidates" in constants and os.path.exists(constants["candidates"]):
     CANDIDATES = constants["candidates"]
 else:
     CANDIDATES = ""
-
 
 if "blacklist" in constants and os.path.exists(constants["blacklist"]):
     BLACKLIST_FILE = constants["blacklist"]

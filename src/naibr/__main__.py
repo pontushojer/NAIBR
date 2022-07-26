@@ -5,7 +5,7 @@ import pysam
 import collections
 
 if len(sys.argv) < 2:
-    raise ValueError("No input config file")
+    sys.exit("No input config file")
 
 from .get_reads import make_barcodeDict_user, get_distributions, make_barcodeDict, get_candidates
 from .global_vars import *
