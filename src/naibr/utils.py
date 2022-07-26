@@ -426,28 +426,24 @@ def collapse(scores, threshold_value):
 
 def write_scores(scores):
     fname = "NAIBR_SVs.bedpe"
-    print(os.path.join(DIR, fname))
-    f = open(os.path.join(DIR, fname), "w")
-    f.write(
-        "\t".join(
-            [
-                "Chr1",
-                "Break1",
-                "Chr2",
-                "Break2",
-                "Split molecules",
-                "Discordant reads",
-                "Orientation",
-                "Haplotype",
-                "Score",
-                "Pass filter\n",
-            ]
+    print(f"Writing results to {os.path.join(DIR, fname)}")
+    with open(os.path.join(DIR, fname), "w") as f:
+        print(
+            "Chr1",
+            "Break1",
+            "Chr2",
+            "Break2",
+            "Split molecules",
+            "Discordant reads",
+            "Orientation",
+            "Haplotype",
+            "Score",
+            "Pass filter",
+            sep="\t",
+            file=f
         )
-    )
-    for result in scores:
-        f.write(result)
-    f.close()
-    return
+        for result in scores:
+            f.write(result)
 
 
 def parallel_execute(function, input_list):
