@@ -45,7 +45,7 @@ if "k" in constants:
 else:
     MIN_BC_OVERLAP = 3
 
-if "bam_file" in constants:
+if "bam_file" in constants and os.path.exists(constants["bam_file"]):
     BAM_FILE = constants["bam_file"]
 else:
     sys.exit("Missing path to BAM file in config file. Please include this with the "
