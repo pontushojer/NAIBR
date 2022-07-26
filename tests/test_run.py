@@ -81,7 +81,7 @@ def test_novel(tmp_path):
         assert len(lines) == 2
         same_pairwise_elements(
             lines[1].strip().split("\t"),
-            "21	18841937	21	18859811	2.0	0.0	++	0,0	16.6543776425305	FAIL".split("\t")
+            "21	18841934	21	18859811	2.0	0.0	++	0,0	16.6543776425305	FAIL".split("\t")
         )
 
 
@@ -97,7 +97,7 @@ def test_novel_parallel(tmp_path):
         assert len(lines) == 2
         same_pairwise_elements(
             lines[1].strip().split("\t"),
-            "21	18841937	21	18859811	2.0	0.0	++	0,0	16.6543776425305	FAIL".split("\t")
+            "21	18841934	21	18859811	2.0	0.0	++	0,0	16.6543776425305	FAIL".split("\t")
         )
 
 

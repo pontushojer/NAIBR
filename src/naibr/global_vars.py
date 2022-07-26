@@ -79,34 +79,41 @@ else:
     SD_MULT = 2
 
 
+def parse_read_pairs(iterator):
+    mates = {}
+    for read in iterator:
+        if read.is_unmapped or read.mate_is_unmapped:
+            continue
+
+        if read.query_name in mates:
+            yield read, mates.pop(read.query_name)
+        else:
+            mates[read.query_name] = read
+
+
 def estimate_lmin_lmax():
     reads = pysam.AlignmentFile(BAM_FILE, "rb")
-    mate_pairs = dict()
-    ls = []
-    length = []
+    pair_spans = []
+    reads_lengths = []
     num = 0
     for i, chrm in enumerate(reads.references):
-        for read in reads.fetch(chrm):
-            if read.is_unmapped or read.mate_is_unmapped:
-                continue
-
+        for read, mate in parse_read_pairs(reads.fetch(chrm)):
             num += 1
-            if num > 1000000:
+            if num > 1_000_000:
                 break
-            if read.query_name in mate_pairs:
-                if read.reference_start > mate_pairs[read.query_name][0]:
-                    dist = read.reference_start - mate_pairs[read.query_name][1]
-                else:
-                    dist = mate_pairs[read.query_name][0] - read.reference_end
 
-                if abs(dist) < 2000:
-                    length.append(read.query_length)
-                    ls.append(dist)
+            if read.reference_start > mate.reference_start:
+                dist = read.reference_start - mate.reference_end
             else:
-                mate_pairs[read.query_name] = (read.reference_start, read.reference_end)
-    mean_dist = np.mean(ls)
-    std_dist = np.std(ls)
-    lmin = max(-int(np.mean(length)), int(mean_dist - std_dist * SD_MULT))
+                dist = mate.reference_start - read.reference_end
+
+            if abs(dist) < 2000:
+                reads_lengths.extend([read.query_length, mate.query_length])
+                pair_spans.append(dist)
+
+    mean_dist = np.mean(pair_spans)
+    std_dist = np.std(pair_spans)
+    lmin = max(-int(np.mean(reads_lengths)), int(mean_dist - std_dist * SD_MULT))
     lmax = int(mean_dist + std_dist * SD_MULT)
     return lmin, max(100, lmax)
 
