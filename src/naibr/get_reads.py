@@ -271,10 +271,10 @@ def pass_checks(read):
     if read.is_secondary or read.is_supplementary:
         return False
 
-    if not (is_proper_chrom(read.reference_name) and is_proper_chrom(read.next_reference_name)):
+    if not read.has_tag("BX"):
         return False
 
-    if not read.has_tag("BX"):
+    if not is_proper_chrom(read.next_reference_name):
         return False
 
     if not first_read(read):
