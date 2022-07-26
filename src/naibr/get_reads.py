@@ -113,10 +113,11 @@ def signj(disc):
 
 
 def add_disc(peread, discs):
-    for a in [int(-LMAX / 2), 0, int(LMAX / 2)]:
+    half_lmax = LMAX / 2
+    for a in [-half_lmax, 0, half_lmax]:
         norm_ia = roundto(peread.i + a, LMAX)
         norm_i = roundto(peread.i, LMAX)
-        for b in [int(-LMAX / 2), 0, int(LMAX / 2)]:
+        for b in [-half_lmax, 0, half_lmax]:
             norm_jb = roundto(peread.j + b, LMAX)
             norm_j = roundto(peread.j, LMAX)
             if (a == 0 or norm_ia != norm_i) and (b == 0 or norm_jb != norm_j):
