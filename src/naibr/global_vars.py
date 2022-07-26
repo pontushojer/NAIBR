@@ -18,13 +18,18 @@ def parse_blacklist(fname):
     return blacklist
 
 
-with open(sys.argv[1]) as f:
-    data = f.read().split("\n")
-    constants = dict()
-    for line in data:
-        if line and line[0] != "#":
-            name, val = line.split("=")
-            constants[name] = val
+def parse_configs(fname):
+    configs = {}
+    with open(fname) as f:
+        data = f.read().split("\n")
+        for line in data:
+            if line and line[0] != "#":
+                name, val = line.split("=")
+                configs[name] = val
+    return configs
+
+
+constants = parse_configs(sys.argv[1])
 
 
 if "min_mapq" in constants:
