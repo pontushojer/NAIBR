@@ -92,6 +92,10 @@ def parse_read_pairs(iterator):
 
 
 def estimate_lmin_lmax():
+    """
+    Estmate the upper and lower bounds for insert sizes by looing at up to
+    the first million read pairs.
+    """
     reads = pysam.AlignmentFile(BAM_FILE, "rb")
     pair_spans = []
     reads_lengths = []
@@ -112,7 +116,7 @@ def estimate_lmin_lmax():
 
     mean_dist = np.mean(pair_spans)
     std_dist = np.std(pair_spans)
-    lmin = max(int(mean_dist - std_dist * SD_MULT), -int(np.mean(reads_lengths)))
+    lmin = max(int(mean_dist - std_dist * SD_MULT), int(np.mean(reads_lengths)))
     lmax = max(int(mean_dist + std_dist * SD_MULT), 100)
 
     if DEBUG:
