@@ -112,9 +112,12 @@ def estimate_lmin_lmax():
 
     mean_dist = np.mean(pair_spans)
     std_dist = np.std(pair_spans)
-    lmin = max(-int(np.mean(reads_lengths)), int(mean_dist - std_dist * SD_MULT))
-    lmax = int(mean_dist + std_dist * SD_MULT)
-    return lmin, max(100, lmax)
+    lmin = max(int(mean_dist - std_dist * SD_MULT), -int(np.mean(reads_lengths)))
+    lmax = max(int(mean_dist + std_dist * SD_MULT), 100)
+
+    if DEBUG:
+        print(f"lmax = {lmax}, lmin = {lmin}")
+    return lmin, lmax
 
 
 LMIN, LMAX = estimate_lmin_lmax()
