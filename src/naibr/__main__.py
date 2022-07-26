@@ -7,10 +7,10 @@ import collections
 if len(sys.argv) < 2:
     raise ValueError("No input config file")
 
-from .get_reads import *
+from .get_reads import make_barcodeDict_user, get_distributions, make_barcodeDict, get_candidates
 from .global_vars import *
-from .utils import *
-from .rank import *
+from .utils import flatten, parallel_execute, is_proper_chrom, write_scores
+from .rank import predict_NAs
 
 
 def run_NAIBR_user(cand):

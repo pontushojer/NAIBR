@@ -2,7 +2,7 @@ from __future__ import print_function, division
 import os
 import math
 import multiprocessing as mp
-from .utils import *
+from .utils import log, NA, is_close, roundto, collapse, threshold
 from .global_vars import *
 
 

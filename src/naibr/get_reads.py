@@ -4,7 +4,7 @@ import collections
 import time
 import copy
 
-from .utils import *
+from .utils import PERead, fragment_length, roundto, is_proper_chrom, first_read
 from .global_vars import *
 from .distributions import get_distributions
 
