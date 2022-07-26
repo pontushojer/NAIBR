@@ -166,10 +166,6 @@ class PERead:
         self.j = self.nextstart if read.mate_is_reverse else self.nextstart + read.reference_length
         self.disc = self.is_disc() and not read.is_proper_pair
 
-    def __repr__(self):
-        attributes = [f"{k}={v}" for k, v in vars(self).items()]
-        return f"PEread({', '.join(attributes)})"
-
     def is_disc(self):
         return self.chrm != self.nextchrm or (self.j - self.i) > MIN_SV
 
