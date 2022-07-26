@@ -47,8 +47,13 @@ def make_barcodeDict(chrom):
     t0 = time.time()
     nr = 0
     for nr, read in enumerate(iterator, start=1):
-        reads_start = min(reads_start, read.reference_start)
-        reads_end = max(reads_end, read.reference_end)
+        try:
+            reads_start = min(reads_start, read.reference_start)
+            reads_end = max(reads_end, read.reference_end)
+        except TypeError:
+            # Skips any unmapped reads here
+            pass
+
         cov += read.query_alignment_length
         ## DEBUG
         if DEBUG and cov > 100_000_000:
