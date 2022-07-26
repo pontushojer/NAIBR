@@ -70,7 +70,7 @@ class NA:
             )
         ):
             self.haps = (3, 3)
-            self.score = total
+            self.score = round(total, 3)
             self.disc = discs
             self.pairs = pairs
             self.spans = spans
@@ -95,12 +95,12 @@ class NA:
                 discs += self.disc[(0, 0)]
                 pairs += self.pairs[(0, 0)]
                 spans += self.spans[(0, 0)]
-            self.score = score
+            self.score = round(score, 3)
             self.disc = discs
             self.pairs = pairs
             self.spans = spans
         else:
-            self.score = best_score
+            self.score = round(best_score, 3)
             self.disc = 0
             self.pairs = 0
             self.spans = 0
@@ -354,7 +354,7 @@ def threshold(cov):
     # down to 10X coverage. Below that it is uncertain how accurate it is.
     if cov < 10:
         print(f"WARNING: Low coverage ({cov:.3f}X < 10X), the threshold value might not be accurate.")
-    return 6.943 * cov - 37.33
+    return round(6.943 * cov - 37.33, 3)
 
 
 def fragment_length(read):
