@@ -102,12 +102,11 @@ def estimate_lmin_lmax():
             if num > 1_000_000:
                 break
 
-            if read.reference_start > mate.reference_start:
-                dist = read.reference_start - mate.reference_end
-            else:
-                dist = mate.reference_start - read.reference_end
+            start = min(read.reference_start, mate.reference_start)
+            end = max(read.reference_end, mate.reference_end)
+            dist = end-start
 
-            if abs(dist) < 2000:
+            if 0 < abs(dist) < 2000:
                 reads_lengths.extend([read.query_length, mate.query_length])
                 pair_spans.append(dist)
 
