@@ -144,8 +144,8 @@ class PERead:
         "disc",
     ]
 
-    def __init__(self, read):
-        self.barcode = read.get_tag("BX")
+    def __init__(self, read, barcode, mate=None):
+        self.barcode = barcode
         self.orient = get_read_orientation(read)
 
         self.chrm = read.reference_name.strip("chr")
@@ -156,21 +156,34 @@ class PERead:
 
         self.nextchrm = read.next_reference_name.strip("chr")
         self.nextstart = read.next_reference_start
-        # TODO - why not next_reference_end? assumes that both reads same length?
-        self.nextend = read.next_reference_start + (self.end - self.start)
-        # TODO - same mapq used for read 1 and 2, get mate mapq
-        self.nextmapq = read.mapping_quality
+        if mate is None:
+            # Assume same aligment length and mapping quality for mate
+            self.nextend = read.next_reference_start + read.reference_length
+            self.nextmapq = read.mapping_quality
+        else:
+            self.nextend = mate.reference_end
+            self.nextmapq = mate.mapping_quality
         self.nexthap = self.hap
 
         self.i = self.start if read.is_reverse else self.end
         self.j = self.nextstart if read.mate_is_reverse else self.nextstart + read.reference_length
+        self.j = self.nextstart if read.mate_is_reverse else self.nextend
         self.disc = self.is_disc() and not read.is_proper_pair
 
     def is_disc(self):
         return self.chrm != self.nextchrm or (self.j - self.i) > MIN_SV
 
+    def fragment_length(self):
+        return max(self.end, self.nextend) - min(self.start, self.nextstart)
+
+    def mean_mapq(self):
+        return int((self.mapq + self.nextmapq) / 2)
+
     def mid(self):
-        return int((self.end + self.start) / 2)
+        if self.disc:
+            return int((self.end + self.start) / 2)
+        else:
+            return int((self.i + self.j) / 2)
 
 
 def first_read(read):
@@ -221,7 +234,7 @@ def get_barcode(r):
     try:
         return r.get_tag("BX")
     except KeyError:
-        return 0
+        return None
 
 
 def plog(x, num):
@@ -259,12 +272,6 @@ def threshold(cov):
     if cov < 10:
         print(f"WARNING: Low coverage ({cov:.3f}X < 10X), the threshold value might not be accurate.")
     return round(6.943 * cov - 37.33, 3)
-
-
-def fragment_length(read):
-    return max(read.reference_end, read.next_reference_start + read.reference_length) - min(
-        read.reference_start, read.next_reference_start
-    )
 
 
 def collapse(scores, threshold_value):

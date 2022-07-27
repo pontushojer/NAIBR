@@ -49,7 +49,7 @@ def test_candidates(tmp_path):
         assert len(lines) == 2
         same_pairwise_elements(
             lines[1].strip().split("\t"),
-            "21	18759465	21	18906782	28.0	0.0	--	1,1	556.164	PASS".split("\t")
+            "21	18759465	21	18906782	28.0	0.0	--	1,1	567.255	PASS".split("\t")
         )
 
 
@@ -65,7 +65,7 @@ def test_candidates_parallel(tmp_path):
         assert len(lines) == 2
         same_pairwise_elements(
             lines[1].strip().split("\t"),
-            "21	18759465	21	18906782	28.0	0.0	--	1,1	556.164	PASS".split("\t")
+            "21	18759465	21	18906782	28.0	0.0	--	1,1	567.255	PASS".split("\t")
         )
 
 
@@ -81,7 +81,7 @@ def test_novel(tmp_path):
         assert len(lines) == 2
         same_pairwise_elements(
             lines[1].strip().split("\t"),
-            "21	18842204	21	18860078	2.0	0.0	++	0,0	17.035	FAIL".split("\t")
+            "21	18842204	21	18860085	2.0	0.0	++	0,0	18.004	FAIL".split("\t")
         )
 
 
@@ -97,7 +97,7 @@ def test_novel_parallel(tmp_path):
         assert len(lines) == 2
         same_pairwise_elements(
             lines[1].strip().split("\t"),
-            "21	18842204	21	18860078	2.0	0.0	++	0,0	17.035	FAIL".split("\t")
+            "21	18842204	21	18860085	2.0	0.0	++	0,0	18.004	FAIL".split("\t")
         )
 
 

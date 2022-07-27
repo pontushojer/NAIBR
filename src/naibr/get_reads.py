@@ -4,7 +4,7 @@ import collections
 import time
 import copy
 
-from .utils import PERead, fragment_length, roundto, is_proper_chrom, first_read
+from .utils import PERead, roundto, is_proper_chrom, get_barcode
 from .global_vars import *
 from .distributions import get_distributions
 
@@ -26,6 +26,34 @@ def inblacklist(cand):
     return False
 
 
+def parse_mapped_pairs(iterator):
+    mates = {}
+    t0 = time.time()
+    for nr, read in enumerate(iterator, start=1):
+        # Print progress at regular intervals
+        if nr % 1_000_000 == 0:
+            print(f"Processed {nr:,} reads ({1_000_000 // (time.time()-t0):,.0f} reads/second).")
+            t0 = time.time()
+
+        if read.mapping_quality < MIN_MAPQ:
+            continue
+
+        if read.is_unmapped or read.is_duplicate or read.is_supplementary or read.is_secondary:
+            continue
+
+        if read.reference_name != read.next_reference_name:
+            # Interchromosomal discordant reads
+            if is_proper_chrom(read.next_reference_name) and read.reference_name < read.next_reference_name:
+                yield read, None
+        elif read.query_name in mates:
+            if read.reference_start < read.next_reference_start:
+                yield read, mates.pop(read.query_name)
+            else:
+                yield mates.pop(read.query_name), read
+        else:
+            mates[read.query_name] = read
+
+
 def parse_chromosome(chrom):
     """
     Args: chromosome
@@ -44,29 +72,23 @@ def parse_chromosome(chrom):
     interchrom_discs = collections.defaultdict(list)
     barcodes_by_pos = collections.defaultdict(set)
     iterator = reads.fetch(chrom)
-    t0 = time.time()
     nr = 0
-    for nr, read in enumerate(iterator, start=1):
-        try:
+    for read, mate in parse_mapped_pairs(iterator):
+        nr += 2
+        if mate is not None:
+            reads_start = min(reads_start, read.reference_start)
+            reads_end = max(reads_end, mate.reference_end)
+            cov += read.query_alignment_length + mate.query_alignment_length
+        else:
             reads_start = min(reads_start, read.reference_start)
             reads_end = max(reads_end, read.reference_end)
-        except TypeError:
-            # Skips any unmapped reads here
-            pass
+            cov += read.query_alignment_length
 
-        cov += read.query_alignment_length
-        # DEBUG
-        if DEBUG and cov > 100_000_000:
-            break
-
-        if nr % 1_000_000 == 0:
-            print(f"Processed {nr:,} reads ({time.time()-t0:.4f} s for last million).")
-            t0 = time.time()
-
-        if not pass_checks(read):
+        barcode = get_barcode(read)
+        if barcode is None:
             continue
 
-        peread = PERead(read)
+        peread = PERead(read, barcode, mate=mate)
         if peread.disc:
             discs_by_barcode[(peread.chrm, peread.nextchrm, peread.barcode)].append(peread)
             if peread.chrm == peread.nextchrm:
@@ -81,9 +103,9 @@ def parse_chromosome(chrom):
                         peread.orient,
                     )
                 ].append(peread)
-        elif read.is_proper_pair and fragment_length(read) > LMIN:
+        elif read.is_proper_pair and peread.fragment_length() > LMIN:
             reads_by_barcode[(peread.chrm, peread.barcode)].append(
-                (peread.start, peread.nextend, peread.hap, peread.mapq)
+                (peread.start, peread.nextend, peread.hap, peread.mean_mapq())
             )
             norm_mid = roundto(peread.mid(), MAX_LINKED_DIST)
             if peread.barcode not in barcodes_by_pos[(peread.chrm, norm_mid)]:
@@ -219,24 +241,31 @@ def parse_candidate_region(candidate):
     chrm1, break1, chrm2, break2, orientation = candidate
     if break1 > break2 or chrm1 > chrm2:
         chrm1, break1, chrm2, break2 = chrm2, break2, chrm1, break1
+
     if chrm1 != chrm2 or break1 + w < break2 - w:
         window = [(chrm1, break1 - w, break1 + w), (chrm2, break2 - w, break2 + w)]
     else:
         window = [(chrm1, break1 - w, break2 + w)]
+
     for chrm, s, e in window:
         lengths += e - s
         iterator = reads.fetch(chrm, max(0, s), e)
-        for read in iterator:
-            cov += read.query_alignment_length
-            if not pass_checks(read):
+        for read, mate in parse_mapped_pairs(iterator):
+            if mate is not None:
+                cov += read.query_alignment_length + mate.query_alignment_length
+            else:
+                cov += read.query_alignment_length
+
+            barcode = get_barcode(read)
+            if barcode is None:
                 continue
 
-            peread = PERead(read)
+            peread = PERead(read, barcode, mate=mate)
             if peread.disc:
                 discs_by_barcode[(peread.chrm, peread.nextchrm, peread.barcode)].append(peread)
-            elif read.is_proper_pair and fragment_length(read) > LMIN:
+            elif read.is_proper_pair and peread.fragment_length() > LMIN:
                 reads_by_barcode[(peread.chrm, peread.barcode)].append(
-                    (peread.start, peread.nextend, peread.hap, peread.mapq)
+                    (peread.start, peread.nextend, peread.hap, peread.mean_mapq())
                 )
                 norm_mid = roundto(peread.mid(), MAX_LINKED_DIST)
                 if peread.barcode not in barcodes_by_pos[(peread.chrm, norm_mid)]:
@@ -261,25 +290,3 @@ def parse_candidate_region(candidate):
     if DEBUG:
         print(f"Candidate {candidate}: coverage = {coverage}")
     return reads_by_barcode, barcodes_by_pos, discs_by_barcode, [cand], coverage
-
-
-def pass_checks(read):
-    if read.mapping_quality < MIN_MAPQ:
-        return False
-
-    if read.is_duplicate:
-        return False
-
-    if read.is_secondary or read.is_supplementary:
-        return False
-
-    if not read.has_tag("BX"):
-        return False
-
-    if not is_proper_chrom(read.next_reference_name):
-        return False
-
-    if not first_read(read):
-        return False
-
-    return True
