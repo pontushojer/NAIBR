@@ -20,8 +20,9 @@ from .global_vars import *
 mpl.use("Agg")
 
 
-class negBin(object):
+class NegBin(object):
     def __init__(self, p=0.1, r=10):
+        # TODO - Move to hidden method 
         nbin_mpmath = (
             lambda k, p, r: mpmath.gamma(k + r)
             / (mpmath.gamma(k + 1) * mpmath.gamma(r))
@@ -32,7 +33,8 @@ class negBin(object):
         self.p = p
         self.r = r
 
-    def mleFun(self, par, data, sm):
+    @staticmethod
+    def mle(par, data, sm):
         p = par[0]
         r = par[1]
         n = len(data)
@@ -47,7 +49,7 @@ class negBin(object):
             r = (av * av) / (va - av)
             p = (va - av) / (va)
         sm = np.sum(data) / len(data)
-        x = optimize.fsolve(self.mleFun, np.array([p, r]), args=(data, sm))
+        x = optimize.fsolve(self.mle, np.array([p, r]), args=(data, sm))
         self.p = x[0]
         self.r = x[1]
 
@@ -77,27 +79,27 @@ def plot_distribution(p, distr, xlab, ylab, title):
 def linked_reads(reads, chrom):
     reads.sort(key=lambda x: x[0])
 
-    curr_LR = [0, 0, 0, 0]
-    LRs = []
+    current_linkedread = [0, 0, 0, 0]
+    linkedreads = []
     for start, end, hap, mapq in reads:
-        if curr_LR[0] == 0 or start - curr_LR[2] > MAX_LINKED_DIST:
-            if curr_LR[0] != 0 and curr_LR[3] >= MIN_READS and curr_LR[2] - curr_LR[1] >= MIN_LEN:
-                LRs.append(curr_LR)
-            curr_LR = [chrom, start, end, 1]
+        if current_linkedread[0] == 0 or start - current_linkedread[2] > MAX_LINKED_DIST:
+            if current_linkedread[0] != 0 and current_linkedread[3] >= MIN_READS and current_linkedread[2] - current_linkedread[1] >= MIN_LEN:
+                linkedreads.append(current_linkedread)
+            current_linkedread = [chrom, start, end, 1]
         else:
-            curr_LR[2] = max(curr_LR[2], end)
-            curr_LR[3] += 1
-    if curr_LR[0] != 0 and curr_LR[3] >= MIN_READS and curr_LR[2] - curr_LR[1] >= MIN_LEN:
-        LRs.append(curr_LR)
-    return LRs
+            current_linkedread[2] = max(current_linkedread[2], end)
+            current_linkedread[3] += 1
+    if current_linkedread[0] != 0 and current_linkedread[3] >= MIN_READS and current_linkedread[2] - current_linkedread[1] >= MIN_LEN:
+        linkedreads.append(current_linkedread)
+    return linkedreads
 
 
-def get_overlap(barcode_LRs, barcode_overlap):
-    for LR1, LR2 in itertools.combinations(barcode_LRs, 2):
-        if LR1[0] > LR2[0] or LR1[1] > LR2[1]:
-            LR1, LR2 = LR2, LR1
-        chr1, start1, end1, count1 = LR1
-        chr2, start2, end2, count2 = LR2
+def get_overlap(barcode_linkedreads, barcode_overlap):
+    for linkedread1, linkedread2 in itertools.combinations(barcode_linkedreads, 2):
+        if linkedread1[0] > linkedread2[0] or linkedread1[1] > linkedread2[1]:
+            linkedread1, linkedread2 = linkedread2, linkedread1
+        chr1, start1, end1, count1 = linkedread1
+        chr2, start2, end2, count2 = linkedread2
         index1 = {roundto(start1, MAX_LINKED_DIST), roundto(end1, MAX_LINKED_DIST)}
         index2 = {roundto(start2, MAX_LINKED_DIST), roundto(end2, MAX_LINKED_DIST)}
         for id1 in index1:
@@ -105,35 +107,35 @@ def get_overlap(barcode_LRs, barcode_overlap):
                 barcode_overlap[(chr1, id1, chr2, id2)] += 1
 
 
-def get_distributions(reads_by_LR):
-    LRs = []
-    LRs_by_barcode = collections.defaultdict(list)
+def get_distributions(reads_by_barcode):
+    linkedreads = []
+    linkedreads_by_barcode = collections.defaultdict(list)
     barcode_overlap = collections.defaultdict(int)
 
-    for key, reads in reads_by_LR.items():
+    for key, reads in reads_by_barcode.items():
         chrom, barcode = key
-        barcode_LRS = linked_reads(reads, chrom)
-        LRs += barcode_LRS
-        LRs_by_barcode[barcode] += barcode_LRS
+        barcode_linkedreads = linked_reads(reads, chrom)
+        linkedreads += barcode_linkedreads
+        linkedreads_by_barcode[barcode] += barcode_linkedreads
 
-    for barcode, barcode_LRS in LRs_by_barcode.items():
-        if len(barcode_LRS) > 1:
-            get_overlap(barcode_LRS, barcode_overlap)
+    for barcode, barcode_linkedreads in linkedreads_by_barcode.items():
+        if len(barcode_linkedreads) > 1:
+            get_overlap(barcode_linkedreads, barcode_overlap)
 
-    if len(LRs) < 100:
+    if len(linkedreads) < 100:
         return None, None, None
 
-    p_rate = get_rate_distr(LRs)
-    p_len = get_length_distr(LRs)
+    p_rate = get_rate_distr(linkedreads)
+    p_len = get_length_distr(linkedreads)
     return p_len, p_rate, barcode_overlap
 
 
-def get_length_distr(LRs):
-    lengths = [x[2] - x[1] for x in LRs]
+def get_length_distr(linkedreads):
+    lengths = [x[2] - x[1] for x in linkedreads]
     lengths.sort()
     assert len(lengths) >= 100
     assert np.var(lengths) != 0
-    b = negBin()
+    b = NegBin()
     b.fit(lengths)
     p = b.pdf
     pp = lambda x: max(1e-20, float(p([x])[0]))
@@ -144,8 +146,8 @@ def get_length_distr(LRs):
     return pp
 
 
-def get_rate_distr(LRs):
-    rate = [x[3] / float(x[2] - x[1]) for x in LRs]
+def get_rate_distr(linkedreads):
+    rate = [x[3] / float(x[2] - x[1]) for x in linkedreads]
     rate.sort()
     if len(rate) > 10:
         rate = rate[int(len(rate) / 10) : int(len(rate) / 10 * 9)]

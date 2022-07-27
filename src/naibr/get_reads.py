@@ -26,7 +26,7 @@ def inblacklist(cand):
     return False
 
 
-def make_barcodeDict(chrom):
+def parse_chromosome(chrom):
     """
     Args: chromosome
     Function: Parses postion sorted BAM file and extracts relevant information
@@ -38,11 +38,11 @@ def make_barcodeDict(chrom):
     reads = pysam.AlignmentFile(BAM_FILE, "rb")
     reads_start = reads.lengths[list(reads.references).index(chrom)]
     reads_end = 0
-    reads_by_LR = collections.defaultdict(list)
+    reads_by_barcode = collections.defaultdict(list)
     discs_by_barcode = collections.defaultdict(list)
     discs = collections.defaultdict(list)
     interchrom_discs = collections.defaultdict(list)
-    LRs_by_pos = collections.defaultdict(list)
+    barcode_by_pos = collections.defaultdict(list)
     iterator = reads.fetch(chrom)
     t0 = time.time()
     nr = 0
@@ -55,7 +55,7 @@ def make_barcodeDict(chrom):
             pass
 
         cov += read.query_alignment_length
-        ## DEBUG
+        # DEBUG
         if DEBUG and cov > 100_000_000:
             break
 
@@ -82,10 +82,10 @@ def make_barcodeDict(chrom):
                     )
                 ].append(peread)
         elif read.is_proper_pair and fragment_length(read) > LMIN:
-            reads_by_LR[(peread.chrm, peread.barcode)].append((peread.start, peread.nextend, peread.hap, peread.mapq))
+            reads_by_barcode[(peread.chrm, peread.barcode)].append((peread.start, peread.nextend, peread.hap, peread.mapq))
             norm_mid = roundto(peread.mid(), MAX_LINKED_DIST)
-            if peread.barcode not in LRs_by_pos[(peread.chrm, norm_mid)]:
-                LRs_by_pos[(peread.chrm, norm_mid)].append(peread.barcode)
+            if peread.barcode not in barcode_by_pos[(peread.chrm, norm_mid)]:
+                barcode_by_pos[(peread.chrm, norm_mid)].append(peread.barcode)
 
     # TODO - think about how to handle coverage a bit more accurate.
     #      - Use configuration to allow user input?
@@ -93,8 +93,8 @@ def make_barcodeDict(chrom):
     coverage = cov / abs(reads_end-reads_start)
     print(f"Done reading chromosome {chrom}: coverage = {coverage:.3f}, reads = {nr:,}")
     return (
-        reads_by_LR,
-        LRs_by_pos,
+        reads_by_barcode,
+        barcode_by_pos,
         discs_by_barcode,
         discs,
         interchrom_discs,
@@ -172,9 +172,9 @@ def disc_intersection(items):
     return 0, 0, 0, 0
 
 
-def get_candidates(discs, reads_by_LR):
+def get_candidates(discs, reads_by_barcode):
     candidates = []
-    p_len, p_rate, barcode_overlap = get_distributions(reads_by_LR)
+    p_len, p_rate, barcode_overlap = get_distributions(reads_by_barcode)
     if p_len is None or p_rate is None:
         return None, None, None
 
@@ -199,7 +199,7 @@ def get_candidates(discs, reads_by_LR):
     return candidates, p_len, p_rate
 
 
-def make_barcodeDict_user(candidate):
+def parse_candidate_region(candidate):
     """
     Args: candidate novel adjacency input by user
     Function: Parses postion sorted BAM file and extracts positions indicated by candidate NAs
@@ -209,9 +209,9 @@ def make_barcodeDict_user(candidate):
     w = MAX_LEN - MAX_LINKED_DIST
     cov = 0
     reads = pysam.AlignmentFile(BAM_FILE, "rb")
-    reads_by_LR = collections.defaultdict(list)
+    reads_by_barcode = collections.defaultdict(list)
     discs_by_barcode = collections.defaultdict(list)
-    LRs_by_pos = collections.defaultdict(list)
+    barcode_by_pos = collections.defaultdict(list)
     lengths = 0
 
     chrm1, break1, chrm2, break2, orientation = candidate
@@ -233,12 +233,12 @@ def make_barcodeDict_user(candidate):
             if peread.disc:
                 discs_by_barcode[(peread.chrm, peread.nextchrm, peread.barcode)].append(peread)
             elif read.is_proper_pair and fragment_length(read) > LMIN:
-                reads_by_LR[(peread.chrm, peread.barcode)].append(
+                reads_by_barcode[(peread.chrm, peread.barcode)].append(
                     (peread.start, peread.nextend, peread.hap, peread.mapq)
                 )
                 norm_mid = roundto(peread.mid(), MAX_LINKED_DIST)
-                if peread.barcode not in LRs_by_pos[(peread.chrm, norm_mid)]:
-                    LRs_by_pos[(peread.chrm, norm_mid)].append(peread.barcode)
+                if peread.barcode not in barcode_by_pos[(peread.chrm, norm_mid)]:
+                    barcode_by_pos[(peread.chrm, norm_mid)].append(peread.barcode)
 
     cand = copy.copy(peread)
     cand.chrm = chrm1.strip("chr")
@@ -258,7 +258,7 @@ def make_barcodeDict_user(candidate):
     coverage = cov / lengths
     if DEBUG:
         print(f"Candidate {candidate}: coverage = {coverage}")
-    return reads_by_LR, LRs_by_pos, discs_by_barcode, [cand], coverage
+    return reads_by_barcode, barcode_by_pos, discs_by_barcode, [cand], coverage
 
 
 def pass_checks(read):

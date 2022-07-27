@@ -11,7 +11,7 @@ import multiprocessing as mp
 from .global_vars import *
 
 
-class NA:
+class NovelAdjacency:
     __slots__ = [
         "score",
         "chrm1",
@@ -146,7 +146,7 @@ class PERead:
 
     def __init__(self, read):
         self.barcode = read.get_tag("BX")
-        self.orient = get_orient(read)
+        self.orient = get_read_orientation(read)
 
         self.chrm = read.reference_name.strip("chr")
         self.start = read.reference_start
@@ -179,16 +179,16 @@ def first_read(read):
     return (read.reference_start < read.next_reference_start and chrom == mate_chrom) or chrom < mate_chrom
 
 
-def closest_LR(LR1, LR2, i):
-    if not LR1:
-        return LR2
-    if not LR2:
-        return LR1
-    LR1_dist = min(abs(LR1[1] - i), abs(LR1[2]) - i)
-    LR2_dist = min(abs(LR2[1] - i), abs(LR2[2]) - i)
-    if LR1_dist < LR2_dist:
-        return LR1
-    return LR2
+def closest_linkedread(linkedread1, linkedread2, i):
+    if not linkedread1:
+        return linkedread2
+    if not linkedread2:
+        return linkedread1
+    linkedread1_dist = min(abs(linkedread1[1] - i), abs(linkedread1[2]) - i)
+    linkedread2_dist = min(abs(linkedread2[1] - i), abs(linkedread2[2]) - i)
+    if linkedread1_dist < linkedread2_dist:
+        return linkedread1
+    return linkedread2
 
 
 def is_proper_chrom(chrom):
@@ -197,7 +197,7 @@ def is_proper_chrom(chrom):
     return False
 
 
-def get_orient(read):
+def get_read_orientation(read):
     a = ""
     if read.is_reverse:
         a += "-"
@@ -210,6 +210,7 @@ def get_orient(read):
     return a
 
 
+# TODO move to NegBin
 def NB(k, m, r):
     return (
         mpmath.gamma(k + r)
@@ -219,6 +220,7 @@ def NB(k, m, r):
     )
 
 
+# TODO Remove, not used
 def Pois(k, lam):
     return (np.power(lam, k) * math.exp(-lam)) / (mpmath.gamma(k + 1))
 
@@ -251,6 +253,7 @@ def log(x):
         return math.log(1e-300)
 
 
+# TODO - Remove, not used
 def orient(read):
     if read.is_reverse:
         return "-"
@@ -268,6 +271,7 @@ def is_convergent(read, mate):
     return not read.is_reverse and mate.is_reverse
 
 
+# TODO - Remove, not used
 def get_orientation(read, mate):
     # if read.is_read1:
     if read.is_reverse:
@@ -282,12 +286,13 @@ def get_orientation(read, mate):
             return ["++", read.reference_end, mate.reference_end]
 
 
+# TODO Remove, not used
 def rnd(num):
     return int(num / MAX_LINKED_DIST) * MAX_LINKED_DIST
 
 
-def flatten(l):
-    return [item for sublist in l for item in sublist]
+def flatten(list_of_lists):
+    return [item for sublist in list_of_lists for item in sublist]
 
 
 def threshold(cov):
