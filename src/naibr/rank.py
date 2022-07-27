@@ -76,9 +76,9 @@ class CandSplitMol:
         return prob
 
 
-def score_pair(candidate, plen, prate, discs_by_barcode, barcode_by_pos, reads_by_barcode):
+def score_pair(candidate, plen, prate, discs_by_barcode, barcodes_by_pos, reads_by_barcode):
     key, candidate_splits, spans = get_candidate_splits(
-        candidate, barcode_by_pos, reads_by_barcode, discs_by_barcode
+        candidate, barcodes_by_pos, reads_by_barcode, discs_by_barcode
     )
     novel_adjacency = NovelAdjacency(
         candidate.chrm, candidate.nextchrm, candidate.i, candidate.j, candidate.orient
@@ -204,18 +204,18 @@ def get_linkedreads(candidate, barcodes, reads_by_barcode, discs_by_barcode):
     return candidate_splits, spans
 
 
-def get_candidate_splits(candidate, barcode_by_pos, reads_by_barcode, discs_by_barcode):
+def get_candidate_splits(candidate, barcodes_by_pos, reads_by_barcode, discs_by_barcode):
     candidate_i_norm = roundto(candidate.i, MAX_LINKED_DIST)
     candidate_j_norm = roundto(candidate.j, MAX_LINKED_DIST)
     break1_barcodes = set(
-        barcode_by_pos[(candidate.chrm, candidate_i_norm)]
-        + barcode_by_pos[(candidate.chrm, candidate_i_norm - MAX_LINKED_DIST)]
-        + barcode_by_pos[(candidate.chrm, candidate_i_norm + MAX_LINKED_DIST)]
+        barcodes_by_pos[(candidate.chrm, candidate_i_norm)]
+        + barcodes_by_pos[(candidate.chrm, candidate_i_norm - MAX_LINKED_DIST)]
+        + barcodes_by_pos[(candidate.chrm, candidate_i_norm + MAX_LINKED_DIST)]
     )
     break2_barcodes = set(
-        barcode_by_pos[(candidate.nextchrm, candidate_j_norm)]
-        + barcode_by_pos[(candidate.nextchrm, candidate_j_norm - MAX_LINKED_DIST)]
-        + barcode_by_pos[(candidate.nextchrm, candidate_j_norm + MAX_LINKED_DIST)]
+        barcodes_by_pos[(candidate.nextchrm, candidate_j_norm)]
+        + barcodes_by_pos[(candidate.nextchrm, candidate_j_norm - MAX_LINKED_DIST)]
+        + barcodes_by_pos[(candidate.nextchrm, candidate_j_norm + MAX_LINKED_DIST)]
     )
     candidate_splits, spans = get_linkedreads(
         candidate, break1_barcodes.intersection(break2_barcodes), reads_by_barcode, discs_by_barcode
@@ -225,7 +225,7 @@ def get_candidate_splits(candidate, barcode_by_pos, reads_by_barcode, discs_by_b
 
 
 def get_cand_score(
-    candidates, is_interchrom, plen, prate, discs_by_barcode, barcode_by_pos, reads_by_barcode
+    candidates, is_interchrom, plen, prate, discs_by_barcode, barcodes_by_pos, reads_by_barcode
 ):
     scores = []
     score_pair_with_args = partial(
@@ -233,7 +233,7 @@ def get_cand_score(
         plen=plen,
         prate=prate,
         discs_by_barcode=discs_by_barcode,
-        barcode_by_pos=barcode_by_pos,
+        barcodes_by_pos=barcodes_by_pos,
         reads_by_barcode=reads_by_barcode,
     )
     if not is_interchrom or NUM_THREADS == 1:
@@ -266,7 +266,7 @@ def get_cand_score(
 
 def predict_novel_adjacencies(
     reads_by_barcode,
-    barcode_by_pos,
+    barcodes_by_pos,
     discs_by_barcode,
     candidates,
     p_len,
@@ -277,7 +277,7 @@ def predict_novel_adjacencies(
     plen = p_len
     prate = p_rate
     scores = get_cand_score(
-        candidates, interchrom, plen, prate, discs_by_barcode, barcode_by_pos, reads_by_barcode
+        candidates, interchrom, plen, prate, discs_by_barcode, barcodes_by_pos, reads_by_barcode
     )
     scores = [x for x in scores if x]
     scores = collapse(scores, threshold(cov))

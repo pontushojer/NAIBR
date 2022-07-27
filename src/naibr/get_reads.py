@@ -42,7 +42,7 @@ def parse_chromosome(chrom):
     discs_by_barcode = collections.defaultdict(list)
     discs = collections.defaultdict(list)
     interchrom_discs = collections.defaultdict(list)
-    barcode_by_pos = collections.defaultdict(list)
+    barcodes_by_pos = collections.defaultdict(set)
     iterator = reads.fetch(chrom)
     t0 = time.time()
     nr = 0
@@ -86,8 +86,8 @@ def parse_chromosome(chrom):
                 (peread.start, peread.nextend, peread.hap, peread.mapq)
             )
             norm_mid = roundto(peread.mid(), MAX_LINKED_DIST)
-            if peread.barcode not in barcode_by_pos[(peread.chrm, norm_mid)]:
-                barcode_by_pos[(peread.chrm, norm_mid)].append(peread.barcode)
+            if peread.barcode not in barcodes_by_pos[(peread.chrm, norm_mid)]:
+                barcodes_by_pos[(peread.chrm, norm_mid)].add(peread.barcode)
 
     # TODO - think about how to handle coverage a bit more accurate.
     #      - Use configuration to allow user input?
@@ -97,7 +97,7 @@ def parse_chromosome(chrom):
         print(f"Done reading chromosome {chrom}: coverage = {coverage:.3f}, reads = {nr:,}")
     return (
         reads_by_barcode,
-        barcode_by_pos,
+        barcodes_by_pos,
         discs_by_barcode,
         discs,
         interchrom_discs,
@@ -213,7 +213,7 @@ def parse_candidate_region(candidate):
     reads = pysam.AlignmentFile(BAM_FILE, "rb")
     reads_by_barcode = collections.defaultdict(list)
     discs_by_barcode = collections.defaultdict(list)
-    barcode_by_pos = collections.defaultdict(list)
+    barcodes_by_pos = collections.defaultdict(set)
     lengths = 0
 
     chrm1, break1, chrm2, break2, orientation = candidate
@@ -239,8 +239,8 @@ def parse_candidate_region(candidate):
                     (peread.start, peread.nextend, peread.hap, peread.mapq)
                 )
                 norm_mid = roundto(peread.mid(), MAX_LINKED_DIST)
-                if peread.barcode not in barcode_by_pos[(peread.chrm, norm_mid)]:
-                    barcode_by_pos[(peread.chrm, norm_mid)].append(peread.barcode)
+                if peread.barcode not in barcodes_by_pos[(peread.chrm, norm_mid)]:
+                    barcodes_by_pos[(peread.chrm, norm_mid)].add(peread.barcode)
 
     cand = copy.copy(peread)
     cand.chrm = chrm1.strip("chr")
@@ -260,7 +260,7 @@ def parse_candidate_region(candidate):
     coverage = cov / lengths
     if DEBUG:
         print(f"Candidate {candidate}: coverage = {coverage}")
-    return reads_by_barcode, barcode_by_pos, discs_by_barcode, [cand], coverage
+    return reads_by_barcode, barcodes_by_pos, discs_by_barcode, [cand], coverage
 
 
 def pass_checks(read):

@@ -57,12 +57,12 @@ def run_naibr_candidate(cand):
     use user input candidate novel adjacencies
     """
     scores = 0
-    reads_by_barcode, barcode_by_pos, discs_by_barcode, cands, coverage = parse_candidate_region(cand)
+    reads_by_barcode, barcodes_by_pos, discs_by_barcode, cands, coverage = parse_candidate_region(cand)
     p_len, p_rate, overlap = get_distributions(reads_by_barcode)
     if p_len is None:
         return scores
     scores = predict_novel_adjacencies(
-        reads_by_barcode, barcode_by_pos, discs_by_barcode, cands, p_len, p_rate, coverage, False
+        reads_by_barcode, barcodes_by_pos, discs_by_barcode, cands, p_len, p_rate, coverage, False
     )
     return scores
 
@@ -73,7 +73,7 @@ def run_naibr(chrom):
     """
     (
         reads_by_barcode,
-        barcode_by_pos,
+        barcodes_by_pos,
         discs_by_barcode,
         discs,
         interchrom_discs,
@@ -88,7 +88,7 @@ def run_naibr(chrom):
             print("No candidates from %s" % chrom)
             return (
                 reads_by_barcode,
-                barcode_by_pos,
+                barcodes_by_pos,
                 discs_by_barcode,
                 interchrom_discs,
                 coverage,
@@ -98,7 +98,7 @@ def run_naibr(chrom):
         print("ranking %i candidates from %s" % (len(cands), chrom))
         scores = predict_novel_adjacencies(
             reads_by_barcode,
-            barcode_by_pos,
+            barcodes_by_pos,
             discs_by_barcode,
             cands,
             p_len,
@@ -108,7 +108,7 @@ def run_naibr(chrom):
         )
     else:
         print("No candidates from %s" % chrom)
-    return reads_by_barcode, barcode_by_pos, discs_by_barcode, interchrom_discs, coverage, scores
+    return reads_by_barcode, barcodes_by_pos, discs_by_barcode, interchrom_discs, coverage, scores
 
 
 def main():
@@ -152,14 +152,14 @@ def main():
         chroms = [x for x in chroms if is_proper_chrom(x)]
         data = parallel_execute(run_naibr, chroms)
         reads_by_barcode = collections.defaultdict(list)
-        barcode_by_pos = collections.defaultdict(list)
+        barcodes_by_pos = collections.defaultdict(list)
         discs_by_barcode = collections.defaultdict(list)
         discs = collections.defaultdict(list)
         coverage = []
         scores = []
         for (
             reads_by_barcode_chrom,
-            barcode_by_pos_chrom,
+            barcodes_by_pos_chrom,
             discs_by_barcode_chrom,
             discs_chrom,
             cov_chrom,
@@ -167,7 +167,7 @@ def main():
         ) in data:
             if scores_chrom:
                 reads_by_barcode.update(reads_by_barcode_chrom)
-                barcode_by_pos.update(barcode_by_pos_chrom)
+                barcodes_by_pos.update(barcodes_by_pos_chrom)
                 discs_by_barcode.update(discs_by_barcode_chrom)
                 discs.update(discs_chrom)
                 coverage.append(cov_chrom)
@@ -177,7 +177,7 @@ def main():
             print("ranking %i interchromosomal candidates" % len(cands))
             scores += predict_novel_adjacencies(
                 reads_by_barcode,
-                barcode_by_pos,
+                barcodes_by_pos,
                 discs_by_barcode,
                 cands,
                 p_len,
