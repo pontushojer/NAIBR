@@ -211,31 +211,6 @@ def get_CSMs(i):
     return key, CSMs, spans
 
 
-# TODO - no longer used, remove?
-def parse_CSMs(all_CSMs):
-    global CSMs_by_cand
-    for key, CSMs, spans in all_CSMs:
-        CSMs_by_cand[key] = [CSMs, spans]
-
-
-# TODO - no longer used, remove?
-def get_all_CSMs():
-    global CSMs_by_cand
-    CSMs_by_cand = dict()
-    if not is_interchrom or NUM_THREADS == 1:
-        all_CSMs = []
-        for i in range(len(candidates)):
-            key, CSMs, spans = get_CSMs(i)
-            CSMs_by_cand[key] = [CSMs, spans]
-    elif is_interchrom and NUM_THREADS != 1:
-        pool = mp.Pool(min(5, NUM_THREADS), maxtasksperchild=1)
-        map_fn = pool.map
-        all_CSMs = map_fn(get_CSMs, range(len(candidates)))
-        parse_CSMs(all_CSMs)
-        pool.close()
-        pool.join()
-
-
 def get_cand_score(cands):
     global candidates
     candidates = cands
