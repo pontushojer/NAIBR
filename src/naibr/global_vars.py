@@ -107,9 +107,9 @@ def estimate_lmin_lmax():
     pair_spans = []
     reads_lengths = []
     num = 0
-    for i, chrm in enumerate(reads.references):
+    for chrm in reads.references:
         for read, mate in parse_read_pairs(reads.fetch(chrm)):
-            num += 1
+            num += 2
             if num > 1_000_000:
                 break
 
@@ -117,17 +117,21 @@ def estimate_lmin_lmax():
             end = max(read.reference_end, mate.reference_end)
             dist = end - start
 
-            if 0 < abs(dist) < 2000:
+            if abs(dist) < 2000:
                 reads_lengths.extend([read.query_length, mate.query_length])
                 pair_spans.append(dist)
 
-    mean_dist = np.mean(pair_spans)
-    std_dist = np.std(pair_spans)
+    pair_spans = np.array(pair_spans)
+    mean_dist = pair_spans.mean()
+    std_dist = pair_spans.std()
+
     lmin = max(int(mean_dist - std_dist * SD_MULT), int(np.mean(reads_lengths)))
     lmax = max(int(mean_dist + std_dist * SD_MULT), 100)
 
     if DEBUG:
-        print(f"lmax = {lmax}, lmin = {lmin}")
+        # Estimate how large a percentage of reads have span within [lmin, lmax].
+        reads_included = len(pair_spans[(pair_spans < lmax) & (pair_spans > lmin)])/len(pair_spans)
+        print(f"lmax = {lmax}, lmin = {lmin}, reads_included = {reads_included:.1%}", )
     return lmin, lmax
 
 
