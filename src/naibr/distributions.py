@@ -122,11 +122,10 @@ def get_distributions(reads_by_barcode):
     linkedreads_by_barcode = collections.defaultdict(list)
     barcode_overlap = collections.defaultdict(int)
 
-    for key, reads in reads_by_barcode.items():
-        chrom, barcode = key
+    for (chrom, barcode), reads in reads_by_barcode.items():
         barcode_linkedreads = linked_reads(reads, chrom)
-        linkedreads += barcode_linkedreads
-        linkedreads_by_barcode[barcode] += barcode_linkedreads
+        linkedreads.extend(barcode_linkedreads)
+        linkedreads_by_barcode[barcode].extend(barcode_linkedreads)
 
     for barcode, barcode_linkedreads in linkedreads_by_barcode.items():
         if len(barcode_linkedreads) > 1:
