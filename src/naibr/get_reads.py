@@ -70,7 +70,7 @@ def parse_chromosome(chrom):
         if peread.disc:
             discs_by_barcode[(peread.chrm, peread.nextchrm, peread.barcode)].append(peread)
             if peread.chrm == peread.nextchrm:
-                discs = add_disc(peread, discs)
+                add_disc(peread, discs)
             else:
                 interchrom_discs[
                     (
@@ -128,7 +128,6 @@ def add_disc(peread, discs):
             norm_j = roundto(peread.j, LMAX)
             if (a == 0 or norm_ia != norm_i) and (b == 0 or norm_jb != norm_j):
                 discs[(peread.chrm, norm_ia, peread.nextchrm, norm_jb, peread.orient)].append(peread)
-    return discs
 
 
 def largest_overlap(items):
