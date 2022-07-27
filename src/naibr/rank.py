@@ -1,6 +1,6 @@
 from __future__ import print_function, division
 import os
-from functools import partial
+from functools import partial, cache
 import math
 import multiprocessing as mp
 from .utils import log, NovelAdjacency, is_close, roundto, collapse, threshold
@@ -66,14 +66,19 @@ class CandSplitMol:
     def map_prob(self, mapqs):
         prob = 1
         for mapq in mapqs:
-            prob *= 1 - math.pow(10, (mapq / -10.0))
+            prob *= 1 - phred_probability(mapq)
         return prob
 
     def mismap_prob(self, mapqs):
         prob = 1
         for mapq in mapqs:
-            prob *= math.pow(10, (mapq / -10.0))
+            prob *= phred_probability(mapq)
         return prob
+
+
+@cache
+def phred_probability(mapq: int) -> int:
+    return math.pow(10, (mapq / -10.0))
 
 
 def score_pair(candidate, plen, prate, discs_by_barcode, barcodes_by_pos, reads_by_barcode):
