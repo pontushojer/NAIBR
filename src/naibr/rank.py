@@ -224,14 +224,15 @@ def get_cand_score(candidates):
         best.get_score()
         if best.pairs > 0 and best.score > -float("inf"):
             ret = (
-                [best.chrm1, best.break1, best.chrm2, best.break2]
-                + ["split_mols:" + str(best.pairs)]
-                + ["discordants:" + str(best.disc)]
-                + [
-                    "orient:" + candidate.orient,
-                    "haps:" + str(best.haps[0]) + "," + str(best.haps[1]),
-                    "score:" + str(best.score),
-                ]
+                best.chrm1,
+                best.break1,
+                best.chrm2,
+                best.break2,
+                f"split_mols:{best.pairs}",
+                f"discordants:{best.disc}",
+                f"orient:{candidate.orient}",
+                f"haps:{best.haps[0]},{best.haps[1]}",
+                f"score:{best.score}",
             )
             rets.append(ret)
     return rets
