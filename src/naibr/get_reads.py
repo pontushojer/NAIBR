@@ -93,7 +93,8 @@ def parse_chromosome(chrom):
     #      - Use configuration to allow user input?
     #      - Otherwise calculate accurately across each chromosome (or subsection).
     coverage = cov / abs(reads_end - reads_start)
-    print(f"Done reading chromosome {chrom}: coverage = {coverage:.3f}, reads = {nr:,}")
+    if nr > 0:
+        print(f"Done reading chromosome {chrom}: coverage = {coverage:.3f}, reads = {nr:,}")
     return (
         reads_by_barcode,
         barcode_by_pos,
