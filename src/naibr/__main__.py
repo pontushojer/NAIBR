@@ -1,11 +1,50 @@
+"""
+NAIBR - Novel Adjacency Identification with Barcoded Reads
+
+Usage: naibr input.config
+
+Running requires a config file with "=" separated parameters and values.
+
+required:
+    bam_file - str - Path to BAM file with phased linked reads, i.e. has BX and HP tags.
+
+options:
+    outdir - str - Path to output directory. Default: CWD
+    blacklist - str - Path to BED file with regions to ignore
+    candidates - str - Path to BEDPE with candidiate SVs to evaluate
+    d - int - Maximum distance between read-pairs in a linked-read. Default: 10,000
+    min_mapq - int - Minimum mapping quality to evaluate reads. Default: 40
+    k - int - Minimum number of barcode overlaps supporting a candidate NA. Default: 3
+    min_sv - int - Minimum size of structural variant. Default: 1000
+    sd_mult - int - Stddev multiplier for max/min insert size (LMAX/LMIN) calculcation. Default: 2
+    min_len - int - Minimum length of linked read fragment. Default: 2*LMAX
+    max_len - int - TO_BE_ADDED. Default: 200,000
+    min_reads - int - Minimum reads in linked read fragment. Default: 2
+    min_discs - int - Minimum number of discordant reads. Default: 2
+    threads - int - Threads to use. Default: 1
+    DEBUG - bool - Run in debug mode. Default: False
+
+About:
+
+    NAIBR identifies novel adjacencies created by structural variation events such as
+    deletions, duplications, inversions, and complex rearrangements using linked-read
+    whole-genome sequencing data as produced by 10X Genomics. Please refer to the
+    publication for details about the method.
+
+Citation:
+
+    Elyanow R, Wu HT, Raphael BJ. Identifying structural variants using linked-read
+    sequencing data. Bioinformatics. 2018 Jan 15;34(2):353-360.
+    doi: 10.1093/bioinformatics/btx712
+"""
 from __future__ import print_function, division
 import sys
 import time
 import pysam
 import collections
 
-if len(sys.argv) < 2:
-    sys.exit("No input config file")
+if len(sys.argv) < 2 or sys.argv[1] in {"help", "-h", "--help"}:
+    sys.exit(__doc__)
 
 from .get_reads import parse_candidate_region, get_distributions, parse_chromosome, get_candidates
 from .global_vars import *
@@ -83,11 +122,11 @@ def main():
     print(f"  blacklist = {BLACKLIST_FILE}")
     print(f"  outdir = {DIR}")
     print("PARAMETERS")
-    print(f"  d =         {MAX_LINKED_DIST:>9,} (maximum distance between read-pairs in a linked-read)")
+    print(f"  d =         {MAX_LINKED_DIST:>9,}")
     print(f"  min_mapq =  {MIN_MAPQ:>9}")
-    print(f"  k =         {MIN_BC_OVERLAP:>9} (minimum number of barcode overlaps supporting a candidate NA)")
-    print(f"  min_sv =    {MIN_SV:>9,} (minimum size of structural variant)")
-    print(f"  sd_mult =   {SD_MULT:>9} (stddev multiplier for lmax/lmin calculcation)")
+    print(f"  k =         {MIN_BC_OVERLAP:>9}")
+    print(f"  min_sv =    {MIN_SV:>9,}")
+    print(f"  sd_mult =   {SD_MULT:>9}")
     print(f"  min_len =   {MIN_LEN:>9,}")
     print(f"  max_len =   {MAX_LEN:>9,}")
     print(f"  min_reads = {MIN_READS:>9}")
