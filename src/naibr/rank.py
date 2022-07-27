@@ -1,5 +1,6 @@
 from __future__ import print_function, division
 import os
+from functools import partial
 import math
 import multiprocessing as mp
 from .utils import log, NA, is_close, roundto, collapse, threshold
@@ -16,7 +17,7 @@ class CandSplitMol:
         self.hap_j = 0
         self.discs = 0
 
-    def score_CSM(self, CSM, candScore):
+    def score_CSM(self, CSM, candScore, plen, prate):
         LRs_i, D, LRs_j = CSM
         # chrm,start,end,num,hap,barcode
         chrm_i, si, ei, mapq_i, hap_i, barcode_i = LRs_i
@@ -75,12 +76,12 @@ class CandSplitMol:
         return prob
 
 
-def score_pair(candidate):
-    key, CSMs, spans = get_CSMs(candidate)
+def score_pair(candidate, plen, prate, discs_by_barcode, LRs_by_pos, reads_by_LR):
+    key, CSMs, spans = get_CSMs(candidate, LRs_by_pos, reads_by_LR, discs_by_barcode)
     candScore = NA(candidate.chrm, candidate.nextchrm, candidate.i, candidate.j, candidate.orient)
     for CSM in CSMs:
         c = CandSplitMol()
-        c.score_CSM(CSM, candScore)
+        c.score_CSM(CSM, candScore, plen, prate)
     for hap in spans:
         candScore.spans[hap] += 1
     return candScore, candidate
@@ -115,7 +116,7 @@ def spanning(x, candidate):
     return span
 
 
-def discs(candidate, barcode):
+def discs(candidate, barcode, discs_by_barcode):
     ds = discs_by_barcode[(candidate.chrm, candidate.nextchrm, barcode)]
     ds = [
         int((read.mapq + read.nextmapq) / 2)
@@ -133,7 +134,7 @@ def crossing(start, end, i):
     return start < i < end
 
 
-def linked_reads(barcode, chrm, candidate):
+def linked_reads(barcode, chrm, candidate, reads_by_LR):
     span = []
     reads = reads_by_LR[(chrm, barcode)]
     reads.sort(key=lambda x: x[0])
@@ -164,15 +165,15 @@ def linked_reads(barcode, chrm, candidate):
     return LRs, span
 
 
-def get_LRs(candidate, barcodes):
+def get_LRs(candidate, barcodes, reads_by_LR, discs_by_barcode):
     CSMs = []
     spans = []
     for barcode in barcodes:
         span = []
-        LRs, s = linked_reads(barcode, candidate.chrm, candidate)
+        LRs, s = linked_reads(barcode, candidate.chrm, candidate, reads_by_LR)
         span += s
         if candidate.chrm != candidate.nextchrm:
-            LRs2, s = linked_reads(barcode, candidate.nextchrm, candidate)
+            LRs2, s = linked_reads(barcode, candidate.nextchrm, candidate, reads_by_LR)
             LRs += LRs2
         LRs_i, LRs_j = [[], []]
         for x in LRs:
@@ -184,14 +185,14 @@ def get_LRs(candidate, barcodes):
                 span += [(x[-2][0], x[-2][-1])]
 
         if LRs_i and LRs_j and LRs_i[1] < LRs_j[1]:
-            D = discs(candidate, barcode)
+            D = discs(candidate, barcode, discs_by_barcode)
             CSM = [LRs_i, D, LRs_j]
             CSMs.append(CSM)
         spans += span
     return CSMs, spans
 
 
-def get_CSMs(candidate):
+def get_CSMs(candidate, LRs_by_pos, reads_by_LR, discs_by_barcode):
     candidate_i_norm = roundto(candidate.i, MAX_LINKED_DIST)
     candidate_j_norm = roundto(candidate.j, MAX_LINKED_DIST)
     break1_barcodes = set(
@@ -204,18 +205,19 @@ def get_CSMs(candidate):
         + LRs_by_pos[(candidate.nextchrm, candidate_j_norm - MAX_LINKED_DIST)]
         + LRs_by_pos[(candidate.nextchrm, candidate_j_norm + MAX_LINKED_DIST)]
     )
-    CSMs, spans = get_LRs(candidate, break1_barcodes.intersection(break2_barcodes))
+    CSMs, spans = get_LRs(candidate, break1_barcodes.intersection(break2_barcodes), reads_by_LR, discs_by_barcode)
     key = (candidate.i, candidate.j, candidate.orient)
     return key, CSMs, spans
 
 
-def get_cand_score(candidates):
+def get_cand_score(candidates, is_interchrom, plen, prate, discs_by_barcode, LRs_by_pos, reads_by_LR):
     scores = []
+    score_pair_with_args = partial(score_pair, plen=plen, prate=prate, discs_by_barcode=discs_by_barcode, LRs_by_pos=LRs_by_pos, reads_by_LR=reads_by_LR)
     if not is_interchrom or NUM_THREADS == 1:
-        scores = map(score_pair, candidates)
+        scores = map(score_pair_with_args, candidates)
     elif is_interchrom and NUM_THREADS != 1:
         pool = mp.Pool(min(5, NUM_THREADS), maxtasksperchild=1)
-        scores = pool.map(score_pair, candidates)
+        scores = pool.map(score_pair_with_args, candidates)
         pool.close()
         pool.join()
 
@@ -239,26 +241,18 @@ def get_cand_score(candidates):
 
 
 def predict_NAs(
-    reads_by_lr,
-    lrs_by_pos,
-    Discs_by_barcode,
+    reads_by_LR,
+    LRs_by_pos,
+    discs_by_barcode,
     candidates,
     p_len,
     p_rate,
     cov,
     interchrom,
 ):
-    global plen, prate, discs_by_barcode, LRs_by_pos, is_interchrom
-    global LRs_by_pos, reads_by_LR, discs_by_barcode
-    LRs_by_pos, reads_by_LR, discs_by_barcode = (
-        lrs_by_pos,
-        reads_by_lr,
-        Discs_by_barcode,
-    )
-    is_interchrom = interchrom
     plen = p_len
     prate = p_rate
-    scores = get_cand_score(candidates)
+    scores = get_cand_score(candidates, interchrom, plen, prate, discs_by_barcode, LRs_by_pos, reads_by_LR)
     scores = [x for x in scores if x]
     scores = collapse(scores, threshold(cov))
     return scores
