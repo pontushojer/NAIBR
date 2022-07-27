@@ -153,31 +153,6 @@ def add_disc(peread, discs):
                 discs[(peread.chrm, norm_ia, peread.nextchrm, norm_jb, peread.orient)].append(peread)
 
 
-def largest_overlap(items):
-    positions_i = collections.defaultdict(int)
-    positions_j = collections.defaultdict(int)
-    for disc in items:
-        start, end = signi(disc)
-        for pos in range(start, end):
-            positions_i[pos] += 1
-        start, end = signj(disc)
-        for pos in range(start, end):
-            positions_j[pos] += 1
-    i = 0
-    overlap_i = 0
-    for pos, overlap in positions_i.items():
-        if overlap > overlap_i:
-            overlap_i = overlap
-            i = pos
-    j = 0
-    overlap_j = 0
-    for pos, overlap in positions_j.items():
-        if overlap > overlap_j:
-            overlap_j = overlap
-            j = pos
-    return i, j, overlap_i, overlap_j
-
-
 def coordinates(s, e, orient):
     return s if orient == "+" else e
 
