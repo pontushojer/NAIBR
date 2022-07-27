@@ -220,11 +220,6 @@ def NB(k, m, r):
     )
 
 
-# TODO Remove, not used
-def Pois(k, lam):
-    return (np.power(lam, k) * math.exp(-lam)) / (mpmath.gamma(k + 1))
-
-
 def get_hap(r):
     try:
         return r.get_tag("HP")
@@ -253,13 +248,6 @@ def log(x):
         return math.log(1e-300)
 
 
-# TODO - Remove, not used
-def orient(read):
-    if read.is_reverse:
-        return "-"
-    return "+"
-
-
 def is_close(index, read_pos, orient):
     if orient == "+":
         return abs(index - read_pos) <= LMAX
@@ -269,26 +257,6 @@ def is_close(index, read_pos, orient):
 
 def is_convergent(read, mate):
     return not read.is_reverse and mate.is_reverse
-
-
-# TODO - Remove, not used
-def get_orientation(read, mate):
-    # if read.is_read1:
-    if read.is_reverse:
-        if mate.is_reverse:
-            return ["--", read.reference_start, mate.reference_start]
-        else:
-            return ["-+", read.reference_start, mate.reference_end]
-    else:
-        if read.mate_is_reverse:
-            return ["+-", read.reference_end, mate.reference_start]
-        else:
-            return ["++", read.reference_end, mate.reference_end]
-
-
-# TODO Remove, not used
-def rnd(num):
-    return int(num / MAX_LINKED_DIST) * MAX_LINKED_DIST
 
 
 def flatten(list_of_lists):
