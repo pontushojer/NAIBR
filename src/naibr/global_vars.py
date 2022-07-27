@@ -48,8 +48,10 @@ else:
 if "bam_file" in constants and os.path.exists(constants["bam_file"]):
     BAM_FILE = constants["bam_file"]
 else:
-    sys.exit("Missing path to BAM file in config file. Please include this with the "
-             "pattern 'bam_file=/path/to/file.bam'")
+    sys.exit(
+        "Missing path to BAM file in config file. Please include this with the "
+        "pattern 'bam_file=/path/to/file.bam'"
+    )
 
 if "DEBUG" in constants:
     DEBUG = bool(constants["DEBUG"])
@@ -108,7 +110,7 @@ def estimate_lmin_lmax():
 
             start = min(read.reference_start, mate.reference_start)
             end = max(read.reference_end, mate.reference_end)
-            dist = end-start
+            dist = end - start
 
             if 0 < abs(dist) < 2000:
                 reads_lengths.extend([read.query_length, mate.query_length])

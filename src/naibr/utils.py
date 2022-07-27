@@ -279,7 +279,9 @@ def collapse(scores, threshold_value):
         chrom2 = replace_23_24(chrom2)
 
         if "Y" not in chrom1 and "Y" not in chrom2:
-            l.append([chrom1, int(s1), chrom2, int(s2), float(split), float(disc), orient, haps, float(score)])
+            l.append(
+                [chrom1, int(s1), chrom2, int(s2), float(split), float(disc), orient, haps, float(score)]
+            )
     r = roundto(LMAX, 100) * 5
 
     # Sort on decreasing score
@@ -347,7 +349,7 @@ def write_scores(scores):
             "Score",
             "Pass filter",
             sep="\t",
-            file=f
+            file=f,
         )
         for result in scores:
             f.write(result)

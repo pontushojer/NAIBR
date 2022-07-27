@@ -82,7 +82,9 @@ def parse_chromosome(chrom):
                     )
                 ].append(peread)
         elif read.is_proper_pair and fragment_length(read) > LMIN:
-            reads_by_barcode[(peread.chrm, peread.barcode)].append((peread.start, peread.nextend, peread.hap, peread.mapq))
+            reads_by_barcode[(peread.chrm, peread.barcode)].append(
+                (peread.start, peread.nextend, peread.hap, peread.mapq)
+            )
             norm_mid = roundto(peread.mid(), MAX_LINKED_DIST)
             if peread.barcode not in barcode_by_pos[(peread.chrm, norm_mid)]:
                 barcode_by_pos[(peread.chrm, norm_mid)].append(peread.barcode)
@@ -90,7 +92,7 @@ def parse_chromosome(chrom):
     # TODO - think about how to handle coverage a bit more accurate.
     #      - Use configuration to allow user input?
     #      - Otherwise calculate accurately across each chromosome (or subsection).
-    coverage = cov / abs(reads_end-reads_start)
+    coverage = cov / abs(reads_end - reads_start)
     print(f"Done reading chromosome {chrom}: coverage = {coverage:.3f}, reads = {nr:,}")
     return (
         reads_by_barcode,

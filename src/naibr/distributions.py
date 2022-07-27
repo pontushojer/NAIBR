@@ -28,7 +28,12 @@ class NegBin(object):
 
     @staticmethod
     def _nbin(k, p, r):
-        return mpmath.gamma(k + r) / (mpmath.gamma(k + 1) * mpmath.gamma(r)) * np.power(1 - p, r) * np.power(p, k)
+        return (
+            mpmath.gamma(k + r)
+            / (mpmath.gamma(k + 1) * mpmath.gamma(r))
+            * np.power(1 - p, r)
+            * np.power(p, k)
+        )
 
     @staticmethod
     def mle(par, data, sm):
@@ -80,13 +85,21 @@ def linked_reads(reads, chrom):
     linkedreads = []
     for start, end, hap, mapq in reads:
         if current_linkedread[0] == 0 or start - current_linkedread[2] > MAX_LINKED_DIST:
-            if current_linkedread[0] != 0 and current_linkedread[3] >= MIN_READS and current_linkedread[2] - current_linkedread[1] >= MIN_LEN:
+            if (
+                current_linkedread[0] != 0
+                and current_linkedread[3] >= MIN_READS
+                and current_linkedread[2] - current_linkedread[1] >= MIN_LEN
+            ):
                 linkedreads.append(current_linkedread)
             current_linkedread = [chrom, start, end, 1]
         else:
             current_linkedread[2] = max(current_linkedread[2], end)
             current_linkedread[3] += 1
-    if current_linkedread[0] != 0 and current_linkedread[3] >= MIN_READS and current_linkedread[2] - current_linkedread[1] >= MIN_LEN:
+    if (
+        current_linkedread[0] != 0
+        and current_linkedread[3] >= MIN_READS
+        and current_linkedread[2] - current_linkedread[1] >= MIN_LEN
+    ):
         linkedreads.append(current_linkedread)
     return linkedreads
 

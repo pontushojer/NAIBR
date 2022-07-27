@@ -77,8 +77,12 @@ class CandSplitMol:
 
 
 def score_pair(candidate, plen, prate, discs_by_barcode, barcode_by_pos, reads_by_barcode):
-    key, candidate_splits, spans = get_candidate_splits(candidate, barcode_by_pos, reads_by_barcode, discs_by_barcode)
-    novel_adjacency = NovelAdjacency(candidate.chrm, candidate.nextchrm, candidate.i, candidate.j, candidate.orient)
+    key, candidate_splits, spans = get_candidate_splits(
+        candidate, barcode_by_pos, reads_by_barcode, discs_by_barcode
+    )
+    novel_adjacency = NovelAdjacency(
+        candidate.chrm, candidate.nextchrm, candidate.i, candidate.j, candidate.orient
+    )
     for candidate_split in candidate_splits:
         c = CandSplitMol()
         c.score(candidate_split, novel_adjacency, plen, prate)
@@ -143,7 +147,11 @@ def linked_reads(barcode, chrm, candidate, reads_by_barcode):
     linkedreads = []
     for start, end, hap, mapq in reads:
         if current_linkedread[0] == 0 or start - current_linkedread[2] > MAX_LINKED_DIST:
-            if current_linkedread[0] != 0 and len(current_linkedread[3]) >= MIN_READS and current_linkedread[2] - current_linkedread[1] >= MIN_LEN:
+            if (
+                current_linkedread[0] != 0
+                and len(current_linkedread[3]) >= MIN_READS
+                and current_linkedread[2] - current_linkedread[1] >= MIN_LEN
+            ):
                 linkedreads.append(current_linkedread)
             current_linkedread = [chrm, start, end, [mapq], [hap], barcode]
         elif (
@@ -157,7 +165,11 @@ def linked_reads(barcode, chrm, candidate, reads_by_barcode):
             current_linkedread[2] = max(current_linkedread[2], end)
             current_linkedread[3].append(mapq)
             current_linkedread[4].append(hap)
-    if current_linkedread[0] != 0 and len(current_linkedread[3]) >= MIN_READS and current_linkedread[2] - current_linkedread[1] >= MIN_LEN:
+    if (
+        current_linkedread[0] != 0
+        and len(current_linkedread[3]) >= MIN_READS
+        and current_linkedread[2] - current_linkedread[1] >= MIN_LEN
+    ):
         linkedreads.append(current_linkedread)
     for i in range(1, len(linkedreads)):
         if linkedreads[i][1] - linkedreads[i - 1][2] < MAX_LINKED_DIST:
@@ -205,14 +217,25 @@ def get_candidate_splits(candidate, barcode_by_pos, reads_by_barcode, discs_by_b
         + barcode_by_pos[(candidate.nextchrm, candidate_j_norm - MAX_LINKED_DIST)]
         + barcode_by_pos[(candidate.nextchrm, candidate_j_norm + MAX_LINKED_DIST)]
     )
-    candidate_splits, spans = get_linkedreads(candidate, break1_barcodes.intersection(break2_barcodes), reads_by_barcode, discs_by_barcode)
+    candidate_splits, spans = get_linkedreads(
+        candidate, break1_barcodes.intersection(break2_barcodes), reads_by_barcode, discs_by_barcode
+    )
     key = (candidate.i, candidate.j, candidate.orient)
     return key, candidate_splits, spans
 
 
-def get_cand_score(candidates, is_interchrom, plen, prate, discs_by_barcode, barcode_by_pos, reads_by_barcode):
+def get_cand_score(
+    candidates, is_interchrom, plen, prate, discs_by_barcode, barcode_by_pos, reads_by_barcode
+):
     scores = []
-    score_pair_with_args = partial(score_pair, plen=plen, prate=prate, discs_by_barcode=discs_by_barcode, barcode_by_pos=barcode_by_pos, reads_by_barcode=reads_by_barcode)
+    score_pair_with_args = partial(
+        score_pair,
+        plen=plen,
+        prate=prate,
+        discs_by_barcode=discs_by_barcode,
+        barcode_by_pos=barcode_by_pos,
+        reads_by_barcode=reads_by_barcode,
+    )
     if not is_interchrom or NUM_THREADS == 1:
         scores = map(score_pair_with_args, candidates)
     elif is_interchrom and NUM_THREADS != 1:
@@ -253,7 +276,9 @@ def predict_novel_adjacencies(
 ):
     plen = p_len
     prate = p_rate
-    scores = get_cand_score(candidates, interchrom, plen, prate, discs_by_barcode, barcode_by_pos, reads_by_barcode)
+    scores = get_cand_score(
+        candidates, interchrom, plen, prate, discs_by_barcode, barcode_by_pos, reads_by_barcode
+    )
     scores = [x for x in scores if x]
     scores = collapse(scores, threshold(cov))
     return scores

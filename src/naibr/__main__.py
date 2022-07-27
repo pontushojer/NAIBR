@@ -22,7 +22,9 @@ def run_naibr_candidate(cand):
     p_len, p_rate, overlap = get_distributions(reads_by_barcode)
     if p_len is None:
         return scores
-    scores = predict_novel_adjacencies(reads_by_barcode, barcode_by_pos, discs_by_barcode, cands, p_len, p_rate, coverage, False)
+    scores = predict_novel_adjacencies(
+        reads_by_barcode, barcode_by_pos, discs_by_barcode, cands, p_len, p_rate, coverage, False
+    )
     return scores
 
 
