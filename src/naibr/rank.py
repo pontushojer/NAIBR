@@ -82,7 +82,7 @@ def phred_probability(mapq: int) -> int:
 
 
 def score_pair(candidate, plen, prate, discs_by_barcode, barcodes_by_pos, reads_by_barcode):
-    key, candidate_splits, spans = get_candidate_splits(
+    candidate_splits, spans = get_candidate_splits(
         candidate, barcodes_by_pos, reads_by_barcode, discs_by_barcode
     )
     novel_adjacency = NovelAdjacency(
@@ -225,8 +225,7 @@ def get_candidate_splits(candidate, barcodes_by_pos, reads_by_barcode, discs_by_
     candidate_splits, spans = get_linkedreads(
         candidate, break1_barcodes.intersection(break2_barcodes), reads_by_barcode, discs_by_barcode
     )
-    key = (candidate.i, candidate.j, candidate.orient)
-    return key, candidate_splits, spans
+    return candidate_splits, spans
 
 
 def get_cand_score(
