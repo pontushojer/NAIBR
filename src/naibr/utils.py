@@ -210,16 +210,6 @@ def get_read_orientation(read):
     return a
 
 
-# TODO move to NegBin
-def NB(k, m, r):
-    return (
-        mpmath.gamma(k + r)
-        / (mpmath.gamma(k + 1) * mpmath.gamma(r))
-        * np.power(m / (r + m), k)
-        * np.power(r / (r + m), r)
-    )
-
-
 def get_hap(r):
     try:
         return r.get_tag("HP")

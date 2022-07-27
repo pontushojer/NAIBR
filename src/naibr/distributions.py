@@ -22,16 +22,13 @@ mpl.use("Agg")
 
 class NegBin(object):
     def __init__(self, p=0.1, r=10):
-        # TODO - Move to hidden method 
-        nbin_mpmath = (
-            lambda k, p, r: mpmath.gamma(k + r)
-            / (mpmath.gamma(k + 1) * mpmath.gamma(r))
-            * np.power(1 - p, r)
-            * np.power(p, k)
-        )
-        self.nbin = np.frompyfunc(nbin_mpmath, 3, 1)
+        self.nbin = np.frompyfunc(self._nbin, 3, 1)
         self.p = p
         self.r = r
+
+    @staticmethod
+    def _nbin(k, p, r):
+        return mpmath.gamma(k + r) / (mpmath.gamma(k + 1) * mpmath.gamma(r)) * np.power(1 - p, r) * np.power(p, k)
 
     @staticmethod
     def mle(par, data, sm):
