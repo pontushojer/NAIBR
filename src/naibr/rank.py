@@ -220,6 +220,7 @@ def get_cand_score(candidates, is_interchrom, plen, prate, discs_by_barcode, bar
         scores = pool.map(score_pair_with_args, candidates)
         pool.close()
         pool.join()
+    # TODO - Based on this if NUM_THREADS is 1 no interchrom candidates will be evaluated.
 
     rets = []
     for best, candidate in scores:
@@ -230,11 +231,11 @@ def get_cand_score(candidates, is_interchrom, plen, prate, discs_by_barcode, bar
                 best.break1,
                 best.chrm2,
                 best.break2,
-                f"split_mols:{best.pairs}",
-                f"discordants:{best.disc}",
-                f"orient:{candidate.orient}",
-                f"haps:{best.haps[0]},{best.haps[1]}",
-                f"score:{best.score}",
+                best.pairs,
+                best.disc,
+                candidate.orient,
+                f"{best.haps[0]},{best.haps[1]}",
+                best.score,
             )
             rets.append(ret)
     return rets

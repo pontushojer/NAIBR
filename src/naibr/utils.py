@@ -268,24 +268,18 @@ def fragment_length(read):
 
 
 def collapse(scores, threshold_value):
+    def replace_23_24(chrom):
+        replace = {"24": "Y", "23": "X"}
+        return replace.get(chrom, chrom)
+
     l = []
     for linea in scores:
-        chrom1, s1, chrom2, s2 = linea[0:4]
-        if chrom1 == "24":
-            chrom1 = "Y"
-        if chrom1 == "23":
-            chrom1 = "X"
-        if chrom2 == "24":
-            chrom2 = "Y"
-        if chrom2 == "23":
-            chrom2 = "X"
-        split = float(linea[4].split(":")[-1])
-        disc = float(linea[5].split(":")[-1])
-        orient = linea[6].split(":")[-1]
-        haps = linea[7].split(":")[-1]
-        score = float(linea[8].split(":")[-1])
+        chrom1, s1, chrom2, s2, split, disc, orient, haps, score = linea
+        chrom1 = replace_23_24(chrom1)
+        chrom2 = replace_23_24(chrom2)
+
         if "Y" not in chrom1 and "Y" not in chrom2:
-            l.append([chrom1, int(s1), chrom2, int(s2), split, disc, orient, haps, score])
+            l.append([chrom1, int(s1), chrom2, int(s2), float(split), float(disc), orient, haps, float(score)])
     r = roundto(LMAX, 100) * 5
 
     # Sort on decreasing score
