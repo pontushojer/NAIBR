@@ -75,9 +75,8 @@ class CandSplitMol:
         return prob
 
 
-def score_pair(i):
-    key, CSMs, spans = get_CSMs(i)
-    candidate = candidates[i]
+def score_pair(candidate):
+    key, CSMs, spans = get_CSMs(candidate)
     candScore = NA(candidate.chrm, candidate.nextchrm, candidate.i, candidate.j, candidate.orient)
     for CSM in CSMs:
         c = CandSplitMol()
@@ -192,8 +191,7 @@ def get_LRs(candidate, barcodes):
     return CSMs, spans
 
 
-def get_CSMs(i):
-    candidate = candidates[i]
+def get_CSMs(candidate):
     candidate_i_norm = roundto(candidate.i, MAX_LINKED_DIST)
     candidate_j_norm = roundto(candidate.j, MAX_LINKED_DIST)
     break1_barcodes = set(
@@ -211,16 +209,13 @@ def get_CSMs(i):
     return key, CSMs, spans
 
 
-def get_cand_score(cands):
-    global candidates
-    candidates = cands
-
+def get_cand_score(candidates):
     scores = []
     if not is_interchrom or NUM_THREADS == 1:
-        scores = map(score_pair, range(len(candidates)))
+        scores = map(score_pair, candidates)
     elif is_interchrom and NUM_THREADS != 1:
         pool = mp.Pool(min(5, NUM_THREADS), maxtasksperchild=1)
-        scores = pool.map(score_pair, range(len(candidates)))
+        scores = pool.map(score_pair, candidates)
         pool.close()
         pool.join()
 
