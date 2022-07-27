@@ -92,21 +92,14 @@ def linked_reads(reads, chrom):
     return LRs
 
 
-def get_overlap(barcode_LRs):
-    global barcode_overlap
+def get_overlap(barcode_LRs, barcode_overlap):
     for LR1, LR2 in itertools.combinations(barcode_LRs, 2):
         if LR1[0] > LR2[0] or LR1[1] > LR2[1]:
             LR1, LR2 = LR2, LR1
         chr1, start1, end1, count1 = LR1
         chr2, start2, end2, count2 = LR2
-        index1 = {
-            int(start1 / MAX_LINKED_DIST) * MAX_LINKED_DIST,
-            int(end1 / MAX_LINKED_DIST) * MAX_LINKED_DIST,
-        }
-        index2 = {
-            int(start2 / MAX_LINKED_DIST) * MAX_LINKED_DIST,
-            int(end2 / MAX_LINKED_DIST) * MAX_LINKED_DIST,
-        }
+        index1 = {roundto(start1, MAX_LINKED_DIST), roundto(end1, MAX_LINKED_DIST)}
+        index2 = {roundto(start2, MAX_LINKED_DIST), roundto(end2, MAX_LINKED_DIST)}
         for id1 in index1:
             for id2 in index2:
                 barcode_overlap[(chr1, id1, chr2, id2)] += 1
@@ -114,19 +107,22 @@ def get_overlap(barcode_LRs):
 
 def get_distributions(reads_by_LR):
     LRs = []
-    global barcode_overlap, LRs_by_barcode
     LRs_by_barcode = collections.defaultdict(list)
     barcode_overlap = collections.defaultdict(int)
+
     for key, reads in reads_by_LR.items():
         chrom, barcode = key
         barcode_LRS = linked_reads(reads, chrom)
         LRs += barcode_LRS
         LRs_by_barcode[barcode] += barcode_LRS
+
     for barcode, barcode_LRS in LRs_by_barcode.items():
         if len(barcode_LRS) > 1:
-            get_overlap(barcode_LRS)
+            get_overlap(barcode_LRS, barcode_overlap)
+
     if len(LRs) < 100:
         return None, None, None
+
     p_rate = get_rate_distr(LRs)
     p_len = get_length_distr(LRs)
     return p_len, p_rate, barcode_overlap
