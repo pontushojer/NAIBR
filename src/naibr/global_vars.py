@@ -20,6 +20,9 @@ def parse_blacklist(fname):
 
 
 def parse_configs(fname):
+    if not os.path.exists(fname):
+        sys.exit(f"ERROR: '{fname}' is not a config file")
+
     configs = {}
     with open(fname) as f:
         for line in f:
@@ -28,6 +31,8 @@ def parse_configs(fname):
                 continue
 
             name, val = line.split("=")
+            name = name.strip(" ")
+            val = val.strip(" ")
             configs[name] = val
     return configs
 
