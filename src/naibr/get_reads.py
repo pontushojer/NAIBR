@@ -199,7 +199,9 @@ def get_candidates(discs, reads_by_barcode):
         norm_i = roundto(cand.i, configs.MAX_LINKED_DIST)
         norm_j = roundto(cand.j, configs.MAX_LINKED_DIST)
         barcode_overlaps = barcode_overlap[(cand.chrm, norm_i, cand.nextchrm, norm_j)]
-        if (cand.chrm == cand.nextchrm and cand.j - cand.i < configs.MAX_LINKED_DIST) or barcode_overlaps >= configs.MIN_BC_OVERLAP:
+        if (
+            cand.chrm == cand.nextchrm and cand.j - cand.i < configs.MAX_LINKED_DIST
+        ) or barcode_overlaps >= configs.MIN_BC_OVERLAP:
             if not any(x.i == cand.i and x.j == cand.j for x in candidates):
                 candidates.append(cand)
     return candidates, p_len, p_rate
@@ -254,17 +256,17 @@ def parse_candidate_region(candidate):
                     barcodes_by_pos[(peread.chrm, norm_mid)].add(peread.barcode)
 
     cand = copy.copy(peread)
-    cand.chrm = chrm1.strip("chr")
+    cand.chrm = chrm1
     cand.i = break1
-    cand.nextchrm = chrm2.strip("chr")
+    cand.nextchrm = chrm2
     cand.j = break2
     cand.orient = orientation
     if (cand.chrm == cand.nextchrm and cand.i > cand.j) or (
         cand.chrm != cand.nextchrm and cand.chrm > cand.nextchrm
     ):
-        cand.chrm = chrm2.strip("chr")
+        cand.chrm = chrm2
         cand.i = break2
-        cand.nextchrm = chrm1.strip("chr")
+        cand.nextchrm = chrm1
         cand.j = break1
         cand.orient = orientation[::-1]
 

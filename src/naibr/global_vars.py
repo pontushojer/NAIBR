@@ -14,7 +14,6 @@ def parse_blacklist(fname):
             fields = line.strip().split("\t")
             assert len(fields) == 3
             chrom, start, end = fields
-            chrom = chrom.strip("chr")
             blacklist[chrom].append([int(start), int(end)])
     return blacklist
 
@@ -63,8 +62,10 @@ def estimate_lmin_lmax(bam_file, sd_mult, debug=False):
 
     if debug:
         # Estimate how large a percentage of reads have span within [lmin, lmax].
-        reads_included = len(pair_spans[(pair_spans < lmax) & (pair_spans > lmin)])/len(pair_spans)
-        print(f"lmax = {lmax}, lmin = {lmin}, reads_included = {reads_included:.1%}", )
+        reads_included = len(pair_spans[(pair_spans < lmax) & (pair_spans > lmin)]) / len(pair_spans)
+        print(
+            f"lmax = {lmax}, lmin = {lmin}, reads_included = {reads_included:.1%}",
+        )
     return lmin, lmax
 
 
@@ -176,5 +177,3 @@ class Configs:
 
 
 configs = Configs.from_file(sys.argv[1])
-
-

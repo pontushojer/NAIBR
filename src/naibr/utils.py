@@ -177,13 +177,13 @@ class PERead:
         self.barcode = barcode
         self.orient = get_read_orientation(read)
 
-        self.chrm = read.reference_name.strip("chr")
+        self.chrm = read.reference_name
         self.start = read.reference_start
         self.end = read.reference_end
         self.mapq = read.mapping_quality
         self.hap = get_hap(read)
 
-        self.nextchrm = read.next_reference_name.strip("chr")
+        self.nextchrm = read.next_reference_name
         self.nextstart = read.next_reference_start
         if mate is None:
             # Assume same aligment length and mapping quality for mate
@@ -304,16 +304,11 @@ def threshold(cov):
 
 
 def collapse(scores, threshold_value):
-    def replace_23_24(chrom):
-        replace = {"24": "Y", "23": "X"}
-        return replace.get(chrom, chrom)
-
     l = []
     for linea in scores:
         chrom1, s1, chrom2, s2, split, disc, orient, haps, score = linea
-        chrom1 = replace_23_24(chrom1)
-        chrom2 = replace_23_24(chrom2)
 
+        # TODO - Make this configurable to work with non-human genomes
         if "Y" not in chrom1 and "Y" not in chrom2:
             l.append(
                 [chrom1, int(s1), chrom2, int(s2), float(split), float(disc), orient, haps, float(score)]

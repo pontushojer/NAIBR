@@ -49,7 +49,7 @@ def test_candidates(tmp_path):
         assert len(lines) == 2
         same_pairwise_elements(
             lines[1].strip().split("\t"),
-            "21	18759465	21	18906782	28.0	0.0	--	1,1	567.255	PASS".split("\t")
+            "chr21	18759465	chr21	18906782	28.0	0.0	--	1,1	567.255	PASS".split("\t"),
         )
 
 
@@ -65,7 +65,7 @@ def test_candidates_parallel(tmp_path):
         assert len(lines) == 2
         same_pairwise_elements(
             lines[1].strip().split("\t"),
-            "21	18759465	21	18906782	28.0	0.0	--	1,1	567.255	PASS".split("\t")
+            "chr21	18759465	chr21	18906782	28.0	0.0	--	1,1	567.255	PASS".split("\t"),
         )
 
 
@@ -81,7 +81,7 @@ def test_novel(tmp_path):
         assert len(lines) == 2
         same_pairwise_elements(
             lines[1].strip().split("\t"),
-            "21	18842204	21	18860085	2.0	0.0	++	0,0	18.004	FAIL".split("\t")
+            "chr21	18842204	chr21	18860085	2.0	0.0	++	0,0	18.004	FAIL".split("\t"),
         )
 
 
@@ -97,7 +97,7 @@ def test_novel_parallel(tmp_path):
         assert len(lines) == 2
         same_pairwise_elements(
             lines[1].strip().split("\t"),
-            "21	18842204	21	18860085	2.0	0.0	++	0,0	18.004	FAIL".split("\t")
+            "chr21	18842204	chr21	18860085	2.0	0.0	++	0,0	18.004	FAIL".split("\t"),
         )
 
 
@@ -114,7 +114,7 @@ def test_consistent(tmp_path):
     with open(new_candidates, "w") as outfile, open(output) as infile:
         line = infile.readlines()[1]
         chr1, pos1, chr2, pos2, _, _, orient, *_ = line.split("\t")
-        print(f"chr{chr1}", pos1, pos1, f"chr{chr2}", pos2, pos2, orient, sep="\t", file=outfile)
+        print(chr1, pos1, pos1, chr2, pos2, pos2, orient, sep="\t", file=outfile)
 
     # Run with generated candidates
     configs = Configs(bam_file=BAM, candidates=new_candidates, outdir=tmp_path / "rerun")
