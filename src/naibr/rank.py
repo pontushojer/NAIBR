@@ -17,7 +17,7 @@ class CandSplitMol:
         self.hap_j = 0
         self.discs = 0
 
-    def score(self, candidate_split, novel_adjacency, plen, prate):
+    def calculate_score(self, candidate_split, plen, prate):
         linkedread_i, discs_mapqs, linkedread_j = candidate_split
         # chrm,start,end,num,hap,barcode
         chrm_i, si, ei, mapq_i, hap_i, barcode_i = linkedread_i
@@ -59,9 +59,12 @@ class CandSplitMol:
         self.hap_i = hap_i
         self.hap_j = hap_j
         self.discs = len(discs_mapqs)
-        novel_adjacency.score[(hap_i, hap_j)] += self.scoreHA - self.scoreH0
-        novel_adjacency.pairs[(hap_i, hap_j)] += 1
-        novel_adjacency.disc[(hap_i, hap_j)] += self.discs
+
+    def score(self):
+        return self.scoreHA - self.scoreH0
+
+    def haplotype(self):
+        return self.hap_i, self.hap_j
 
     def map_prob(self, mapqs):
         prob = 1
@@ -91,7 +94,8 @@ def score_pair(candidate, plen, prate, discs_by_barcode, barcodes_by_pos, reads_
     novel_adjacency.add_spans(spans)
     for candidate_split in candidate_splits:
         c = CandSplitMol()
-        c.score(candidate_split, novel_adjacency, plen, prate)
+        c.calculate_score(candidate_split, plen, prate)
+        novel_adjacency.add_score(c)
 
     return novel_adjacency
 

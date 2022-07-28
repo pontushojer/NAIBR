@@ -7,7 +7,6 @@ import linecache
 import scipy.stats
 import collections
 import multiprocessing as mp
-
 from .global_vars import *
 
 
@@ -40,6 +39,12 @@ class NovelAdjacency:
     def add_spans(self, spans):
         for hap in spans:
             self.spans[hap] += 1
+
+    def add_score(self, candsplitmol):
+        haplotype = candsplitmol.haplotype()
+        self.score[haplotype] += candsplitmol.score()
+        self.pairs[haplotype] += 1
+        self.disc[haplotype] += candsplitmol.discs
 
     def get_score(self):
         best_score = -float("inf")
