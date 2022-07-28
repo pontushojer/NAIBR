@@ -270,13 +270,11 @@ def predict_novel_adjacencies(
     barcodes_by_pos,
     discs_by_barcode,
     candidates,
-    p_len,
-    p_rate,
+    plen,
+    prate,
     cov,
     interchrom,
 ):
-    plen = p_len
-    prate = p_rate
     scores = get_cand_score(
         candidates, interchrom, plen, prate, discs_by_barcode, barcodes_by_pos, reads_by_barcode
     )
