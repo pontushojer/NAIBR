@@ -109,6 +109,19 @@ class NovelAdjacency:
             self.pairs = 0
             self.spans = 0
 
+    def to_tuple(self):
+        return (
+            self.chrm1,
+            self.break1,
+            self.chrm2,
+            self.break2,
+            self.pairs,
+            self.disc,
+            self.orient,
+            f"{self.haps[0]},{self.haps[1]}",
+            self.score,
+        )
+
 
 class LinkedRead:
     __slots__ = ["barcode", "chrm", "start", "disc", "end", "hap", "num"]

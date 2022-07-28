@@ -93,7 +93,7 @@ def score_pair(candidate, plen, prate, discs_by_barcode, barcodes_by_pos, reads_
         c = CandSplitMol()
         c.score(candidate_split, novel_adjacency, plen, prate)
 
-    return novel_adjacency, candidate
+    return novel_adjacency
 
 
 def near_i(x, candidate):
@@ -253,21 +253,10 @@ def get_cand_score(
     # TODO - Based on this if NUM_THREADS is 1 no interchrom candidates will be evaluated.
 
     rets = []
-    for best, candidate in scores:
-        best.get_score()
-        if best.pairs > 0 and best.score > -float("inf"):
-            ret = (
-                best.chrm1,
-                best.break1,
-                best.chrm2,
-                best.break2,
-                best.pairs,
-                best.disc,
-                candidate.orient,
-                f"{best.haps[0]},{best.haps[1]}",
-                best.score,
-            )
-            rets.append(ret)
+    for novel_adjacency in scores:
+        novel_adjacency.get_score()
+        if novel_adjacency.pairs > 0 and novel_adjacency.score > -float("inf"):
+            rets.append(novel_adjacency.to_tuple())
     return rets
 
 
