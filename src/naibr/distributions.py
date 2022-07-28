@@ -2,20 +2,17 @@ from __future__ import print_function, division
 import os
 import collections
 import itertools
-from .utils import *
-import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
 from pylab import rc
-from scipy.stats import norm
-from scipy.stats import gamma
+import scipy.stats as scipy_stats
 import scipy.special as special
 import scipy.optimize as optimize
 import numpy as np
 import mpmath
 
-from .global_vars import *
+from .global_vars import configs
+from .utils import roundto
 
 mpl.use("Agg")
 
@@ -73,7 +70,7 @@ def plot_distribution(p, distr, xlab, ylab, title):
     x0 = max(n)
     xmax = max(bins)
     plt.axis([0, max(bins), 0, max(max(y), max(n))])
-    fig.savefig(os.path.join(DIR, fname + ".pdf"), format="pdf")
+    fig.savefig(os.path.join(configs.DIR, fname + ".pdf"), format="pdf")
     plt.close("all")
     return
 
@@ -84,11 +81,11 @@ def linked_reads(reads, chrom):
     current_linkedread = [0, 0, 0, 0]
     linkedreads = []
     for start, end, hap, mapq in reads:
-        if current_linkedread[0] == 0 or start - current_linkedread[2] > MAX_LINKED_DIST:
+        if current_linkedread[0] == 0 or start - current_linkedread[2] > configs.MAX_LINKED_DIST:
             if (
                 current_linkedread[0] != 0
-                and current_linkedread[3] >= MIN_READS
-                and current_linkedread[2] - current_linkedread[1] >= MIN_LEN
+                and current_linkedread[3] >= configs.MIN_READS
+                and current_linkedread[2] - current_linkedread[1] >= configs.MIN_LEN
             ):
                 linkedreads.append(current_linkedread)
             current_linkedread = [chrom, start, end, 1]
@@ -97,8 +94,8 @@ def linked_reads(reads, chrom):
             current_linkedread[3] += 1
     if (
         current_linkedread[0] != 0
-        and current_linkedread[3] >= MIN_READS
-        and current_linkedread[2] - current_linkedread[1] >= MIN_LEN
+        and current_linkedread[3] >= configs.MIN_READS
+        and current_linkedread[2] - current_linkedread[1] >= configs.MIN_LEN
     ):
         linkedreads.append(current_linkedread)
     return linkedreads
@@ -110,8 +107,8 @@ def get_overlap(barcode_linkedreads, barcode_overlap):
             linkedread1, linkedread2 = linkedread2, linkedread1
         chr1, start1, end1, count1 = linkedread1
         chr2, start2, end2, count2 = linkedread2
-        index1 = {roundto(start1, MAX_LINKED_DIST), roundto(end1, MAX_LINKED_DIST)}
-        index2 = {roundto(start2, MAX_LINKED_DIST), roundto(end2, MAX_LINKED_DIST)}
+        index1 = {roundto(start1, configs.MAX_LINKED_DIST), roundto(end1, configs.MAX_LINKED_DIST)}
+        index2 = {roundto(start2, configs.MAX_LINKED_DIST), roundto(end2, configs.MAX_LINKED_DIST)}
         for id1 in index1:
             for id2 in index2:
                 barcode_overlap[(chr1, id1, chr2, id2)] += 1
@@ -148,8 +145,8 @@ def get_length_distr(linkedreads):
     b.fit(lengths)
     p = b.pdf
     pp = lambda x: max(1e-20, float(p([x])[0]))
-    ## poisson distribution
-    # p = scipy.stats.poisson(np.mean(lengths)).pmf
+    # poisson distribution
+    # p = scipy_stats.poisson(np.mean(lengths)).pmf
     # pp = lambda x: max(1e-20,float(p([x])[0]))
     # plot_distribution(pp,lengths,'Linked-read lengths (bp)','Frequency','Linked-read length distribution')
     return pp
@@ -160,12 +157,12 @@ def get_rate_distr(linkedreads):
     rate.sort()
     if len(rate) > 10:
         rate = rate[int(len(rate) / 10) : int(len(rate) / 10 * 9)]
-    alpha, loc, beta = scipy.stats.gamma.fit(rate)
-    p = scipy.stats.gamma(alpha, loc, beta).cdf
+    alpha, loc, beta = scipy_stats.gamma.fit(rate)
+    p = scipy_stats.gamma(alpha, loc, beta).cdf
     pp = lambda x: max(1e-20, float(p([max(x, 1e-6)])[0] - p([max(x, 1e-6) - 1e-6])[0]))
-    ## normal distribution
-    # mu,sig = scipy.stats.norm.fit(rate)
-    # p = scipy.stats.norm(mu,sig).cdf
+    # normal distribution
+    # mu,sig = scipy_stats.norm.fit(rate)
+    # p = scipy_stats.norm(mu,sig).cdf
     # pp = lambda x: max(1e-20,float(p([max(x,1e-6)])[0]-p([max(x,1e-6)-1e-6])[0]))
     # plot_distribution(pp,rate,'Per-molecule sequencing rate','Frequency','Per-molecule sequencing rate')
     return pp

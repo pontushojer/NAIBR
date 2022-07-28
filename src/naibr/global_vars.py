@@ -1,10 +1,11 @@
-### GLOBALS ####
 from __future__ import print_function
 import os
 import sys
 import collections
 import pysam
 import numpy as np
+from dataclasses import dataclass
+from typing import Dict, List, Tuple
 
 
 def parse_blacklist(fname):
@@ -19,73 +20,6 @@ def parse_blacklist(fname):
     return blacklist
 
 
-def parse_configs(fname):
-    if not os.path.exists(fname):
-        sys.exit(f"ERROR: '{fname}' is not a config file")
-
-    configs = {}
-    with open(fname) as f:
-        for line in f:
-            line = line.strip()
-            if line == "" or line.startswith("#"):
-                continue
-
-            name, val = line.split("=")
-            name = name.strip(" ")
-            val = val.strip(" ")
-            configs[name] = val
-    return configs
-
-
-constants = parse_configs(sys.argv[1])
-
-
-if "min_mapq" in constants:
-    MIN_MAPQ = int(constants["min_mapq"])
-else:
-    MIN_MAPQ = 40
-
-if "k" in constants:
-    MIN_BC_OVERLAP = int(constants["k"])
-else:
-    MIN_BC_OVERLAP = 3
-
-if "bam_file" in constants and os.path.exists(constants["bam_file"]):
-    BAM_FILE = constants["bam_file"]
-else:
-    sys.exit(
-        "Missing path to BAM file in config file. Please include this with the "
-        "pattern 'bam_file=/path/to/file.bam'"
-    )
-
-if "DEBUG" in constants:
-    DEBUG = bool(constants["DEBUG"])
-else:
-    DEBUG = False
-
-if "outdir" in constants:
-    DIR = constants["outdir"]
-    if not os.path.exists(DIR):
-        os.makedirs(DIR)
-else:
-    DIR = ".."
-
-if "d" in constants:
-    MAX_LINKED_DIST = int(constants["d"])
-else:
-    MAX_LINKED_DIST = 10_000
-
-if "threads" in constants:
-    NUM_THREADS = int(constants["threads"])
-else:
-    NUM_THREADS = 1
-
-if "sd_mult" in constants:
-    SD_MULT = int(constants["sd_mult"])
-else:
-    SD_MULT = 2
-
-
 def parse_read_pairs(iterator):
     mates = {}
     for read in iterator:
@@ -98,12 +32,12 @@ def parse_read_pairs(iterator):
             mates[read.query_name] = read
 
 
-def estimate_lmin_lmax():
+def estimate_lmin_lmax(bam_file, sd_mult, debug=False):
     """
     Estmate the upper and lower bounds for insert sizes by looing at up to
     the first million read pairs.
     """
-    reads = pysam.AlignmentFile(BAM_FILE, "rb")
+    reads = pysam.AlignmentFile(bam_file, "rb")
     pair_spans = []
     reads_lengths = []
     num = 0
@@ -125,52 +59,123 @@ def estimate_lmin_lmax():
     mean_dist = pair_spans.mean()
     std_dist = pair_spans.std()
 
-    lmin = max(int(mean_dist - std_dist * SD_MULT), int(np.mean(reads_lengths)))
-    lmax = max(int(mean_dist + std_dist * SD_MULT), 100)
+    lmin = max(int(mean_dist - std_dist * sd_mult), int(np.mean(reads_lengths)))
+    lmax = max(int(mean_dist + std_dist * sd_mult), 100)
 
-    if DEBUG:
+    if debug:
         # Estimate how large a percentage of reads have span within [lmin, lmax].
         reads_included = len(pair_spans[(pair_spans < lmax) & (pair_spans > lmin)])/len(pair_spans)
         print(f"lmax = {lmax}, lmin = {lmin}, reads_included = {reads_included:.1%}", )
     return lmin, lmax
 
 
-LMIN, LMAX = estimate_lmin_lmax()
+@dataclass
+class Configs:
+    MIN_MAPQ: int = 40
+    MIN_BC_OVERLAP: int = 3
+    BAM_FILE: str = None
+    DEBUG: bool = False
+    DIR: str = ""
+    MAX_LINKED_DIST: int = 10_000
+    NUM_THREADS: int = 1
+    SD_MULT: int = 2
+    LMIN: int = None
+    LMAX: int = None
+    MIN_SV: int = None
+    MIN_LEN: int = None
+    MAX_LEN: int = 200000
+    MIN_READS: int = 2
+    MIN_DISCS: int = 2
+    CANDIDATES: str = None
+    BLACKLIST_FILE: str = None
+    BLACKLIST: Dict[str, List[Tuple[int, int]]] = None
+
+    def update(self, constants):
+        if "min_mapq" in constants:
+            self.MIN_MAPQ = int(constants["min_mapq"])
+
+        if "k" in constants:
+            self.MIN_BC_OVERLAP = int(constants["k"])
+
+        if "bam_file" in constants and os.path.exists(constants["bam_file"]):
+            self.BAM_FILE = constants["bam_file"]
+        else:
+            sys.exit(
+                "Missing path to BAM file in config file. Please include this with the "
+                "pattern 'bam_file=/path/to/file.bam'"
+            )
+
+        if "DEBUG" in constants:
+            self.DEBUG = bool(constants["DEBUG"])
+
+        if "outdir" in constants:
+            self.DIR = constants["outdir"]
+            if not os.path.exists(self.DIR):
+                os.makedirs(self.DIR)
+
+        if "d" in constants:
+            self.MAX_LINKED_DIST = int(constants["d"])
+
+        if "threads" in constants:
+            self.NUM_THREADS = int(constants["threads"])
+
+        if "sd_mult" in constants:
+            self.SD_MULT = int(constants["sd_mult"])
+
+        self.LMIN, self.LMAX = estimate_lmin_lmax(self.BAM_FILE, self.SD_MULT, self.DEBUG)
+
+        if "min_sv" in constants:
+            self.MIN_SV = int(constants["min_sv"])
+        else:
+            self.MIN_SV = 2 * self.LMAX
+
+        if "min_len" in constants:
+            self.MIN_LEN = int(constants["min_len"])
+        else:
+            self.MIN_LEN = 2 * self.LMAX
+
+        if "max_len" in constants:
+            self.MAX_LEN = int(constants["max_len"])
+
+        if "min_reads" in constants:
+            self.MIN_READS = int(constants["min_reads"])
+
+        if "min_discs" in constants:
+            self.MIN_DISCS = int(constants["min_discs"])
+
+        if "candidates" in constants and os.path.exists(constants["candidates"]):
+            self.CANDIDATES = constants["candidates"]
+
+        if "blacklist" in constants and os.path.exists(constants["blacklist"]):
+            self.BLACKLIST_FILE = constants["blacklist"]
+            self.BLACKLIST = parse_blacklist(constants["blacklist"])
+
+    @classmethod
+    def from_file(cls, file):
+        constants = cls.parse_configs(file)
+        c = cls()
+        c.update(constants)
+        return c
+
+    @staticmethod
+    def parse_configs(fname):
+        if not os.path.exists(fname):
+            sys.exit(f"ERROR: '{fname}' is not a config file")
+
+        fileconfigs = {}
+        with open(fname) as f:
+            for line in f:
+                line = line.strip()
+                if line == "" or line.startswith("#"):
+                    continue
+
+                name, val = line.split("=")
+                name = name.strip(" ")
+                val = val.strip(" ")
+                fileconfigs[name] = val
+        return fileconfigs
 
 
-if "min_sv" in constants:
-    MIN_SV = int(constants["min_sv"])
-else:
-    MIN_SV = 2 * LMAX
+configs = Configs.from_file(sys.argv[1])
 
-if "min_len" in constants:
-    MIN_LEN = int(constants["min_len"])
-else:
-    MIN_LEN = 2 * LMAX
 
-if "max_len" in constants:
-    MAX_LEN = int(constants["max_len"])
-else:
-    MAX_LEN = 200000
-
-if "min_reads" in constants:
-    MIN_READS = int(constants["min_reads"])
-else:
-    MIN_READS = 2
-
-if "min_discs" in constants:
-    MIN_DISCS = int(constants["min_discs"])
-else:
-    MIN_DISCS = 2
-
-if "candidates" in constants and os.path.exists(constants["candidates"]):
-    CANDIDATES = constants["candidates"]
-else:
-    CANDIDATES = ""
-
-if "blacklist" in constants and os.path.exists(constants["blacklist"]):
-    BLACKLIST_FILE = constants["blacklist"]
-    BLACKLIST = parse_blacklist(constants["blacklist"])
-else:
-    BLACKLIST_FILE = ""
-    BLACKLIST = None

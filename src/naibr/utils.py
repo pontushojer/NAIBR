@@ -1,13 +1,9 @@
 from __future__ import print_function, division
 import math
-import mpmath
-import copy
-import numpy as np
-import linecache
-import scipy.stats
+import os
 import collections
 import multiprocessing as mp
-from .global_vars import *
+from .global_vars import configs
 
 
 class NovelAdjacency:
@@ -205,7 +201,7 @@ class PERead:
         self.disc = self.is_disc() and not read.is_proper_pair
 
     def is_disc(self):
-        return self.chrm != self.nextchrm or (self.j - self.i) > MIN_SV
+        return self.chrm != self.nextchrm or (self.j - self.i) > configs.MIN_SV
 
     def fragment_length(self):
         return max(self.end, self.nextend) - min(self.start, self.nextstart)
@@ -287,9 +283,9 @@ def log(x):
 
 def is_close(index, read_pos, orient):
     if orient == "+":
-        return abs(index - read_pos) <= LMAX
+        return abs(index - read_pos) <= configs.LMAX
     else:
-        return abs(index - read_pos) <= LMAX
+        return abs(index - read_pos) <= configs.LMAX
 
 
 def is_convergent(read, mate):
@@ -323,7 +319,7 @@ def collapse(scores, threshold_value):
             l.append(
                 [chrom1, int(s1), chrom2, int(s2), float(split), float(disc), orient, haps, float(score)]
             )
-    r = roundto(LMAX, 100) * 5
+    r = roundto(configs.LMAX, 100) * 5
 
     # Sort on decreasing score
     l.sort(key=lambda x: x[-1], reverse=True)
@@ -376,8 +372,8 @@ def collapse(scores, threshold_value):
 
 def write_scores(scores):
     fname = "NAIBR_SVs.bedpe"
-    print(f"Writing results to {os.path.join(DIR, fname)}")
-    with open(os.path.join(DIR, fname), "w") as f:
+    print(f"Writing results to {os.path.join(configs.DIR, fname)}")
+    with open(os.path.join(configs.DIR, fname), "w") as f:
         print(
             "Chr1",
             "Break1",
@@ -397,10 +393,10 @@ def write_scores(scores):
 
 
 def parallel_execute(function, input_list):
-    if NUM_THREADS != 1:
-        pool = mp.Pool(NUM_THREADS, maxtasksperchild=1)
+    if configs.NUM_THREADS != 1:
+        pool = mp.Pool(configs.NUM_THREADS, maxtasksperchild=1)
         map_fn = pool.map
-        print("running on %s threads" % str(NUM_THREADS))
+        print("running on %s threads" % str(configs.NUM_THREADS))
         data = map_fn(function, input_list)
         pool.close()
         pool.join()

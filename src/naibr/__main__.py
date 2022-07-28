@@ -42,12 +42,13 @@ import sys
 import time
 import pysam
 import collections
+import numpy as np
 
 if len(sys.argv) < 2 or sys.argv[1] in {"help", "-h", "--help"}:
     sys.exit(__doc__)
 
 from .get_reads import parse_candidate_region, get_distributions, parse_chromosome, get_candidates
-from .global_vars import *
+from .global_vars import configs
 from .utils import flatten, parallel_execute, is_proper_chrom, write_scores
 from .rank import predict_novel_adjacencies
 
@@ -117,28 +118,28 @@ def main():
     print("========= NAIBR =========")
     print("-------- CONFIGS --------")
     print("FILES")
-    print(f"  bam_file = {BAM_FILE}")
-    print(f"  candidates = {CANDIDATES}")
-    print(f"  blacklist = {BLACKLIST_FILE}")
-    print(f"  outdir = {DIR}")
+    print(f"  bam_file = {configs.BAM_FILE}")
+    print(f"  candidates = {configs.CANDIDATES}")
+    print(f"  blacklist = {configs.BLACKLIST_FILE}")
+    print(f"  outdir = {configs.DIR}")
     print("PARAMETERS")
-    print(f"  d =         {MAX_LINKED_DIST:>9,}")
-    print(f"  min_mapq =  {MIN_MAPQ:>9}")
-    print(f"  k =         {MIN_BC_OVERLAP:>9}")
-    print(f"  min_sv =    {MIN_SV:>9,}")
-    print(f"  sd_mult =   {SD_MULT:>9}")
-    print(f"  min_len =   {MIN_LEN:>9,}")
-    print(f"  max_len =   {MAX_LEN:>9,}")
-    print(f"  min_reads = {MIN_READS:>9}")
-    print(f"  min_discs = {MIN_DISCS:>9}")
-    print(f"  threads =   {NUM_THREADS:>9}")
-    print(f"  DEBUG =     {str(DEBUG).rjust(9)}")
+    print(f"  d =         {configs.MAX_LINKED_DIST:>9,}")
+    print(f"  min_mapq =  {configs.MIN_MAPQ:>9}")
+    print(f"  k =         {configs.MIN_BC_OVERLAP:>9}")
+    print(f"  min_sv =    {configs.MIN_SV:>9,}")
+    print(f"  sd_mult =   {configs.SD_MULT:>9}")
+    print(f"  min_len =   {configs.MIN_LEN:>9,}")
+    print(f"  max_len =   {configs.MAX_LEN:>9,}")
+    print(f"  min_reads = {configs.MIN_READS:>9}")
+    print(f"  min_discs = {configs.MIN_DISCS:>9}")
+    print(f"  threads =   {configs.NUM_THREADS:>9}")
+    print(f"  DEBUG =     {str(configs.DEBUG).rjust(9)}")
     print("-------------------------")
 
-    if len(CANDIDATES) > 0:
+    if configs.CANDIDATES:
         print("Using user defined candidates")
         cands = []
-        with open(CANDIDATES) as f:
+        with open(configs.CANDIDATES) as f:
             for line in f:
                 els = line.strip().split("\t")
                 if len(els) > 4:
@@ -147,7 +148,7 @@ def main():
         write_scores(scores)
 
     else:
-        reads = pysam.AlignmentFile(BAM_FILE, "rb")
+        reads = pysam.AlignmentFile(configs.BAM_FILE, "rb")
         chroms = reads.references
         chroms = [x for x in chroms if is_proper_chrom(x)]
         data = parallel_execute(run_naibr, chroms)

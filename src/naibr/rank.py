@@ -1,10 +1,10 @@
 from __future__ import print_function, division
-import os
 from functools import partial, cache
 import math
 import multiprocessing as mp
+
 from .utils import log, NovelAdjacency, is_close, roundto, collapse, threshold
-from .global_vars import *
+from .global_vars import configs
 
 
 class CandSplitMol:
@@ -80,7 +80,7 @@ class CandSplitMol:
 
 
 @cache
-def phred_probability(mapq: int) -> int:
+def phred_probability(mapq: int) -> float:
     return math.pow(10, (mapq / -10.0))
 
 
@@ -105,8 +105,8 @@ def near_i(x, candidate):
     start = x[1]
     end = x[2]
     neari = (
-        (candidate.orient[0] == "+" and end - LMAX < candidate.i < end + MAX_LINKED_DIST)
-        or (candidate.orient[0] == "-" and start + LMAX > candidate.i > start - MAX_LINKED_DIST)
+        (candidate.orient[0] == "+" and end - configs.LMAX < candidate.i < end + configs.MAX_LINKED_DIST)
+        or (candidate.orient[0] == "-" and start + configs.LMAX > candidate.i > start - configs.MAX_LINKED_DIST)
     ) and candidate.chrm == chrm
     return neari
 
@@ -116,8 +116,8 @@ def near_j(x, candidate):
     start = x[1]
     end = x[2]
     nearj = (
-        (candidate.orient[1] == "+" and end - LMAX < candidate.j < end + MAX_LINKED_DIST)
-        or (candidate.orient[1] == "-" and start + LMAX > candidate.j > start - MAX_LINKED_DIST)
+        (candidate.orient[1] == "+" and end - configs.LMAX < candidate.j < end + configs.MAX_LINKED_DIST)
+        or (candidate.orient[1] == "-" and start + configs.LMAX > candidate.j > start - configs.MAX_LINKED_DIST)
     ) and candidate.nextchrm == chrm
     return nearj
 
@@ -155,11 +155,11 @@ def linked_reads(barcode, chrm, candidate, reads_by_barcode):
     current_linkedread = [0, 0, 0, [], [], 0]
     linkedreads = []
     for start, end, hap, mapq in reads:
-        if current_linkedread[0] == 0 or start - current_linkedread[2] > MAX_LINKED_DIST:
+        if current_linkedread[0] == 0 or start - current_linkedread[2] > configs.MAX_LINKED_DIST:
             if (
                 current_linkedread[0] != 0
-                and len(current_linkedread[3]) >= MIN_READS
-                and current_linkedread[2] - current_linkedread[1] >= MIN_LEN
+                and len(current_linkedread[3]) >= configs.MIN_READS
+                and current_linkedread[2] - current_linkedread[1] >= configs.MIN_LEN
             ):
                 linkedreads.append(current_linkedread)
             current_linkedread = [chrm, start, end, [mapq], [hap], barcode]
@@ -176,13 +176,13 @@ def linked_reads(barcode, chrm, candidate, reads_by_barcode):
             current_linkedread[4].append(hap)
     if (
         current_linkedread[0] != 0
-        and len(current_linkedread[3]) >= MIN_READS
-        and current_linkedread[2] - current_linkedread[1] >= MIN_LEN
+        and len(current_linkedread[3]) >= configs.MIN_READS
+        and current_linkedread[2] - current_linkedread[1] >= configs.MIN_LEN
     ):
         linkedreads.append(current_linkedread)
 
     for lr1, lr2 in zip(linkedreads[:-1], linkedreads[1:]):
-        if lr2[1] - lr1[2] < MAX_LINKED_DIST:
+        if lr2[1] - lr1[2] < configs.MAX_LINKED_DIST:
             lr1_hap = max(lr1[-2])
             lr2_hap = max(lr2[-2])
             span.append((lr1_hap, lr2_hap))
@@ -195,10 +195,10 @@ def get_linkedreads(candidate, barcodes, reads_by_barcode, discs_by_barcode):
     for barcode in barcodes:
         span = []
         linkedreads, s = linked_reads(barcode, candidate.chrm, candidate, reads_by_barcode)
-        span += s
+        span.extend(s)
         if candidate.chrm != candidate.nextchrm:
             linkedreads2, s = linked_reads(barcode, candidate.nextchrm, candidate, reads_by_barcode)
-            linkedreads += linkedreads2
+            linkedreads.extend(linkedreads2)
         linkedreads_i, linkedreads_j = [[], []]
         for x in linkedreads:
             if near_i(x, candidate):
@@ -206,31 +206,31 @@ def get_linkedreads(candidate, barcodes, reads_by_barcode, discs_by_barcode):
             elif near_j(x, candidate):
                 linkedreads_j = x
             if spanning(x, candidate):
-                span += [(x[-2][0], x[-2][-1])]
+                span += [(x[-2][0], x[-2][-1])]  # First and last haplotype on linked read
 
         if linkedreads_i and linkedreads_j and linkedreads_i[1] < linkedreads_j[1]:
             discs_mapqs = discs(candidate, barcode, discs_by_barcode)
             candidate_split = [linkedreads_i, discs_mapqs, linkedreads_j]
             candidate_splits.append(candidate_split)
-        spans += span
+        spans.extend(span)
     return candidate_splits, spans
 
 
 def get_candidate_splits(candidate, barcodes_by_pos, reads_by_barcode, discs_by_barcode):
     # Get normalized positions for candidate split molecule
-    candidate_i_norm = roundto(candidate.i, MAX_LINKED_DIST)
-    candidate_j_norm = roundto(candidate.j, MAX_LINKED_DIST)
+    candidate_i_norm = roundto(candidate.i, configs.MAX_LINKED_DIST)
+    candidate_j_norm = roundto(candidate.j, configs.MAX_LINKED_DIST)
 
     # Create sets of proximal barcodes
     break1_barcodes = (
         barcodes_by_pos[(candidate.chrm, candidate_i_norm)]
-        | barcodes_by_pos[(candidate.chrm, candidate_i_norm - MAX_LINKED_DIST)]
-        | barcodes_by_pos[(candidate.chrm, candidate_i_norm + MAX_LINKED_DIST)]
+        | barcodes_by_pos[(candidate.chrm, candidate_i_norm - configs.MAX_LINKED_DIST)]
+        | barcodes_by_pos[(candidate.chrm, candidate_i_norm + configs.MAX_LINKED_DIST)]
     )
     break2_barcodes = (
         barcodes_by_pos[(candidate.nextchrm, candidate_j_norm)]
-        | barcodes_by_pos[(candidate.nextchrm, candidate_j_norm - MAX_LINKED_DIST)]
-        | barcodes_by_pos[(candidate.nextchrm, candidate_j_norm + MAX_LINKED_DIST)]
+        | barcodes_by_pos[(candidate.nextchrm, candidate_j_norm - configs.MAX_LINKED_DIST)]
+        | barcodes_by_pos[(candidate.nextchrm, candidate_j_norm + configs.MAX_LINKED_DIST)]
     )
 
     barcodes_intersect = break1_barcodes.intersection(break2_barcodes)
@@ -252,10 +252,10 @@ def get_cand_score(
         barcodes_by_pos=barcodes_by_pos,
         reads_by_barcode=reads_by_barcode,
     )
-    if not is_interchrom or NUM_THREADS == 1:
+    if not is_interchrom or configs.NUM_THREADS == 1:
         scores = map(score_pair_with_args, candidates)
-    elif is_interchrom and NUM_THREADS != 1:
-        pool = mp.Pool(min(5, NUM_THREADS), maxtasksperchild=1)
+    elif is_interchrom and configs.NUM_THREADS != 1:
+        pool = mp.Pool(min(5, configs.NUM_THREADS), maxtasksperchild=1)
         scores = pool.map(score_pair_with_args, candidates)
         pool.close()
         pool.join()
@@ -282,6 +282,5 @@ def predict_novel_adjacencies(
     scores = get_cand_score(
         candidates, interchrom, plen, prate, discs_by_barcode, barcodes_by_pos, reads_by_barcode
     )
-    scores = [x for x in scores if x]
     scores = collapse(scores, threshold(cov))
     return scores
