@@ -1,4 +1,3 @@
-from __future__ import print_function, division
 from functools import partial, cache
 import math
 import multiprocessing as mp

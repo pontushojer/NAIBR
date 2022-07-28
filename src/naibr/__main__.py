@@ -37,7 +37,6 @@ Citation:
     sequencing data. Bioinformatics. 2018 Jan 15;34(2):353-360.
     doi: 10.1093/bioinformatics/btx712
 """
-from __future__ import print_function, division
 import sys
 import time
 import pysam
