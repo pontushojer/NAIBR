@@ -151,31 +151,35 @@ def linked_reads(barcode, chrm, candidate, reads_by_barcode):
     reads = reads_by_barcode[(chrm, barcode)]
     reads.sort(key=lambda x: x[0])
     # chrm,start,end,num,hap,barcode
-    current_linkedread = [0, 0, 0, [], [], 0]
+    start, end, hap, mapq = reads[0]
+    current_linkedread = [chrm, start, end, [mapq], [hap], barcode]
     linkedreads = []
-    for start, end, hap, mapq in reads:
-        if current_linkedread[0] == 0 or start - current_linkedread[2] > configs.MAX_LINKED_DIST:
+    for start, end, hap, mapq in reads[1:]:
+        # Add current_linkedreads if larger than MAX_LINKED_DIST from current start
+        # and is larger than MIN_LEN and has more than MIN_READS
+        if start - current_linkedread[2] > configs.MAX_LINKED_DIST:
             if (
-                current_linkedread[0] != 0
-                and len(current_linkedread[3]) >= configs.MIN_READS
+                len(current_linkedread[3]) >= configs.MIN_READS
                 and current_linkedread[2] - current_linkedread[1] >= configs.MIN_LEN
             ):
                 linkedreads.append(current_linkedread)
             current_linkedread = [chrm, start, end, [mapq], [hap], barcode]
+
+        # Add current linkedread the candidate split separates the previous and current read
         elif (
             candidate.chrm == candidate.nextchrm
-            and current_linkedread[0] != 0
             and (current_linkedread[2] < candidate.i and start > candidate.j)
         ):
             linkedreads.append(current_linkedread)
             current_linkedread = [chrm, start, end, [mapq], [hap], barcode]
+
+        # Otherwice add read
         else:
             current_linkedread[2] = max(current_linkedread[2], end)
             current_linkedread[3].append(mapq)
             current_linkedread[4].append(hap)
     if (
-        current_linkedread[0] != 0
-        and len(current_linkedread[3]) >= configs.MIN_READS
+        len(current_linkedread[3]) >= configs.MIN_READS
         and current_linkedread[2] - current_linkedread[1] >= configs.MIN_LEN
     ):
         linkedreads.append(current_linkedread)

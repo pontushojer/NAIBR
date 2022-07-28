@@ -77,13 +77,13 @@ def plot_distribution(p, distr, xlab, ylab, title):
 def linked_reads(reads, chrom):
     reads.sort(key=lambda x: x[0])
 
-    current_linkedread = [0, 0, 0, 0]
+    start, end, hap, mapq = reads[0]
+    current_linkedread = [chrom, start, end, 1]
     linkedreads = []
-    for start, end, hap, mapq in reads:
-        if current_linkedread[0] == 0 or start - current_linkedread[2] > configs.MAX_LINKED_DIST:
+    for start, end, hap, mapq in reads[1:]:
+        if start - current_linkedread[2] > configs.MAX_LINKED_DIST:
             if (
-                current_linkedread[0] != 0
-                and current_linkedread[3] >= configs.MIN_READS
+                current_linkedread[3] >= configs.MIN_READS
                 and current_linkedread[2] - current_linkedread[1] >= configs.MIN_LEN
             ):
                 linkedreads.append(current_linkedread)
@@ -92,8 +92,7 @@ def linked_reads(reads, chrom):
             current_linkedread[2] = max(current_linkedread[2], end)
             current_linkedread[3] += 1
     if (
-        current_linkedread[0] != 0
-        and current_linkedread[3] >= configs.MIN_READS
+        current_linkedread[3] >= configs.MIN_READS
         and current_linkedread[2] - current_linkedread[1] >= configs.MIN_LEN
     ):
         linkedreads.append(current_linkedread)
