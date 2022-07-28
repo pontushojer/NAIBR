@@ -157,12 +157,12 @@ def coordinates(s, e, orient):
     return s if orient == "+" else e
 
 
-def disc_intersection(items):
+def disc_intersection(disc_reads):
     intersection = [0, float("Inf"), 0, float("Inf")]
-    items.sort(key=lambda x: x.i)
-    for disc in items:
-        starti, endi = signi(disc)
-        startj, endj = signj(disc)
+    disc_reads.sort(key=lambda x: x.i)
+    for disc_read in disc_reads:
+        starti, endi = signi(disc_read)
+        startj, endj = signj(disc_read)
         si, ei, sj, ej = intersection
         intersection = [max(si, starti), min(ei, endi), max(sj, startj), min(ej, endj)]
     si, ei, sj, ej = intersection
@@ -177,24 +177,32 @@ def get_candidates(discs, reads_by_barcode):
     if p_len is None or p_rate is None:
         return None, None, None
 
-    for key, items in discs.items():
-        orient = key[4]
-        si, ei, sj, ej = disc_intersection(items)
-        if si and sj and len(items) >= MIN_DISCS:
-            i = coordinates(si, ei, orient[0])
-            j = coordinates(sj, ej, orient[1])
-            cand = copy.copy(items[0])
-            cand.i = i
-            cand.j = j
-            norm_i = roundto(cand.i, MAX_LINKED_DIST)
-            norm_j = roundto(cand.j, MAX_LINKED_DIST)
-            barcode_overlaps = barcode_overlap[(cand.chrm, norm_i, cand.nextchrm, norm_j)]
-            if not inblacklist(cand) and (
-                (cand.chrm == cand.nextchrm and cand.j - cand.i < MAX_LINKED_DIST)
-                or barcode_overlaps >= MIN_BC_OVERLAP
-            ):
-                if not any(x.i == cand.i and x.j == cand.j for x in candidates):
-                    candidates.append(cand)
+    for position, disc_reads in discs.items():
+        # Skip positions with too few discs
+        if len(disc_reads) < MIN_DISCS:
+            continue
+
+        # Try to intersect read pair positions
+        si, ei, sj, ej = disc_intersection(disc_reads)
+        if si == 0 or sj == 0:
+            continue
+
+        # Skip if overlapping blacklist
+        if inblacklist(disc_reads[0]):
+            continue
+
+        orient = position[4]
+        i = coordinates(si, ei, orient[0])
+        j = coordinates(sj, ej, orient[1])
+        cand = copy.copy(disc_reads[0])
+        cand.i = i
+        cand.j = j
+        norm_i = roundto(cand.i, MAX_LINKED_DIST)
+        norm_j = roundto(cand.j, MAX_LINKED_DIST)
+        barcode_overlaps = barcode_overlap[(cand.chrm, norm_i, cand.nextchrm, norm_j)]
+        if (cand.chrm == cand.nextchrm and cand.j - cand.i < MAX_LINKED_DIST) or barcode_overlaps >= MIN_BC_OVERLAP:
+            if not any(x.i == cand.i and x.j == cand.j for x in candidates):
+                candidates.append(cand)
     return candidates, p_len, p_rate
 
 
