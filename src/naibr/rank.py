@@ -128,7 +128,7 @@ def spanning(x, candidate):
 def discs(candidate, barcode, discs_by_barcode):
     ds = discs_by_barcode[(candidate.chrm, candidate.nextchrm, barcode)]
     ds = [
-        int((read.mapq + read.nextmapq) / 2)
+        read.mean_mapq()
         for read in ds
         if candidate.chrm == read.chrm
         and candidate.nextchrm == read.nextchrm
