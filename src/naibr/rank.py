@@ -213,8 +213,11 @@ def get_linkedreads(candidate, barcodes, reads_by_barcode, discs_by_barcode):
 
 
 def get_candidate_splits(candidate, barcodes_by_pos, reads_by_barcode, discs_by_barcode):
+    # Get normalized positions for candidate split molecule
     candidate_i_norm = roundto(candidate.i, MAX_LINKED_DIST)
     candidate_j_norm = roundto(candidate.j, MAX_LINKED_DIST)
+
+    # Create sets of proximal barcodes
     break1_barcodes = (
         barcodes_by_pos[(candidate.chrm, candidate_i_norm)]
         | barcodes_by_pos[(candidate.chrm, candidate_i_norm - MAX_LINKED_DIST)]
@@ -225,8 +228,10 @@ def get_candidate_splits(candidate, barcodes_by_pos, reads_by_barcode, discs_by_
         | barcodes_by_pos[(candidate.nextchrm, candidate_j_norm - MAX_LINKED_DIST)]
         | barcodes_by_pos[(candidate.nextchrm, candidate_j_norm + MAX_LINKED_DIST)]
     )
+
+    barcodes_intersect = break1_barcodes.intersection(break2_barcodes)
     candidate_splits, spans = get_linkedreads(
-        candidate, break1_barcodes.intersection(break2_barcodes), reads_by_barcode, discs_by_barcode
+        candidate, barcodes_intersect, reads_by_barcode, discs_by_barcode
     )
     return candidate_splits, spans
 
