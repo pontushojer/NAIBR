@@ -176,9 +176,12 @@ def linked_reads(barcode, chrm, candidate, reads_by_barcode):
         and current_linkedread[2] - current_linkedread[1] >= MIN_LEN
     ):
         linkedreads.append(current_linkedread)
-    for i in range(1, len(linkedreads)):
-        if linkedreads[i][1] - linkedreads[i - 1][2] < MAX_LINKED_DIST:
-            span.append((max(linkedreads[i - 1][-2]), max(linkedreads[i][-2])))
+
+    for lr1, lr2 in zip(linkedreads[:-1], linkedreads[1:]):
+        if lr2[1] - lr1[2] < MAX_LINKED_DIST:
+            lr1_hap = max(lr1[-2])
+            lr2_hap = max(lr2[-2])
+            span.append((lr1_hap, lr2_hap))
     return linkedreads, span
 
 
