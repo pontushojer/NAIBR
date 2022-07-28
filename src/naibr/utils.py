@@ -48,23 +48,30 @@ class NovelAdjacency:
         for hap in list(self.score):
             s = self.score[hap]
             d = self.disc[hap]
+
             if self.pairs[hap] > self.spans[hap]:
                 total += s
+
             if hap[0] != 0 and self.pairs[(0, hap[1])] >= self.spans[(0, hap[1])]:
                 s += max(0, self.score[(0, hap[1])])
                 d += self.disc[(0, hap[1])]
+
             if hap[1] != 0 and self.pairs[(hap[0]), 0] >= self.spans[(hap[0]), 0]:
                 s += max(0, self.score[(hap[0]), 0])
                 d += self.disc[(hap[0]), 0]
+
             if hap[0] != 0 and hap[1] != 0 and self.pairs[(0, 0)] >= self.spans[(0, 0)]:
                 s += max(0, self.score[(0, 0)])
                 d += self.disc[(0, 0)]
+
             if s > best_score and self.pairs[hap] > 0 and self.pairs[hap] >= self.spans[hap]:
                 best_score = s
                 best_haps = hap
-        pairs = sum([self.pairs[x] for x in self.pairs.keys()])
-        spans = sum([self.spans[x] for x in self.spans.keys()])
-        discs = sum([self.disc[x] for x in self.disc.keys()])
+
+        pairs = sum(self.pairs.values())
+        spans = sum(self.spans.values())
+        discs = sum(self.disc.values())
+
         if (
             -float("inf") < best_score < total
             and pairs >= spans
@@ -78,27 +85,32 @@ class NovelAdjacency:
             self.disc = discs
             self.pairs = pairs
             self.spans = spans
+
         elif best_score > -float("inf"):
             self.haps = best_haps
             score = self.score[best_haps]
             discs = self.disc[best_haps]
             pairs = self.pairs[best_haps]
             spans = self.spans[best_haps]
+
             if best_haps[0] != 0 and self.score[(0, best_haps[1])] > 0:
                 score += self.score[(0, best_haps[1])]
                 discs += self.disc[(0, best_haps[1])]
                 pairs += self.pairs[(0, best_haps[1])]
                 spans += self.spans[(0, best_haps[1])]
+
             if best_haps[1] != 0 and self.score[(best_haps[0], 0)] > 0:
                 score += self.score[(best_haps[0], 0)]
                 discs += self.disc[(best_haps[0], 0)]
                 pairs += self.pairs[(best_haps[0], 0)]
                 spans += self.spans[(best_haps[0], 0)]
+
             if best_haps[1] != 0 and best_haps[0] != 0 and self.score[(0, 0)] > 0:
                 score += self.score[(0, 0)]
                 discs += self.disc[(0, 0)]
                 pairs += self.pairs[(0, 0)]
                 spans += self.spans[(0, 0)]
+
             self.score = round(score, 3)
             self.disc = discs
             self.pairs = pairs
