@@ -1,3 +1,4 @@
+import collections
 from functools import partial, cache
 import math
 import multiprocessing as mp
@@ -22,8 +23,8 @@ class CandSplitMol:
         chrm_i, si, ei, mapq_i, hap_i, barcode_i = linkedread_i
         chrm_j, sj, ej, mapq_j, hap_j, barcode_j = linkedread_j
         num_i, num_j = len(mapq_i), len(mapq_j)
-        hap_i = max(hap_i)
-        hap_j = max(hap_j)
+        hap_i = majority_vote(hap_i)
+        hap_j = majority_vote(hap_j)
         len0 = ej - si
         rate0 = (num_j + num_i) / float(len0)
         lenA = (ei - si) + (ej - sj)
@@ -146,6 +147,18 @@ def crossing(start, end, i):
     return start < i < end
 
 
+def majority_vote(haps):
+    """From a list of haplotypes select the most numerous that's not 0 (unphased)
+    unless all are 0"""
+    counts = collections.Counter(haps)
+    if counts[1] == 0 and counts[2] == 0:
+        return 0
+    elif counts[1] > counts[2]:
+        return 1
+    else:
+        return 2
+
+
 def linked_reads(barcode, chrm, candidate, reads_by_barcode):
     span = []
     if (chrm, barcode) not in reads_by_barcode:
@@ -189,8 +202,8 @@ def linked_reads(barcode, chrm, candidate, reads_by_barcode):
 
     for lr1, lr2 in zip(linkedreads[:-1], linkedreads[1:]):
         if lr2[1] - lr1[2] < configs.MAX_LINKED_DIST:
-            lr1_hap = max(lr1[-2])
-            lr2_hap = max(lr2[-2])
+            lr1_hap = majority_vote(lr1[-2])
+            lr2_hap = majority_vote(lr2[-2])
             span.append((lr1_hap, lr2_hap))
     return linkedreads, span
 
