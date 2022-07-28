@@ -37,6 +37,10 @@ class NovelAdjacency:
         self.disc = collections.defaultdict(int)
         self.pairs = collections.defaultdict(int)
 
+    def add_spans(self, spans):
+        for hap in spans:
+            self.spans[hap] += 1
+
     def get_score(self):
         best_score = -float("inf")
         best_haps = (0, 0)

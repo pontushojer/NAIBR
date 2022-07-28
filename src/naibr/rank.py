@@ -88,11 +88,11 @@ def score_pair(candidate, plen, prate, discs_by_barcode, barcodes_by_pos, reads_
     novel_adjacency = NovelAdjacency(
         candidate.chrm, candidate.nextchrm, candidate.i, candidate.j, candidate.orient
     )
+    novel_adjacency.add_spans(spans)
     for candidate_split in candidate_splits:
         c = CandSplitMol()
         c.score(candidate_split, novel_adjacency, plen, prate)
-    for hap in spans:
-        novel_adjacency.spans[hap] += 1
+
     return novel_adjacency, candidate
 
 
