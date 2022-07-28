@@ -148,6 +148,9 @@ def crossing(start, end, i):
 
 def linked_reads(barcode, chrm, candidate, reads_by_barcode):
     span = []
+    if (chrm, barcode) not in reads_by_barcode:
+        return [], []
+
     reads = reads_by_barcode[(chrm, barcode)]
     reads.sort(key=lambda x: x[0])
     # chrm,start,end,num,hap,barcode

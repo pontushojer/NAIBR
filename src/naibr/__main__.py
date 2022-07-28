@@ -58,6 +58,11 @@ def run_naibr_candidate(cand):
     """
     scores = 0
     reads_by_barcode, barcodes_by_pos, discs_by_barcode, cands, coverage = parse_candidate_region(cand)
+
+    # Filter out barcodes with too few reads
+    if configs.MIN_READS > 1:
+        reads_by_barcode = {k: v for k, v in reads_by_barcode.items() if len(v) >= configs.MIN_READS}
+
     p_len, p_rate, overlap = get_distributions(reads_by_barcode)
     if p_len is None:
         return scores
@@ -79,6 +84,11 @@ def run_naibr(chrom):
         interchrom_discs,
         coverage,
     ) = parse_chromosome(chrom)
+
+    # Filter out barcodes with too few reads
+    if configs.MIN_READS > 1:
+        reads_by_barcode = {k: v for k, v in reads_by_barcode.items() if len(v) >= configs.MIN_READS}
+
     scores = 0
     if len(reads_by_barcode) > 0:
         t_get_candidates = time.time()
