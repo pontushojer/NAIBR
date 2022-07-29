@@ -100,15 +100,22 @@ def linked_reads(reads, chrom):
 
 
 def get_overlap(barcode_linkedreads, barcode_overlap):
+    """Tally up the pair-wise overlapp of normalized positions between linked reads
+     within a barcode"""
     for linkedread1, linkedread2 in itertools.combinations(barcode_linkedreads, 2):
         if linkedread1[0] > linkedread2[0] or linkedread1[1] > linkedread2[1]:
             linkedread1, linkedread2 = linkedread2, linkedread1
         chr1, start1, end1, count1 = linkedread1
         chr2, start2, end2, count2 = linkedread2
-        index1 = {roundto(start1, configs.MAX_LINKED_DIST), roundto(end1, configs.MAX_LINKED_DIST)}
-        index2 = {roundto(start2, configs.MAX_LINKED_DIST), roundto(end2, configs.MAX_LINKED_DIST)}
-        for id1 in index1:
-            for id2 in index2:
+        norm_start1 = roundto(start1, configs.MAX_LINKED_DIST)
+        norm_end1 = roundto(end1, configs.MAX_LINKED_DIST) + configs.MAX_LINKED_DIST
+        norm_start2 = roundto(start2, configs.MAX_LINKED_DIST)
+        norm_end2 = roundto(end2, configs.MAX_LINKED_DIST) + configs.MAX_LINKED_DIST
+
+        # Connect each normalized position covered by each linked read between the
+        # two.
+        for id1 in range(norm_start1, norm_end1, configs.MAX_LINKED_DIST):
+            for id2 in range(norm_start2, norm_end2, configs.MAX_LINKED_DIST):
                 barcode_overlap[(chr1, id1, chr2, id2)] += 1
 
 
