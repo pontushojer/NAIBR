@@ -3,7 +3,7 @@ import collections
 import time
 import copy
 
-from .utils import PERead, roundto, is_proper_chrom, get_barcode
+from .utils import PERead, roundto, is_proper_chrom, get_barcode, NovelAdjacency
 from .global_vars import configs
 from .distributions import get_distributions
 
@@ -190,19 +190,20 @@ def get_candidates(discs, reads_by_barcode):
         if inblacklist(disc_reads[0]):
             continue
 
+        chrm = position[0]
+        nextchrm = position[2]
         orient = position[4]
         i = coordinates(si, ei, orient[0])
         j = coordinates(sj, ej, orient[1])
-        cand = copy.copy(disc_reads[0])
-        cand.i = i
-        cand.j = j
-        norm_i = roundto(cand.i, configs.MAX_LINKED_DIST)
-        norm_j = roundto(cand.j, configs.MAX_LINKED_DIST)
-        barcode_overlaps = barcode_overlap[(cand.chrm, norm_i, cand.nextchrm, norm_j)]
+        cand = NovelAdjacency(chrm1=chrm, chrm2=nextchrm, indi=i, indj=j, orient=orient)
+        norm_i = roundto(i, configs.MAX_LINKED_DIST)
+        norm_j = roundto(j, configs.MAX_LINKED_DIST)
+        barcode_overlaps = barcode_overlap[(chrm, norm_i, nextchrm, norm_j)]
         if (
-            cand.chrm == cand.nextchrm and cand.j - cand.i < configs.MAX_LINKED_DIST
+            chrm == nextchrm and j - i < configs.MAX_LINKED_DIST
         ) or barcode_overlaps >= configs.MIN_BC_OVERLAP:
-            if not any(x.i == cand.i and x.j == cand.j for x in candidates):
+            # Check that not already added
+            if not any(cand == x for x in candidates):
                 candidates.append(cand)
     return candidates, p_len, p_rate
 
@@ -223,8 +224,11 @@ def parse_candidate_region(candidate):
     lengths = 0
 
     chrm1, break1, chrm2, break2, orientation = candidate
-    if break1 > break2 or chrm1 > chrm2:
+
+    # Sort breakpoints if needed
+    if (chrm1 == chrm2 and break1 > break2) or (chrm1 != chrm2 and chrm1 > chrm2):
         chrm1, break1, chrm2, break2 = chrm2, break2, chrm1, break1
+        orientation = orientation[::-1]
 
     if chrm1 != chrm2 or break1 + w < break2 - w:
         window = [(chrm1, break1 - w, break1 + w), (chrm2, break2 - w, break2 + w)]
@@ -255,20 +259,7 @@ def parse_candidate_region(candidate):
                 if peread.barcode not in barcodes_by_pos[(peread.chrm, norm_mid)]:
                     barcodes_by_pos[(peread.chrm, norm_mid)].add(peread.barcode)
 
-    cand = copy.copy(peread)
-    cand.chrm = chrm1
-    cand.i = break1
-    cand.nextchrm = chrm2
-    cand.j = break2
-    cand.orient = orientation
-    if (cand.chrm == cand.nextchrm and cand.i > cand.j) or (
-        cand.chrm != cand.nextchrm and cand.chrm > cand.nextchrm
-    ):
-        cand.chrm = chrm2
-        cand.i = break2
-        cand.nextchrm = chrm1
-        cand.j = break1
-        cand.orient = orientation[::-1]
+    cand = NovelAdjacency(chrm1=chrm1, chrm2=chrm2, indi=break1, indj=break2, orient=orientation)
 
     coverage = cov / lengths
     if configs.DEBUG:

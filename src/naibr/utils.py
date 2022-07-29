@@ -24,13 +24,15 @@ class NovelAdjacency:
     ]
 
     def __init__(self, chrm1, chrm2, indi, indj, orient):
-        self.score = -float("inf")
-        self.score_by_hap = collections.defaultdict(int)
         self.chrm1 = chrm1
         self.break1 = indi
         self.chrm2 = chrm2
         self.break2 = indj
         self.orient = orient
+
+        self.score = -float("inf")
+        self.score_by_hap = collections.defaultdict(int)
+
         self.haps = (0, 0)
         self.spans = 0
         self.discs = 0
@@ -44,6 +46,15 @@ class NovelAdjacency:
                f"{self.spans=}, {self.discs=}, {self.pairs=}, {self.score=}, spans_by_hap={dict(self.spans_by_hap)}, " \
                f"discs_by_hap={dict(self.discs_by_hap)}, pairs_by_hap={dict(self.pairs_by_hap)}, " \
                f"score_by_hap={dict(self.score_by_hap)}"
+
+    def __eq__(self, other):
+        return self.coordinates() == other.coordinates()
+
+    def coordinates(self):
+        return self.chrm1, self.break1, self.chrm2, self.break2, self.orient
+
+    def is_interchromosomal(self):
+        return self.chrm1 != self.chrm2
 
     def add_spans(self, spans):
         for hap in spans:

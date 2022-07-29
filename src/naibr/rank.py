@@ -88,16 +88,14 @@ def score_pair(candidate, plen, prate, discs_by_barcode, barcodes_by_pos, reads_
     candidate_splits, spans = get_candidate_splits(
         candidate, barcodes_by_pos, reads_by_barcode, discs_by_barcode
     )
-    novel_adjacency = NovelAdjacency(
-        candidate.chrm, candidate.nextchrm, candidate.i, candidate.j, candidate.orient
-    )
-    novel_adjacency.add_spans(spans)
+
+    candidate.add_spans(spans)
     for candidate_split in candidate_splits:
         c = CandSplitMol()
         c.calculate_score(candidate_split, plen, prate)
-        novel_adjacency.add_score(c)
+        candidate.add_score(c)
 
-    return novel_adjacency
+    return candidate
 
 
 def near_i(x, candidate):
@@ -105,9 +103,9 @@ def near_i(x, candidate):
     start = x[1]
     end = x[2]
     neari = (
-        (candidate.orient[0] == "+" and end - configs.LMAX < candidate.i < end + configs.MAX_LINKED_DIST)
-        or (candidate.orient[0] == "-" and start + configs.LMAX > candidate.i > start - configs.MAX_LINKED_DIST)
-    ) and candidate.chrm == chrm
+        (candidate.orient[0] == "+" and end - configs.LMAX < candidate.break1 < end + configs.MAX_LINKED_DIST)
+        or (candidate.orient[0] == "-" and start + configs.LMAX > candidate.break1 > start - configs.MAX_LINKED_DIST)
+    ) and candidate.chrm1 == chrm
     return neari
 
 
@@ -116,28 +114,28 @@ def near_j(x, candidate):
     start = x[1]
     end = x[2]
     nearj = (
-        (candidate.orient[1] == "+" and end - configs.LMAX < candidate.j < end + configs.MAX_LINKED_DIST)
-        or (candidate.orient[1] == "-" and start + configs.LMAX > candidate.j > start - configs.MAX_LINKED_DIST)
-    ) and candidate.nextchrm == chrm
+        (candidate.orient[1] == "+" and end - configs.LMAX < candidate.break2 < end + configs.MAX_LINKED_DIST)
+        or (candidate.orient[1] == "-" and start + configs.LMAX > candidate.break2 > start - configs.MAX_LINKED_DIST)
+    ) and candidate.chrm2 == chrm
     return nearj
 
 
 def spanning(x, candidate):
     start = x[1]
     end = x[2]
-    span = start < candidate.i and end > candidate.j
+    span = start < candidate.break1 and end > candidate.break2
     return span
 
 
 def discs(candidate, barcode, discs_by_barcode):
-    ds = discs_by_barcode[(candidate.chrm, candidate.nextchrm, barcode)]
+    ds = discs_by_barcode[(candidate.chrm1, candidate.chrm2, barcode)]
     ds = [
         read.mean_mapq()
         for read in ds
-        if candidate.chrm == read.chrm
-        and candidate.nextchrm == read.nextchrm
-        and is_close(candidate.i, read.i, read.orient[0])
-        and is_close(candidate.j, read.j, read.orient[1])
+        if candidate.chrm1 == read.chrm
+        and not candidate.is_interchromosomal()
+        and is_close(candidate.break1, read.i, read.orient[0])
+        and is_close(candidate.break2, read.j, read.orient[1])
         and candidate.orient == read.orient
     ]
     return ds
@@ -183,8 +181,8 @@ def linked_reads(barcode, chrm, candidate, reads_by_barcode):
 
         # Add current linkedread the candidate split separates the previous and current read
         elif (
-            candidate.chrm == candidate.nextchrm
-            and (current_linkedread[2] < candidate.i and start > candidate.j)
+            not candidate.is_interchromosomal()
+            and (current_linkedread[2] < candidate.break1 and start > candidate.break2)
         ):
             linkedreads.append(current_linkedread)
             current_linkedread = [chrm, start, end, [mapq], [hap], barcode]
@@ -213,10 +211,10 @@ def get_linkedreads(candidate, barcodes, reads_by_barcode, discs_by_barcode):
     spans = []
     for barcode in barcodes:
         span = []
-        linkedreads, s = linked_reads(barcode, candidate.chrm, candidate, reads_by_barcode)
+        linkedreads, s = linked_reads(barcode, candidate.chrm1, candidate, reads_by_barcode)
         span.extend(s)
-        if candidate.chrm != candidate.nextchrm:
-            linkedreads2, s = linked_reads(barcode, candidate.nextchrm, candidate, reads_by_barcode)
+        if candidate.is_interchromosomal():
+            linkedreads2, s = linked_reads(barcode, candidate.chrm2, candidate, reads_by_barcode)
             linkedreads.extend(linkedreads2)
         linkedreads_i, linkedreads_j = [[], []]
         for x in linkedreads:
@@ -235,21 +233,21 @@ def get_linkedreads(candidate, barcodes, reads_by_barcode, discs_by_barcode):
     return candidate_splits, spans
 
 
-def get_candidate_splits(candidate, barcodes_by_pos, reads_by_barcode, discs_by_barcode):
+def get_candidate_splits(candidate: NovelAdjacency, barcodes_by_pos, reads_by_barcode, discs_by_barcode):
     # Get normalized positions for candidate split molecule
-    candidate_i_norm = roundto(candidate.i, configs.MAX_LINKED_DIST)
-    candidate_j_norm = roundto(candidate.j, configs.MAX_LINKED_DIST)
+    candidate_break1_norm = roundto(candidate.break1, configs.MAX_LINKED_DIST)
+    candidate_break2_norm = roundto(candidate.break2, configs.MAX_LINKED_DIST)
 
     # Create sets of proximal barcodes
     break1_barcodes = (
-        barcodes_by_pos[(candidate.chrm, candidate_i_norm)]
-        | barcodes_by_pos[(candidate.chrm, candidate_i_norm - configs.MAX_LINKED_DIST)]
-        | barcodes_by_pos[(candidate.chrm, candidate_i_norm + configs.MAX_LINKED_DIST)]
+        barcodes_by_pos[(candidate.chrm1, candidate_break1_norm)]
+        | barcodes_by_pos[(candidate.chrm1, candidate_break1_norm - configs.MAX_LINKED_DIST)]
+        | barcodes_by_pos[(candidate.chrm1, candidate_break1_norm + configs.MAX_LINKED_DIST)]
     )
     break2_barcodes = (
-        barcodes_by_pos[(candidate.nextchrm, candidate_j_norm)]
-        | barcodes_by_pos[(candidate.nextchrm, candidate_j_norm - configs.MAX_LINKED_DIST)]
-        | barcodes_by_pos[(candidate.nextchrm, candidate_j_norm + configs.MAX_LINKED_DIST)]
+        barcodes_by_pos[(candidate.chrm2, candidate_break2_norm)]
+        | barcodes_by_pos[(candidate.chrm2, candidate_break2_norm - configs.MAX_LINKED_DIST)]
+        | barcodes_by_pos[(candidate.chrm2, candidate_break2_norm + configs.MAX_LINKED_DIST)]
     )
 
     barcodes_intersect = break1_barcodes.intersection(break2_barcodes)
