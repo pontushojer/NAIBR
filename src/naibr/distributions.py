@@ -99,7 +99,22 @@ def linked_reads(reads, chrom):
     return linkedreads
 
 
-def get_overlap(barcode_linkedreads, barcode_overlap):
+def get_internal_overlap(barcode_linkedreads, barcode_overlap):
+    """Tally up the internal overlapp of normalized positions with linked reads
+    for a barcode"""
+    for linkedread in barcode_linkedreads:
+        chrom, start, end, count = linkedread
+        if end - start < configs.MAX_LINKED_DIST:
+            continue
+
+        norm_start = roundto(start, configs.MAX_LINKED_DIST)
+        norm_end = roundto(end, configs.MAX_LINKED_DIST) + configs.MAX_LINKED_DIST
+        positions = list(range(norm_start, norm_end, configs.MAX_LINKED_DIST))
+        for s, e in itertools.combinations(positions, 2):
+            barcode_overlap[(chrom, s, chrom, e)] += 1
+
+
+def get_pairwise_overlap(barcode_linkedreads, barcode_overlap):
     """Tally up the pair-wise overlapp of normalized positions between linked reads
      within a barcode"""
     for linkedread1, linkedread2 in itertools.combinations(barcode_linkedreads, 2):
@@ -130,8 +145,9 @@ def get_distributions(reads_by_barcode):
         linkedreads_by_barcode[barcode].extend(barcode_linkedreads)
 
     for barcode, barcode_linkedreads in linkedreads_by_barcode.items():
+        get_internal_overlap(barcode_linkedreads, barcode_overlap)
         if len(barcode_linkedreads) > 1:
-            get_overlap(barcode_linkedreads, barcode_overlap)
+            get_pairwise_overlap(barcode_linkedreads, barcode_overlap)
 
     if len(linkedreads) < 100:
         return None, None, None
