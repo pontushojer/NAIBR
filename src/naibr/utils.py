@@ -8,116 +8,130 @@ from .global_vars import configs
 class NovelAdjacency:
     __slots__ = [
         "score",
+        "score_by_hap",
         "chrm1",
         "break1",
         "chrm2",
         "break2",
         "orient",
         "haps",
-        "disc",
+        "discs",
         "pairs",
         "spans",
+        "discs_by_hap",
+        "pairs_by_hap",
+        "spans_by_hap",
     ]
 
     def __init__(self, chrm1, chrm2, indi, indj, orient):
-        self.score = collections.defaultdict(int)
+        self.score = -float("inf")
+        self.score_by_hap = collections.defaultdict(int)
         self.chrm1 = chrm1
         self.break1 = indi
         self.chrm2 = chrm2
         self.break2 = indj
         self.orient = orient
         self.haps = (0, 0)
-        self.spans = collections.defaultdict(int)
-        self.disc = collections.defaultdict(int)
-        self.pairs = collections.defaultdict(int)
+        self.spans = 0
+        self.discs = 0
+        self.pairs = 0
+        self.spans_by_hap = collections.defaultdict(int)
+        self.discs_by_hap = collections.defaultdict(int)
+        self.pairs_by_hap = collections.defaultdict(int)
+
+    def __repr__(self):
+        return f"NovelAdjacency({self.chrm1=}, {self.break1=}, {self.chrm2=}, {self.break1=}, {self.haps=}, " \
+               f"{self.spans=}, {self.discs=}, {self.pairs=}, {self.score=}, spans_by_hap={dict(self.spans_by_hap)}, " \
+               f"discs_by_hap={dict(self.discs_by_hap)}, pairs_by_hap={dict(self.pairs_by_hap)}, " \
+               f"score_by_hap={dict(self.score_by_hap)}"
 
     def add_spans(self, spans):
         for hap in spans:
-            self.spans[hap] += 1
+            self.spans_by_hap[hap] += 1
 
     def add_score(self, candsplitmol):
         haplotype = candsplitmol.haplotype()
-        self.score[haplotype] += candsplitmol.score()
-        self.pairs[haplotype] += 1
-        self.disc[haplotype] += candsplitmol.discs
+        self.score_by_hap[haplotype] += candsplitmol.score()
+        self.pairs_by_hap[haplotype] += 1
+        self.discs_by_hap[haplotype] += candsplitmol.discs
 
     def get_score(self):
         best_score = -float("inf")
         best_haps = (0, 0)
         total = 0
-        for hap in list(self.score):
-            s = self.score[hap]
-            d = self.disc[hap]
+        for hap in list(self.score_by_hap):
+            s = self.score_by_hap[hap]
+            d = self.discs_by_hap[hap]
 
-            if self.pairs[hap] > self.spans[hap]:
+            if self.pairs_by_hap[hap] > self.spans_by_hap[hap]:
                 total += s
 
-            if hap[0] != 0 and self.pairs[(0, hap[1])] >= self.spans[(0, hap[1])]:
-                s += max(0, self.score[(0, hap[1])])
-                d += self.disc[(0, hap[1])]
+            if hap[0] != 0 and self.pairs_by_hap[(0, hap[1])] >= self.spans_by_hap[(0, hap[1])]:
+                s += max(0, self.score_by_hap[(0, hap[1])])
+                d += self.discs_by_hap[(0, hap[1])]
 
-            if hap[1] != 0 and self.pairs[(hap[0]), 0] >= self.spans[(hap[0]), 0]:
-                s += max(0, self.score[(hap[0]), 0])
-                d += self.disc[(hap[0]), 0]
+            if hap[1] != 0 and self.pairs_by_hap[(hap[0]), 0] >= self.spans_by_hap[(hap[0]), 0]:
+                s += max(0, self.score_by_hap[(hap[0]), 0])
+                d += self.discs_by_hap[(hap[0]), 0]
 
-            if hap[0] != 0 and hap[1] != 0 and self.pairs[(0, 0)] >= self.spans[(0, 0)]:
-                s += max(0, self.score[(0, 0)])
-                d += self.disc[(0, 0)]
+            if hap[0] != 0 and hap[1] != 0 and self.pairs_by_hap[(0, 0)] >= self.spans_by_hap[(0, 0)]:
+                s += max(0, self.score_by_hap[(0, 0)])
+                d += self.discs_by_hap[(0, 0)]
 
-            if s > best_score and self.pairs[hap] > 0 and self.pairs[hap] >= self.spans[hap]:
+            if s > best_score and self.pairs_by_hap[hap] > 0 and self.pairs_by_hap[hap] >= self.spans_by_hap[hap]:
                 best_score = s
                 best_haps = hap
 
-        pairs = sum(self.pairs.values())
-        spans = sum(self.spans.values())
-        discs = sum(self.disc.values())
+        pairs = sum(self.pairs_by_hap.values())
+        spans = sum(self.spans_by_hap.values())
+        discs = sum(self.discs_by_hap.values())
 
         if (
             -float("inf") < best_score < total
             and pairs >= spans
             and (
-                (self.score[(1, 1)] > 0 and self.score[(2, 2)] > 0)
-                or (self.score[(1, 2)] > 0 and self.score[(2, 1)] > 0)
+                (self.score_by_hap[(1, 1)] > 0 and self.score_by_hap[(2, 2)] > 0)
+                or (self.score_by_hap[(1, 2)] > 0 and self.score_by_hap[(2, 1)] > 0)
             )
         ):
             self.haps = (3, 3)
             self.score = round(total, 3)
-            self.disc = discs
+            self.discs = discs
             self.pairs = pairs
             self.spans = spans
 
         elif best_score > -float("inf"):
             self.haps = best_haps
-            score = self.score[best_haps]
-            discs = self.disc[best_haps]
-            pairs = self.pairs[best_haps]
-            spans = self.spans[best_haps]
+            score = self.score_by_hap[best_haps]
+            discs = self.discs_by_hap[best_haps]
+            pairs = self.pairs_by_hap[best_haps]
+            spans = self.spans_by_hap[best_haps]
 
-            if best_haps[0] != 0 and self.score[(0, best_haps[1])] > 0:
-                score += self.score[(0, best_haps[1])]
-                discs += self.disc[(0, best_haps[1])]
-                pairs += self.pairs[(0, best_haps[1])]
-                spans += self.spans[(0, best_haps[1])]
+            if best_haps[0] != 0 and self.score_by_hap[(0, best_haps[1])] > 0:
+                score += self.score_by_hap[(0, best_haps[1])]
+                discs += self.discs_by_hap[(0, best_haps[1])]
+                pairs += self.pairs_by_hap[(0, best_haps[1])]
+                spans += self.spans_by_hap[(0, best_haps[1])]
 
-            if best_haps[1] != 0 and self.score[(best_haps[0], 0)] > 0:
-                score += self.score[(best_haps[0], 0)]
-                discs += self.disc[(best_haps[0], 0)]
-                pairs += self.pairs[(best_haps[0], 0)]
-                spans += self.spans[(best_haps[0], 0)]
+            if best_haps[1] != 0 and self.score_by_hap[(best_haps[0], 0)] > 0:
+                score += self.score_by_hap[(best_haps[0], 0)]
+                discs += self.discs_by_hap[(best_haps[0], 0)]
+                pairs += self.pairs_by_hap[(best_haps[0], 0)]
+                spans += self.spans_by_hap[(best_haps[0], 0)]
 
-            if best_haps[1] != 0 and best_haps[0] != 0 and self.score[(0, 0)] > 0:
-                score += self.score[(0, 0)]
-                discs += self.disc[(0, 0)]
-                pairs += self.pairs[(0, 0)]
-                spans += self.spans[(0, 0)]
+            if best_haps[1] != 0 and best_haps[0] != 0 and self.score_by_hap[(0, 0)] > 0:
+                score += self.score_by_hap[(0, 0)]
+                discs += self.discs_by_hap[(0, 0)]
+                pairs += self.pairs_by_hap[(0, 0)]
+                spans += self.spans_by_hap[(0, 0)]
 
             self.score = round(score, 3)
-            self.disc = discs
+            self.discs = discs
             self.pairs = pairs
             self.spans = spans
         else:
             self.score = round(best_score, 3)
-            self.disc = 0
+            self.discs = 0
             self.pairs = 0
             self.spans = 0
 
@@ -128,7 +142,7 @@ class NovelAdjacency:
             self.chrm2,
             self.break2,
             self.pairs,
-            self.disc,
+            self.discs,
             self.orient,
             f"{self.haps[0]},{self.haps[1]}",
             self.score,
