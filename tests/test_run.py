@@ -5,6 +5,7 @@ from pathlib import Path
 
 BAM = Path("tests/data/example_chr21.bam").absolute()
 CANDIDATES = Path("tests/data/example_candidates.bedpe").absolute()
+CANDIDATES_REV = Path("tests/data/example_candidates_reversed.bedpe").absolute()
 BLACKLIST = Path("tests/data/example_blacklist.bedpe").absolute()
 
 
@@ -39,6 +40,22 @@ def same_pairwise_elements(list1, list2):
 
 def test_candidates(tmp_path):
     configs = Configs(bam_file=BAM, candidates=CANDIDATES, outdir=tmp_path)
+    configs.write_to(tmp_path / "naibr.configs")
+
+    subprocess.run(["naibr", tmp_path / "naibr.configs"])
+    output = tmp_path / "NAIBR_SVs.bedpe"
+    with open(output) as f:
+        lines = f.readlines()
+
+        assert len(lines) == 2
+        same_pairwise_elements(
+            lines[1].strip().split("\t"),
+            "chr21	18759465	chr21	18906782	28.0	0.0	--	1,1	567.255	PASS".split("\t"),
+        )
+
+
+def test_candidates_reversed(tmp_path):
+    configs = Configs(bam_file=BAM, candidates=CANDIDATES_REV, outdir=tmp_path)
     configs.write_to(tmp_path / "naibr.configs")
 
     subprocess.run(["naibr", tmp_path / "naibr.configs"])
