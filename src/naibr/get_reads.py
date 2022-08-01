@@ -107,8 +107,7 @@ def parse_chromosome(chrom):
                 (peread.start, peread.nextend, peread.hap, peread.mean_mapq())
             )
             norm_mid = roundto(peread.mid(), configs.MAX_LINKED_DIST)
-            if peread.barcode not in barcodes_by_pos[(peread.chrm, norm_mid)]:
-                barcodes_by_pos[(peread.chrm, norm_mid)].add(peread.barcode)
+            barcodes_by_pos[(peread.chrm, norm_mid)].add(peread.barcode)
 
     # TODO - think about how to handle coverage a bit more accurate.
     #      - Use configuration to allow user input?
@@ -256,8 +255,7 @@ def parse_candidate_region(candidate):
                     (peread.start, peread.nextend, peread.hap, peread.mean_mapq())
                 )
                 norm_mid = roundto(peread.mid(), configs.MAX_LINKED_DIST)
-                if peread.barcode not in barcodes_by_pos[(peread.chrm, norm_mid)]:
-                    barcodes_by_pos[(peread.chrm, norm_mid)].add(peread.barcode)
+                barcodes_by_pos[(peread.chrm, norm_mid)].add(peread.barcode)
 
     cand = NovelAdjacency(chrm1=chrm1, chrm2=chrm2, indi=break1, indj=break2, orient=orientation)
 
