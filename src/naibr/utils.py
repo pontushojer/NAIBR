@@ -57,6 +57,14 @@ class NovelAdjacency:
     def __eq__(self, other):
         return self.coordinates() == other.coordinates()
 
+    def length(self):
+        if not self.is_interchromosomal():
+            return abs(self.break2 - self.break1)
+        return 0
+
+    def __len__(self):
+        return self.length()
+
     def coordinates(self):
         return self.chrm1, self.break1, self.chrm2, self.break2, self.orient
 
@@ -76,6 +84,12 @@ class NovelAdjacency:
     def evaluate(self, thershold):
         if self.score > -float("inf"):
             self.pass_threshold = self.score >= thershold
+
+    def svtype(self):
+        """Translation of orientation to DEL, INV and DUP.
+        Based on this: https://github.com/raphael-group/NAIBR/issues/11
+        Note that this is not entirely accurate as the more complex variants are possible."""
+        return {"+-": "DEL", "++": "INV", "--": "INV", "-+": "DUP"}.get(self.orient, "UNK")
 
     def get_score(self):
         best_score = -float("inf")
@@ -184,6 +198,27 @@ class NovelAdjacency:
                 f"{self.haps[0]},{self.haps[1]}",
                 str(self.score),
                 "PASS" if self.pass_threshold else "FAIL",
+            ]
+        )
+
+    def to_bedpe(self, name: str):
+        """10x-style BEDPE format according suitable for IGV visualization
+        see https://support.10xgenomics.com/genome-exome/software/pipelines/latest/output/bedpe"""
+        return "\t".join(
+            [
+                self.chrm1,
+                str(self.break1),
+                str(self.break1 + 1),
+                self.chrm2,
+                str(self.break2),
+                str(self.break2 + 1),
+                name,
+                str(self.score),
+                self.orient[0],  # Strand1
+                self.orient[1],  # Strand 2
+                "PASS" if self.pass_threshold else "FAIL",
+                f"LENGTH={len(self)};NUM_SPLIT_MOLECULES={self.pairs};NUM_DISCORDANT_READS"
+                f"={self.discs};ORIENTATION={self.orient};HAPLOTYPE={self.haps};SVTYPE={self.svtype()}",
             ]
         )
 
@@ -419,6 +454,15 @@ def write_novel_adjacencies(novel_adjacencies):
         )
         for na in novel_adjacencies:
             print(na.to_naibr(), file=f)
+
+    fname2 = "NAIBR_SVs.reformat.bedpe"
+    print(f"Writing results to {os.path.join(configs.DIR, fname2)}")
+    with open(os.path.join(configs.DIR, fname2), "w") as f:
+        # This header is needed to recoginze it as a 10x-style BEDPE
+        # see https://github.com/igvteam/igv/wiki/BedPE-Support
+        print("#chrom1	start1	stop1	chrom2	start2	stop2	name	qual	strand1	strand2	filters	info", file=f)
+        for nr, na in enumerate(novel_adjacencies, start=1):
+            print(na.to_bedpe(f"ID{nr:05}"), file=f)
 
 
 def parallel_execute(function, input_list):
