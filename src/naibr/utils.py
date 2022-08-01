@@ -206,7 +206,7 @@ class PERead:
         self.start = read.reference_start
         self.end = read.reference_end
         self.mapq = read.mapping_quality
-        self.hap = get_hap(read)
+        self.hap = get_haplotype(read)
 
         self.nextchrm = read.next_reference_name
         self.nextstart = read.next_reference_start
@@ -277,16 +277,16 @@ def get_read_orientation(read):
     return a
 
 
-def get_hap(r):
+def get_haplotype(read):
     try:
-        return r.get_tag("HP")
+        return read.get_tag("HP")
     except KeyError:
         return 0
 
 
-def get_barcode(r):
+def get_barcode(read):
     try:
-        return r.get_tag("BX")
+        return read.get_tag("BX")
     except KeyError:
         return None
 
