@@ -192,7 +192,6 @@ class PERead:
         "nextstart",
         "nextend",
         "nextmapq",
-        "nexthap",
         "i",
         "j",
         "disc",
@@ -217,7 +216,6 @@ class PERead:
         else:
             self.nextend = mate.reference_end
             self.nextmapq = mate.mapping_quality
-        self.nexthap = self.hap
 
         self.i = self.start if read.is_reverse else self.end
         self.j = self.nextstart if read.mate_is_reverse else self.nextstart + read.reference_length
