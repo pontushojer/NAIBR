@@ -2,6 +2,7 @@ import math
 import os
 import collections
 import multiprocessing as mp
+
 from .global_vars import configs
 
 
@@ -218,9 +219,13 @@ class PERead:
             self.nextmapq = mate.mapping_quality
 
         self.i = self.start if read.is_reverse else self.end
-        self.j = self.nextstart if read.mate_is_reverse else self.nextstart + read.reference_length
         self.j = self.nextstart if read.mate_is_reverse else self.nextend
         self.disc = self.is_disc() and not read.is_proper_pair
+
+    def __repr__(self):
+        return f"PERead({self.chrm=}, {self.start=}, {self.end=}, {self.mapq=}, {self.nextchrm=}, " \
+               f"{self.nextstart=}, {self.nextend=}, {self.nextmapq=}, {self.barcode=}, {self.hap=}, {self.orient=}, " \
+               f"{self.i=}, {self.j}, {self.disc=}, {self.fragment_length()=})"
 
     def is_disc(self):
         return self.chrm != self.nextchrm or (self.j - self.i) > configs.MIN_SV
