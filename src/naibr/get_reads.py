@@ -102,6 +102,8 @@ def parse_chromosome(chrom):
                         peread.orient,
                     )
                 ].append(peread)
+        # TODO - consider removing minimum fragment_length as these are still properly
+        #        paired with passing mapq.
         elif read.is_proper_pair and peread.fragment_length() > configs.LMIN:
             reads_by_barcode[(peread.chrm, peread.barcode)].append(
                 (peread.start, peread.nextend, peread.hap, peread.mean_mapq())
@@ -250,6 +252,8 @@ def parse_candidate_region(candidate):
             peread = PERead(read, barcode, mate=mate)
             if peread.disc:
                 discs_by_barcode[(peread.chrm, peread.nextchrm, peread.barcode)].append(peread)
+            # TODO - consider removing minimum fragment_length as these are still properly
+            #        paired with passing mapq.
             elif read.is_proper_pair and peread.fragment_length() > configs.LMIN:
                 reads_by_barcode[(peread.chrm, peread.barcode)].append(
                     (peread.start, peread.nextend, peread.hap, peread.mean_mapq())
