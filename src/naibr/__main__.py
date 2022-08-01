@@ -48,7 +48,7 @@ if len(sys.argv) < 2 or sys.argv[1] in {"help", "-h", "--help"}:
 
 from .get_reads import parse_candidate_region, get_distributions, parse_chromosome, get_candidates
 from .global_vars import configs
-from .utils import flatten, parallel_execute, is_proper_chrom, write_scores
+from .utils import flatten, parallel_execute, is_proper_chrom, write_novel_adjacencies
 from .rank import predict_novel_adjacencies
 
 
@@ -89,7 +89,7 @@ def run_naibr(chrom):
     if configs.MIN_READS > 1:
         reads_by_barcode = {k: v for k, v in reads_by_barcode.items() if len(v) >= configs.MIN_READS}
 
-    scores = 0
+    novel_adjacencies = []
     if len(reads_by_barcode) > 0:
         t_get_candidates = time.time()
         cands, p_len, p_rate = get_candidates(discs, reads_by_barcode)
@@ -102,11 +102,11 @@ def run_naibr(chrom):
                 discs_by_barcode,
                 interchrom_discs,
                 coverage,
-                scores,
+                novel_adjacencies,
             )
 
         print("ranking %i candidates from %s" % (len(cands), chrom))
-        scores = predict_novel_adjacencies(
+        novel_adjacencies = predict_novel_adjacencies(
             reads_by_barcode,
             barcodes_by_pos,
             discs_by_barcode,
@@ -118,7 +118,7 @@ def run_naibr(chrom):
         )
     else:
         print("No candidates from %s" % chrom)
-    return reads_by_barcode, barcodes_by_pos, discs_by_barcode, interchrom_discs, coverage, scores
+    return reads_by_barcode, barcodes_by_pos, discs_by_barcode, interchrom_discs, coverage, novel_adjacencies
 
 
 def main():
@@ -153,8 +153,8 @@ def main():
                 els = line.strip().split("\t")
                 if len(els) > 4:
                     cands.append([els[0], int(els[1]), els[3], int(els[4]), els[-1]])
-        scores = flatten(parallel_execute(run_naibr_candidate, cands))
-        write_scores(scores)
+        novel_adjacencies = flatten(parallel_execute(run_naibr_candidate, cands))
+        write_novel_adjacencies(novel_adjacencies)
 
     else:
         reads = pysam.AlignmentFile(configs.BAM_FILE, "rb")
@@ -166,26 +166,26 @@ def main():
         discs_by_barcode = collections.defaultdict(list)
         discs = collections.defaultdict(list)
         coverage = []
-        scores = []
+        novel_adjacencies = []
         for (
             reads_by_barcode_chrom,
             barcodes_by_pos_chrom,
             discs_by_barcode_chrom,
             discs_chrom,
             cov_chrom,
-            scores_chrom,
+            nas_chrom,
         ) in data:
-            if scores_chrom:
+            if nas_chrom:
                 reads_by_barcode.update(reads_by_barcode_chrom)
                 barcodes_by_pos.update(barcodes_by_pos_chrom)
                 discs_by_barcode.update(discs_by_barcode_chrom)
                 discs.update(discs_chrom)
                 coverage.append(cov_chrom)
-                scores += scores_chrom
+                novel_adjacencies += nas_chrom
         cands, p_len, p_rate = get_candidates(discs, reads_by_barcode)
         if cands is not None:
             print("ranking %i interchromosomal candidates" % len(cands))
-            scores += predict_novel_adjacencies(
+            novel_adjacencies += predict_novel_adjacencies(
                 reads_by_barcode,
                 barcodes_by_pos,
                 discs_by_barcode,
@@ -197,7 +197,7 @@ def main():
             )
         else:
             print("No interchromosomal candidates")
-        write_scores(scores)
+        write_novel_adjacencies(novel_adjacencies)
 
     print("Finished in", (time.time() - starttime) / 60.0, "minutes")
     return

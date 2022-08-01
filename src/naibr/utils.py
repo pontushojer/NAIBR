@@ -2,6 +2,7 @@ import math
 import os
 import collections
 import multiprocessing as mp
+import itertools
 
 from .global_vars import configs
 
@@ -22,6 +23,7 @@ class NovelAdjacency:
         "discs_by_hap",
         "pairs_by_hap",
         "spans_by_hap",
+        "pass_threshold",
     ]
 
     def __init__(self, chrm1, chrm2, indi, indj, orient):
@@ -42,11 +44,15 @@ class NovelAdjacency:
         self.discs_by_hap = collections.defaultdict(int)
         self.pairs_by_hap = collections.defaultdict(int)
 
+        self.pass_threshold = None
+
     def __repr__(self):
-        return f"NovelAdjacency({self.chrm1=}, {self.break1=}, {self.chrm2=}, {self.break1=}, {self.haps=}, " \
-               f"{self.spans=}, {self.discs=}, {self.pairs=}, {self.score=}, spans_by_hap={dict(self.spans_by_hap)}, " \
-               f"discs_by_hap={dict(self.discs_by_hap)}, pairs_by_hap={dict(self.pairs_by_hap)}, " \
-               f"score_by_hap={dict(self.score_by_hap)}"
+        return (
+            f"NovelAdjacency({self.chrm1=}, {self.break1=}, {self.chrm2=}, {self.break1=}, {self.haps=}, "
+            f"{self.spans=}, {self.discs=}, {self.pairs=}, {self.score=}, spans_by_hap={dict(self.spans_by_hap)}, "
+            f"discs_by_hap={dict(self.discs_by_hap)}, pairs_by_hap={dict(self.pairs_by_hap)}, "
+            f"score_by_hap={dict(self.score_by_hap)}"
+        )
 
     def __eq__(self, other):
         return self.coordinates() == other.coordinates()
@@ -66,6 +72,10 @@ class NovelAdjacency:
         self.score_by_hap[haplotype] += candsplitmol.score()
         self.pairs_by_hap[haplotype] += 1
         self.discs_by_hap[haplotype] += candsplitmol.discs
+
+    def evaluate(self, thershold):
+        if self.score > -float("inf"):
+            self.pass_threshold = self.score >= thershold
 
     def get_score(self):
         best_score = -float("inf")
@@ -158,6 +168,23 @@ class NovelAdjacency:
             self.orient,
             f"{self.haps[0]},{self.haps[1]}",
             self.score,
+        )
+
+    def to_naibr(self):
+        """NAIBR default format"""
+        return "\t".join(
+            [
+                self.chrm1,
+                str(self.break1),
+                self.chrm2,
+                str(self.break2),
+                str(self.pairs),
+                str(self.discs),
+                self.orient,
+                f"{self.haps[0]},{self.haps[1]}",
+                str(self.score),
+                "PASS" if self.pass_threshold else "FAIL",
+            ]
         )
 
 
@@ -331,68 +358,48 @@ def threshold(cov):
     return round(6.943 * cov - 37.33, 3)
 
 
-def collapse(scores, threshold_value):
-    l = []
-    for linea in scores:
-        chrom1, s1, chrom2, s2, split, disc, orient, haps, score = linea
-
+def filter_chrY(novel_adjacencies):
+    filtered = []
+    for na in novel_adjacencies:
         # TODO - Make this configurable to work with non-human genomes
-        if "Y" not in chrom1 and "Y" not in chrom2:
-            l.append(
-                [chrom1, int(s1), chrom2, int(s2), float(split), float(disc), orient, haps, float(score)]
-            )
+        if "Y" not in na.chrm1 and "Y" not in na.chrm2:
+            filtered.append(na)
+    return filtered
+
+
+def collapse_novel_adjacencies(novel_adjacencies):
     r = roundto(configs.LMAX, 100) * 5
 
     # Sort on decreasing score
-    l.sort(key=lambda x: x[-1], reverse=True)
+    novel_adjacencies.sort(key=lambda x: x.score, reverse=True)
 
     # Keep NAs so that no other NA overlaps breakpoint positions within a distance of r
-    l2 = []
-    nas = collections.defaultdict(list)
-    for chrom1, s1, chrom2, s2, split, disc, orient, haps, score in l:
+    collapsed_nas = {}
+    for na in novel_adjacencies:
         already_appended = False
-        norm_s1 = roundto(s1, r)
-        norm_s2 = roundto(s2, r)
-        for i in [-r, 0, r]:
-            for j in [-r, 0, r]:
-                if (chrom1, norm_s1 + i, chrom2, norm_s2 + j) in nas:
-                    ch1, ds1, ch2, ds2 = nas[(chrom1, norm_s1 + i, chrom2, norm_s2 + j)][0:4]
-                    if abs(ds1 - s1) < r and abs(ds2 - s2) < r:
-                        already_appended = True
+        norm_break1 = roundto(na.break1, r)
+        norm_break2 = roundto(na.break2, r)
+
+        # Check if already appended a novel_adjacency close to current
+        for i, j in itertools.product([-r, 0, r], repeat=2):
+            coords = (na.chrm1, norm_break1 + i, na.chrm2, norm_break2 + j)
+            if coords in collapsed_nas:
+                overlapping_na = collapsed_nas[coords]
+                if abs(overlapping_na.break1 - na.break1) < r and abs(overlapping_na.break2 - na.break2) < r:
+                    already_appended = True
+
         if not already_appended:
-            nas[(chrom1, norm_s1, chrom2, norm_s2)] = [
-                chrom1,
-                s1,
-                chrom2,
-                s2,
-                split,
-                disc,
-                orient,
-                haps,
-                score,
-            ]
+            collapsed_nas[(na.chrm1, norm_break1, na.chrm2, norm_break2)] = na
 
-    # Set PASS/FAIL based on threshold
-    n_pass = 0
-    for i, elem in nas.items():
-        if elem[-1] >= threshold_value:
-            l2.append(elem + ["PASS"])
-            n_pass += 1
-        else:
-            l2.append(elem + ["FAIL"])
-
-    if len(l2) > 0:
-        print(f"Found {len(l2):,} SVs of which {n_pass:,} ({n_pass/len(l2):.1%}) passed the threshold")
-
-    # Sort on descreasing score
-    l2.sort(key=lambda x: (x[-2]), reverse=True)
-
-    # Make list of lines for writing to file
-    l2 = ["\t".join([str(y) for y in x]) + "\n" for x in l2]
-    return l2
+    return list(collapsed_nas.values())
 
 
-def write_scores(scores):
+def evaluate_threshold(novel_adjacencies, threshold_value):
+    for na in novel_adjacencies:
+        na.evaluate(threshold_value)
+
+
+def write_novel_adjacencies(novel_adjacencies):
     fname = "NAIBR_SVs.bedpe"
     print(f"Writing results to {os.path.join(configs.DIR, fname)}")
     with open(os.path.join(configs.DIR, fname), "w") as f:
@@ -410,8 +417,8 @@ def write_scores(scores):
             sep="\t",
             file=f,
         )
-        for result in scores:
-            f.write(result)
+        for na in novel_adjacencies:
+            print(na.to_naibr(), file=f)
 
 
 def parallel_execute(function, input_list):

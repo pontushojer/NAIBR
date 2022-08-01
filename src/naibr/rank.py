@@ -3,7 +3,16 @@ from functools import partial, cache
 import math
 import multiprocessing as mp
 
-from .utils import log, NovelAdjacency, is_close, roundto, collapse, threshold
+from .utils import (
+    log,
+    NovelAdjacency,
+    is_close,
+    roundto,
+    filter_chrY,
+    collapse_novel_adjacencies,
+    threshold,
+    evaluate_threshold,
+)
 from .global_vars import configs
 
 
@@ -282,7 +291,7 @@ def get_cand_score(
     for novel_adjacency in scores:
         novel_adjacency.get_score()
         if novel_adjacency.pairs > 0 and novel_adjacency.score > -float("inf"):
-            rets.append(novel_adjacency.to_tuple())
+            rets.append(novel_adjacency)
     return rets
 
 
@@ -296,8 +305,15 @@ def predict_novel_adjacencies(
     cov,
     interchrom,
 ):
-    scores = get_cand_score(
+    novel_adjacencies = get_cand_score(
         candidates, interchrom, plen, prate, discs_by_barcode, barcodes_by_pos, reads_by_barcode
     )
-    scores = collapse(scores, threshold(cov))
-    return scores
+    novel_adjacencies = filter_chrY(novel_adjacencies)
+    novel_adjacencies = collapse_novel_adjacencies(novel_adjacencies)
+    evaluate_threshold(novel_adjacencies, threshold(cov))
+
+    if novel_adjacencies:
+        n_pass = sum([na.pass_threshold for na in novel_adjacencies])
+        n_total = len(novel_adjacencies)
+        print(f"Found {n_total:,} SVs of which {n_pass:,} ({n_pass / n_total:.1%}) passed the threshold")
+    return novel_adjacencies
