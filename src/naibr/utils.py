@@ -3,6 +3,7 @@ import os
 import collections
 import multiprocessing as mp
 import itertools
+import pysam
 
 from .global_vars import configs
 
@@ -89,7 +90,10 @@ class NovelAdjacency:
         """Translation of orientation to DEL, INV and DUP.
         Based on this: https://github.com/raphael-group/NAIBR/issues/11
         Note that this is not entirely accurate as the more complex variants are possible."""
-        return {"+-": "DEL", "++": "INV", "--": "INV", "-+": "DUP"}.get(self.orient, "UNK")
+        if self.is_interchromosomal():
+            return "TRA"
+        else:
+            return {"+-": "DEL", "++": "INV", "--": "INV", "-+": "DUP"}.get(self.orient, "UNK")
 
     def get_score(self):
         best_score = -float("inf")
@@ -204,6 +208,14 @@ class NovelAdjacency:
     def to_bedpe(self, name: str):
         """10x-style BEDPE format according suitable for IGV visualization
         see https://support.10xgenomics.com/genome-exome/software/pipelines/latest/output/bedpe"""
+        info = ";".join([
+            f"LENGTH={len(self)}",
+            f"NUM_SPLIT_MOLECULES={self.pairs}",
+            f"NUM_DISCORDANT_READS={self.discs}",
+            f"ORIENTATION={self.orient}",
+            f"HAPLOTYPE={self.haps[0]},{self.haps[1]}",
+            f"SVTYPE={self.svtype()}",
+        ])
         return "\t".join(
             [
                 self.chrm1,
@@ -217,10 +229,37 @@ class NovelAdjacency:
                 self.orient[0],  # Strand1
                 self.orient[1],  # Strand 2
                 "PASS" if self.pass_threshold else "FAIL",
-                f"LENGTH={len(self)};NUM_SPLIT_MOLECULES={self.pairs};NUM_DISCORDANT_READS"
-                f"={self.discs};ORIENTATION={self.orient};HAPLOTYPE={self.haps};SVTYPE={self.svtype()}",
+                info,
             ]
         )
+
+    def to_vcf(self, name):
+        info = ';'.join((
+            f'END={self.break2}',
+            f'SVTYPE={self.svtype()}',
+            f'SVLEN={len(self)}',
+            f'SVSCORE={self.score}',
+            f"NUM_SPLIT_MOLECULES={self.pairs}",
+            f"NUM_DISCORDANT_READS={self.discs}",
+            f"HAPLOTYPE={self.haps[0]},{self.haps[1]}",
+        ))
+        if self.is_interchromosomal():
+            info += f";CHR1={self.chrm2}"
+
+        return "\t".join([
+            self.chrm1,
+            str(self.break1),
+            name,
+            'N',
+            f'<{self.svtype()}>',
+            str(self.score),
+            "PASS" if self.pass_threshold else "FAIL",
+            info,
+            'GT',
+            # TODO - This is not the correct genotype, but using './.' corresponds to
+            #  a "non-called" variant in downstream applications.
+            '1/1',
+        ])
 
 
 class LinkedRead:
@@ -422,6 +461,12 @@ def evaluate_threshold(novel_adjacencies, threshold_value):
         na.evaluate(threshold_value)
 
 
+def get_chrom_lengths():
+    reads = pysam.AlignmentFile(configs.BAM_FILE, "rb")
+    for chrom, length in zip(reads.references, reads.lengths):
+        yield chrom, length
+
+
 def write_novel_adjacencies(novel_adjacencies):
     fname = "NAIBR_SVs.bedpe"
     print(f"Writing results to {os.path.join(configs.DIR, fname)}")
@@ -450,7 +495,33 @@ def write_novel_adjacencies(novel_adjacencies):
         # see https://github.com/igvteam/igv/wiki/BedPE-Support
         print("#chrom1	start1	stop1	chrom2	start2	stop2	name	qual	strand1	strand2	filters	info", file=f)
         for nr, na in enumerate(novel_adjacencies, start=1):
-            print(na.to_bedpe(f"ID{nr:05}"), file=f)
+            print(na.to_bedpe(f"NAIBR_{nr:05}"), file=f)
+
+    fname3 = "NAIBR_SVs.vcf"
+    print(f"Writing results to {os.path.join(configs.DIR, fname3)}")
+    with open(os.path.join(configs.DIR, fname3), "w") as f:
+        # Build header
+        header_string = '''##fileformat=VCFv4.2
+##source=NAIBR'''
+
+        header_string += ''.join([f"\n##contig=<ID={c},length={l}>" for c, l in get_chrom_lengths()])
+
+        header_string += '''
+##FILTER=<ID=PASS,Description="Passed the software filter">
+##FILTER=<ID=FAIL,Description="Failed the software filter">
+##INFO=<ID=END,Number=1,Type=Integer,Description="End position of the structural variant">
+##INFO=<ID=SVTYPE,Number=1,Type=String,Description="Type of SV:DEL=Deletion, DUP=Duplication, INV=Inversion">
+##INFO=<ID=SVLEN,Number=1,Type=Integer,Description="Difference in length between REF and ALT alleles">
+##INFO=<ID=SVSCORE,Number=1,Type=Float,Description="NAIBR Score for SV">
+##INFO=<ID=NUM_DISCORDANT_READS,Number=1,Type=Integer,Description="Number of supporting discordant reads">
+##INFO=<ID=NUM_SPLIT_MOLECULES,Number=1,Type=Integer,Description="Number of supporting split molecules">
+##INFO=<ID=HAPLOTYPE,Number=1,Type=String,Description="Haplotype string from NAIBR">
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype, All set to 1/1.">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	SAMPLE'''
+
+        print(header_string, file=f)
+        for nr, na in enumerate(novel_adjacencies, start=1):
+            print(na.to_vcf(f"NAIBR_{nr:05}"), file=f)
 
 
 def parallel_execute(function, input_list):
