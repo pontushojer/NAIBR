@@ -311,18 +311,6 @@ def first_read(read):
     return (read.reference_start < read.next_reference_start and chrom == mate_chrom) or chrom < mate_chrom
 
 
-def closest_linkedread(linkedread1, linkedread2, i):
-    if not linkedread1:
-        return linkedread2
-    if not linkedread2:
-        return linkedread1
-    linkedread1_dist = min(abs(linkedread1[1] - i), abs(linkedread1[2]) - i)
-    linkedread2_dist = min(abs(linkedread2[1] - i), abs(linkedread2[2]) - i)
-    if linkedread1_dist < linkedread2_dist:
-        return linkedread1
-    return linkedread2
-
-
 def is_proper_chrom(chrom):
     if chrom is not None:
         return "Un" not in chrom and "random" not in chrom and "hs37d5" not in chrom
