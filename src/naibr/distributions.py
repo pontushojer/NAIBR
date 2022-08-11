@@ -116,7 +116,7 @@ def get_internal_overlap(barcode_linkedreads, barcode_overlap):
 
 def get_pairwise_overlap(barcode_linkedreads, barcode_overlap):
     """Tally up the pair-wise overlapp of normalized positions between linked reads
-     within a barcode"""
+    within a barcode"""
     for linkedread1, linkedread2 in itertools.combinations(barcode_linkedreads, 2):
         if linkedread1[0] > linkedread2[0] or linkedread1[1] > linkedread2[1]:
             linkedread1, linkedread2 = linkedread2, linkedread1

@@ -118,7 +118,11 @@ class NovelAdjacency:
                 s += max(0, self.score_by_hap[(0, 0)])
                 d += self.discs_by_hap[(0, 0)]
 
-            if s > best_score and self.pairs_by_hap[hap] > 0 and self.pairs_by_hap[hap] >= self.spans_by_hap[hap]:
+            if (
+                s > best_score
+                and self.pairs_by_hap[hap] > 0
+                and self.pairs_by_hap[hap] >= self.spans_by_hap[hap]
+            ):
                 best_score = s
                 best_haps = hap
 
@@ -324,9 +328,11 @@ class PERead:
         self.disc = self.is_disc() and not read.is_proper_pair
 
     def __repr__(self):
-        return f"PERead({self.chrm=}, {self.start=}, {self.end=}, {self.mapq=}, {self.nextchrm=}, " \
-               f"{self.nextstart=}, {self.nextend=}, {self.nextmapq=}, {self.barcode=}, {self.hap=}, {self.orient=}, " \
-               f"{self.i=}, {self.j}, {self.disc=}, {self.fragment_length()=})"
+        return (
+            f"PERead({self.chrm=}, {self.start=}, {self.end=}, {self.mapq=}, {self.nextchrm=}, "
+            f"{self.nextstart=}, {self.nextend=}, {self.nextmapq=}, {self.barcode=}, {self.hap=}, {self.orient=}, "
+            f"{self.i=}, {self.j}, {self.disc=}, {self.fragment_length()=})"
+        )
 
     def is_disc(self):
         return self.chrm != self.nextchrm or (self.j - self.i) > configs.MIN_SV

@@ -113,7 +113,10 @@ def near_i(x, candidate):
     end = x[2]
     neari = (
         (candidate.orient[0] == "+" and end - configs.LMAX < candidate.break1 < end + configs.MAX_LINKED_DIST)
-        or (candidate.orient[0] == "-" and start + configs.LMAX > candidate.break1 > start - configs.MAX_LINKED_DIST)
+        or (
+            candidate.orient[0] == "-"
+            and start + configs.LMAX > candidate.break1 > start - configs.MAX_LINKED_DIST
+        )
     ) and candidate.chrm1 == chrm
     return neari
 
@@ -124,7 +127,10 @@ def near_j(x, candidate):
     end = x[2]
     nearj = (
         (candidate.orient[1] == "+" and end - configs.LMAX < candidate.break2 < end + configs.MAX_LINKED_DIST)
-        or (candidate.orient[1] == "-" and start + configs.LMAX > candidate.break2 > start - configs.MAX_LINKED_DIST)
+        or (
+            candidate.orient[1] == "-"
+            and start + configs.LMAX > candidate.break2 > start - configs.MAX_LINKED_DIST
+        )
     ) and candidate.chrm2 == chrm
     return nearj
 
@@ -189,9 +195,8 @@ def linked_reads(barcode, chrm, candidate, reads_by_barcode):
             current_linkedread = [chrm, start, end, [mapq], [hap], barcode]
 
         # Add current linkedread the candidate split separates the previous and current read
-        elif (
-            not candidate.is_interchromosomal()
-            and (current_linkedread[2] < candidate.break1 and start > candidate.break2)
+        elif not candidate.is_interchromosomal() and (
+            current_linkedread[2] < candidate.break1 and start > candidate.break2
         ):
             linkedreads.append(current_linkedread)
             current_linkedread = [chrm, start, end, [mapq], [hap], barcode]
