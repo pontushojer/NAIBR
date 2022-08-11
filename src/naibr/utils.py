@@ -532,12 +532,9 @@ def write_novel_adjacencies(novel_adjacencies):
 
 def parallel_execute(function, input_list):
     if configs.NUM_THREADS != 1:
-        pool = mp.Pool(configs.NUM_THREADS, maxtasksperchild=1)
-        map_fn = pool.map
-        print("running on %s threads" % str(configs.NUM_THREADS))
-        data = map_fn(function, input_list)
-        pool.close()
-        pool.join()
+        with mp.Pool(configs.NUM_THREADS, maxtasksperchild=1) as pool:
+            print("running on %s threads" % str(configs.NUM_THREADS))
+            data = pool.map(function, input_list)
     else:
         data = map(function, input_list)
     return data
