@@ -145,7 +145,7 @@ def spanning(x, candidate):
 def discs(candidate, barcode, discs_by_barcode):
     ds = discs_by_barcode[(candidate.chrm1, candidate.chrm2, barcode)]
     ds = [
-        read.mean_mapq()
+        read.mean_mapq
         for read in ds
         if candidate.chrm1 == read.chrm
         and not candidate.is_interchromosomal()

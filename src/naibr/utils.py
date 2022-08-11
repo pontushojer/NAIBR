@@ -292,12 +292,11 @@ class PERead:
         "chrm",
         "start",
         "end",
-        "mapq",
+        "mean_mapq",
         "hap",
         "nextchrm",
         "nextstart",
         "nextend",
-        "nextmapq",
         "i",
         "j",
         "disc",
@@ -310,7 +309,6 @@ class PERead:
         self.chrm = read.reference_name
         self.start = read.reference_start
         self.end = read.reference_end
-        self.mapq = read.mapping_quality
         self.hap = get_haplotype(read)
 
         self.nextchrm = read.next_reference_name
@@ -318,10 +316,10 @@ class PERead:
         if mate is None:
             # Assume same aligment length and mapping quality for mate
             self.nextend = read.next_reference_start + read.reference_length
-            self.nextmapq = read.mapping_quality
+            self.mean_mapq = read.mapping_quality
         else:
             self.nextend = mate.reference_end
-            self.nextmapq = mate.mapping_quality
+            self.mean_mapq = (mate.mapping_quality + read.mapping_quality) / 2
 
         self.i = self.start if read.is_reverse else self.end
         self.j = self.nextstart if read.mate_is_reverse else self.nextend
@@ -329,8 +327,8 @@ class PERead:
 
     def __repr__(self):
         return (
-            f"PERead({self.chrm=}, {self.start=}, {self.end=}, {self.mapq=}, {self.nextchrm=}, "
-            f"{self.nextstart=}, {self.nextend=}, {self.nextmapq=}, {self.barcode=}, {self.hap=}, {self.orient=}, "
+            f"PERead({self.chrm=}, {self.start=}, {self.end=}, {self.nextchrm=}, "
+            f"{self.nextstart=}, {self.nextend=}, {self.barcode=}, {self.hap=}, {self.orient=}, "
             f"{self.i=}, {self.j}, {self.disc=}, {self.fragment_length()=})"
         )
 
@@ -339,9 +337,6 @@ class PERead:
 
     def fragment_length(self):
         return max(self.end, self.nextend) - min(self.start, self.nextstart)
-
-    def mean_mapq(self):
-        return int((self.mapq + self.nextmapq) / 2)
 
     def mid(self):
         if self.disc:

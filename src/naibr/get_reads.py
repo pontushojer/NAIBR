@@ -97,7 +97,7 @@ def parse_chromosome(chrom):
         #        paired with passing mapq.
         elif read.is_proper_pair and peread.fragment_length() > configs.LMIN:
             reads_by_barcode[(peread.chrm, peread.barcode)].append(
-                (peread.start, peread.nextend, peread.hap, peread.mean_mapq())
+                (peread.start, peread.nextend, peread.hap, peread.mean_mapq)
             )
             norm_mid = roundto(peread.mid(), configs.MAX_LINKED_DIST)
             barcodes_by_pos[(peread.chrm, norm_mid)].add(peread.barcode)
@@ -248,7 +248,7 @@ def parse_candidate_region(candidate):
             #        paired with passing mapq.
             elif read.is_proper_pair and peread.fragment_length() > configs.LMIN:
                 reads_by_barcode[(peread.chrm, peread.barcode)].append(
-                    (peread.start, peread.nextend, peread.hap, peread.mean_mapq())
+                    (peread.start, peread.nextend, peread.hap, peread.mean_mapq)
                 )
                 norm_mid = roundto(peread.mid(), configs.MAX_LINKED_DIST)
                 barcodes_by_pos[(peread.chrm, norm_mid)].add(peread.barcode)
