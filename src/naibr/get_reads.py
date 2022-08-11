@@ -1,7 +1,6 @@
 import pysam
 import collections
 import time
-import copy
 
 from .utils import PERead, roundto, is_proper_chrom, get_barcode, NovelAdjacency
 from .global_vars import configs
