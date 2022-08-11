@@ -8,21 +8,13 @@ from .global_vars import configs
 from .distributions import get_distributions
 
 
-def inblacklist(cand):
+def inblacklist(chrom, pos):
     """
-    Args: candidate novel adjacency
-    Returns: True if candidate novel adjacency overlaps with
-    interval in blacklist
+    True if position overlaps with interval in blacklist
     """
     if not configs.BLACKLIST:
         return False
-    for s, e in configs.BLACKLIST[cand.chrm]:
-        if s < cand.i < e:
-            return True
-    for s, e in configs.BLACKLIST[cand.nextchrm]:
-        if s < cand.j < e:
-            return True
-    return False
+    return any(s < pos < e for s, e in configs.BLACKLIST[chrom])
 
 
 def parse_mapped_pairs(iterator):
@@ -187,15 +179,16 @@ def get_candidates(discs, reads_by_barcode):
         if si == 0 or sj == 0:
             continue
 
-        # Skip if overlapping blacklist
-        if inblacklist(disc_reads[0]):
-            continue
-
         chrm = position[0]
         nextchrm = position[2]
         orient = position[4]
         i = coordinates(si, ei, orient[0])
         j = coordinates(sj, ej, orient[1])
+
+        # Skip if positions overlaps blacklist
+        if inblacklist(chrm, i) or inblacklist(nextchrm, j):
+            continue
+
         cand = NovelAdjacency(chrm1=chrm, chrm2=nextchrm, indi=i, indj=j, orient=orient)
         norm_i = roundto(i, configs.MAX_LINKED_DIST)
         norm_j = roundto(j, configs.MAX_LINKED_DIST)
