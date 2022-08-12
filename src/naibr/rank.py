@@ -174,7 +174,6 @@ def majority_vote(haps):
 
 
 def linked_reads(barcode, chrm, candidate, reads_by_barcode):
-    span = []
     if (chrm, barcode) not in reads_by_barcode:
         return [], []
 
@@ -212,11 +211,13 @@ def linked_reads(barcode, chrm, candidate, reads_by_barcode):
 
         prev_break_only_cands = only_cands
 
-    for lr1, lr2 in zip(linkedreads[:-1], linkedreads[1:]):
-        if lr2[1] - lr1[2] < configs.MAX_LINKED_DIST:
-            lr1_hap = majority_vote(lr1[-2])
-            lr2_hap = majority_vote(lr2[-2])
-            span.append((lr1_hap, lr2_hap))
+    span = []
+    if not candidate.is_interchromosomal():
+        for lr1, lr2 in zip(linkedreads[:-1], linkedreads[1:]):
+            if lr2[1] - lr1[2] < configs.MAX_LINKED_DIST:
+                lr1_hap = majority_vote(lr1[-2])
+                lr2_hap = majority_vote(lr2[-2])
+                span.append((lr1_hap, lr2_hap))
     return linkedreads, span
 
 
@@ -228,7 +229,7 @@ def get_linkedreads(candidate, barcodes, reads_by_barcode, discs_by_barcode):
         linkedreads, s = linked_reads(barcode, candidate.chrm1, candidate, reads_by_barcode)
         span.extend(s)
         if candidate.is_interchromosomal():
-            linkedreads2, s = linked_reads(barcode, candidate.chrm2, candidate, reads_by_barcode)
+            linkedreads2, _ = linked_reads(barcode, candidate.chrm2, candidate, reads_by_barcode)
             linkedreads.extend(linkedreads2)
 
         linkedread_i, linkedread_j = [None, None]
