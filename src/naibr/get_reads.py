@@ -1,6 +1,7 @@
 import pysam
 import collections
 import time
+import numpy as np
 
 from .utils import PERead, roundto, is_proper_chrom, get_barcode, NovelAdjacency
 from .global_vars import configs
@@ -108,8 +109,16 @@ def parse_chromosome(chrom):
     coverage = cov / abs(reads_end - reads_start)
     if nr > 0:
         print(f"Done reading chromosome {chrom}: coverage = {coverage:.3f}, reads = {nr:,}")
+
+    readarray_by_barcode = {}
+    dtype = [("start", int), ("end", int), ("hap", np.uint), ("mapq", int)]
+    for barcode, reads in reads_by_barcode.items():
+        readarray = np.array(reads, dtype=dtype)
+        readarray.sort(order="start")
+        readarray_by_barcode[barcode] = readarray
+
     return (
-        reads_by_barcode,
+        readarray_by_barcode,
         barcodes_by_pos,
         discs_by_barcode,
         discs,
@@ -253,9 +262,16 @@ def parse_candidate_region(candidate):
                 norm_mid = roundto(peread.mid(), configs.MAX_LINKED_DIST)
                 barcodes_by_pos[(peread.chrm, norm_mid)].add(peread.barcode)
 
+    readarray_by_barcode = {}
+    dtype = [("start", int), ("end", int), ("hap", np.uint), ("mapq", int)]
+    for barcode, reads in reads_by_barcode.items():
+        readarray = np.array(reads, dtype=dtype)
+        readarray.sort(order="start")
+        readarray_by_barcode[barcode] = readarray
+
     cand = NovelAdjacency(chrm1=chrm1, chrm2=chrm2, indi=break1, indj=break2, orient=orientation)
 
     coverage = cov / lengths
     if configs.DEBUG:
         print(f"Candidate {candidate}: coverage = {coverage}")
-    return reads_by_barcode, barcodes_by_pos, discs_by_barcode, [cand], coverage
+    return readarray_by_barcode, barcodes_by_pos, discs_by_barcode, [cand], coverage

@@ -2,6 +2,7 @@ import collections
 from functools import partial, cache
 import math
 import multiprocessing as mp
+import numpy as np
 
 from .utils import (
     log,
@@ -178,39 +179,38 @@ def linked_reads(barcode, chrm, candidate, reads_by_barcode):
         return [], []
 
     reads = reads_by_barcode[(chrm, barcode)]
-    reads.sort(key=lambda x: x[0])
-    # chrm,start,end,num,hap,barcode
-    start, end, hap, mapq = reads[0]
-    current_linkedread = [chrm, start, end, [mapq], [hap], barcode]
+    # Calculate the distance between neighbouring reads
+    pair_dists = reads["start"][1:] - reads["end"][:-1]
+
+    # Get indexes where the distance of neigbouring reads exceeds the MAX_LINKED_DIST.
+    # These reads most likely originate from different molecuels.
+    dist_break = (pair_dists > configs.MAX_LINKED_DIST)
+
+    # Get indexes neigbouring reads span the candidate. These reads could originate the
+    # same molecule. Not for interchromsomal candidates.
+    cand_break = np.full(np.shape(dist_break), False)
+    if not candidate.is_interchromosomal():
+        cand_break = (reads["end"][:-1] < candidate.break1) & (reads["start"][1:] > candidate.break2)
+
+    breaks = np.where(dist_break | cand_break)[0] + 1
+
+    # List whether breaks originate only from reads spanning the candidate
+    # These are not filtered the same way as others.
+    break_only_cands = [b not in set(np.where(dist_break)[0] + 1) for b in breaks] + [False]
     linkedreads = []
-    for start, end, hap, mapq in reads[1:]:
-        # Add current_linkedreads if larger than MAX_LINKED_DIST from current start
-        # and is larger than MIN_LEN and has more than MIN_READS
-        if start - current_linkedread[2] > configs.MAX_LINKED_DIST:
-            if (
-                len(current_linkedread[3]) >= configs.MIN_READS
-                and current_linkedread[2] - current_linkedread[1] >= configs.MIN_LEN
-            ):
-                linkedreads.append(current_linkedread)
-            current_linkedread = [chrm, start, end, [mapq], [hap], barcode]
 
-        # Add current linkedread the candidate split separates the previous and current read
-        elif not candidate.is_interchromosomal() and (
-            current_linkedread[2] < candidate.break1 and start > candidate.break2
-        ):
-            linkedreads.append(current_linkedread)
-            current_linkedread = [chrm, start, end, [mapq], [hap], barcode]
+    # If the prevous reads were split because of spanning the candidate the next reads should be filtered the same way
+    prev_break_only_cands = False
+    for reads_group, only_cands in zip(np.split(reads, breaks), break_only_cands):
+        start = reads_group["start"].min()
+        end = reads_group["end"].max()
+        mapq = list(reads_group["mapq"])
+        hap = list(reads_group["hap"])
+        nr_reads = len(mapq)
+        if (only_cands or prev_break_only_cands) or (nr_reads >= configs.MIN_READS and end - start >= configs.MIN_LEN):
+            linkedreads.append([chrm, start, end, mapq, hap, barcode])
 
-        # Otherwice add read
-        else:
-            current_linkedread[2] = max(current_linkedread[2], end)
-            current_linkedread[3].append(mapq)
-            current_linkedread[4].append(hap)
-    if (
-        len(current_linkedread[3]) >= configs.MIN_READS
-        and current_linkedread[2] - current_linkedread[1] >= configs.MIN_LEN
-    ):
-        linkedreads.append(current_linkedread)
+        prev_break_only_cands = only_cands
 
     for lr1, lr2 in zip(linkedreads[:-1], linkedreads[1:]):
         if lr2[1] - lr1[2] < configs.MAX_LINKED_DIST:

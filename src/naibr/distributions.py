@@ -75,27 +75,21 @@ def plot_distribution(p, distr, xlab, ylab, title):
 
 
 def linked_reads(reads, chrom):
-    reads.sort(key=lambda x: x[0])
+    # Calculate the distance between neighbouring reads
+    pair_dists = reads["start"][1:] - reads["end"][:-1]
 
-    start, end, hap, mapq = reads[0]
-    current_linkedread = [chrom, start, end, 1]
+    # Get indexes where the distance exceeds the MAX_LINKED_DIST
+    breaks = np.where(pair_dists > configs.MAX_LINKED_DIST)[0] + 1
+
     linkedreads = []
-    for start, end, hap, mapq in reads[1:]:
-        if start - current_linkedread[2] > configs.MAX_LINKED_DIST:
-            if (
-                current_linkedread[3] >= configs.MIN_READS
-                and current_linkedread[2] - current_linkedread[1] >= configs.MIN_LEN
-            ):
-                linkedreads.append(current_linkedread)
-            current_linkedread = [chrom, start, end, 1]
-        else:
-            current_linkedread[2] = max(current_linkedread[2], end)
-            current_linkedread[3] += 1
-    if (
-        current_linkedread[3] >= configs.MIN_READS
-        and current_linkedread[2] - current_linkedread[1] >= configs.MIN_LEN
-    ):
-        linkedreads.append(current_linkedread)
+    # Split reads using the indexes into groups of candidate linked reads
+    for reads_group in np.split(reads, breaks):
+        nr_reads = len(reads_group)
+        start = reads_group["start"].min()
+        end = reads_group["end"].max()
+        if nr_reads >= configs.MIN_READS and end - start >= configs.MIN_LEN:
+            linkedreads.append((chrom, start, end, nr_reads))
+
     return linkedreads
 
 
