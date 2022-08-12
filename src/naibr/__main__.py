@@ -96,26 +96,18 @@ def run_naibr(chrom):
         print(f"Got candidate noval adjacencies from data: {time.time() - t_get_candidates:.4f} s")
         if cands is None:
             print("No candidates from %s" % chrom)
-            return (
+        else:
+            print("ranking %i candidates from %s" % (len(cands), chrom))
+            novel_adjacencies = predict_novel_adjacencies(
                 reads_by_barcode,
                 barcodes_by_pos,
                 discs_by_barcode,
-                interchrom_discs,
+                cands,
+                p_len,
+                p_rate,
                 coverage,
-                novel_adjacencies,
+                False,
             )
-
-        print("ranking %i candidates from %s" % (len(cands), chrom))
-        novel_adjacencies = predict_novel_adjacencies(
-            reads_by_barcode,
-            barcodes_by_pos,
-            discs_by_barcode,
-            cands,
-            p_len,
-            p_rate,
-            coverage,
-            False,
-        )
     else:
         print("No candidates from %s" % chrom)
     return reads_by_barcode, barcodes_by_pos, discs_by_barcode, interchrom_discs, coverage, novel_adjacencies
