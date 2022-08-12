@@ -158,14 +158,14 @@ def main():
         reads_by_barcode = collections.defaultdict(list)
         barcodes_by_pos = collections.defaultdict(list)
         discs_by_barcode = collections.defaultdict(list)
-        discs = collections.defaultdict(list)
+        interchrom_discs = collections.defaultdict(list)
         coverage = []
         novel_adjacencies = []
         for (
             reads_by_barcode_chrom,
             barcodes_by_pos_chrom,
             discs_by_barcode_chrom,
-            discs_chrom,
+            interchrom_discs_chrom,
             cov_chrom,
             nas_chrom,
         ) in data:
@@ -173,10 +173,11 @@ def main():
                 reads_by_barcode.update(reads_by_barcode_chrom)
                 barcodes_by_pos.update(barcodes_by_pos_chrom)
                 discs_by_barcode.update(discs_by_barcode_chrom)
-                discs.update(discs_chrom)
+                interchrom_discs.update(interchrom_discs_chrom)
                 coverage.append(cov_chrom)
                 novel_adjacencies += nas_chrom
-        cands, p_len, p_rate = get_candidates(discs, reads_by_barcode)
+
+        cands, p_len, p_rate = get_candidates(interchrom_discs, reads_by_barcode)
         if cands is not None:
             print("ranking %i interchromosomal candidates" % len(cands))
             novel_adjacencies += predict_novel_adjacencies(
