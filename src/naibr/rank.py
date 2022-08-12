@@ -230,18 +230,19 @@ def get_linkedreads(candidate, barcodes, reads_by_barcode, discs_by_barcode):
         if candidate.is_interchromosomal():
             linkedreads2, s = linked_reads(barcode, candidate.chrm2, candidate, reads_by_barcode)
             linkedreads.extend(linkedreads2)
-        linkedreads_i, linkedreads_j = [[], []]
-        for x in linkedreads:
-            if near_i(x, candidate):
-                linkedreads_i = x
-            elif near_j(x, candidate):
-                linkedreads_j = x
-            if spanning(x, candidate):
-                span += [(x[-2][0], x[-2][-1])]  # First and last haplotype on linked read
 
-        if linkedreads_i and linkedreads_j and linkedreads_i[1] < linkedreads_j[1]:
+        linkedread_i, linkedread_j = [None, None]
+        for linkedread in linkedreads:
+            if near_i(linkedread, candidate):
+                linkedread_i = linkedread
+            elif near_j(linkedread, candidate):
+                linkedread_j = linkedread
+            if spanning(linkedread, candidate):
+                span += [(linkedread[-2][0], linkedread[-2][-1])]  # First and last haplotype on linked read
+
+        if linkedread_i and linkedread_j and linkedread_i[1] < linkedread_j[1]:
             discs_mapqs = discs(candidate, barcode, discs_by_barcode)
-            candidate_split = [linkedreads_i, discs_mapqs, linkedreads_j]
+            candidate_split = [linkedread_i, discs_mapqs, linkedread_j]
             candidate_splits.append(candidate_split)
         spans.extend(span)
     return candidate_splits, spans
