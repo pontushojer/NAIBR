@@ -149,9 +149,11 @@ def main():
         write_novel_adjacencies(novel_adjacencies)
 
     else:
-        reads = pysam.AlignmentFile(configs.BAM_FILE, "rb")
-        chroms = reads.references
-        chroms = [x for x in chroms if is_proper_chrom(x)]
+        chroms = []
+        with pysam.AlignmentFile(configs.BAM_FILE, "rb") as reads:
+            chroms = reads.references
+            chroms = [x for x in chroms if is_proper_chrom(x)]
+
         data = parallel_execute(run_naibr, chroms)
         reads_by_barcode = collections.defaultdict(list)
         barcodes_by_pos = collections.defaultdict(list)
