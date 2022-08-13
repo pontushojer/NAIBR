@@ -114,6 +114,30 @@ def run_naibr(chrom):
     return linkedreads_by_barcode, barcodes_by_pos, discs_by_barcode, interchrom_discs, coverage, novel_adjacencies
 
 
+def chromosome_has_haplotyped_reads(chromosome, max_iter=100_000):
+    """Return `chromosome` if found BX and HP tagged read on chromsome within the first `max_iter` reads.
+    Otherwice return None"""
+    with pysam.AlignmentFile(configs.BAM_FILE, "rb") as reads:
+        for nr, read in enumerate(reads.fetch(chromosome)):
+            if read.has_tag("BX") and read.has_tag("HP"):
+                return chromosome
+
+            if nr > max_iter:
+                return None
+    return None
+
+
+def get_chromosomes_with_reads():
+    """Returns a list of chromosomes/contigs which has reads containing BX and HP tags"""
+    with pysam.AlignmentFile(configs.BAM_FILE, "rb") as reads:
+        all_chroms = reads.references
+        all_chroms = [x for x in all_chroms if is_proper_chrom(x)]
+
+    chroms = parallel_execute(chromosome_has_haplotyped_reads, all_chroms)
+    chroms = [chrom for chrom in chroms if chrom is not None]
+    return chroms
+
+
 def main():
     starttime = time.time()
 
@@ -150,12 +174,12 @@ def main():
         write_novel_adjacencies(novel_adjacencies)
 
     else:
-        chroms = []
-        with pysam.AlignmentFile(configs.BAM_FILE, "rb") as reads:
-            chroms = reads.references
-            chroms = [x for x in chroms if is_proper_chrom(x)]
+        chromosomes = get_chromosomes_with_reads()
+        if len(chromosomes) == 0:
+            sys.exit("ERROR: BAM does not contain BX and HP tagged reads.")
+        print(f"Found {len(chromosomes)} chromosome{'s' if len(chromosomes) > 1 else ''} with data in BAM")
 
-        chroms_data = parallel_execute(run_naibr, chroms)
+        chroms_data = parallel_execute(run_naibr, chromosomes)
         linkedreads_by_barcode = collections.defaultdict(dict)
         barcodes_by_pos = collections.defaultdict(list)
         discs_by_barcode = collections.defaultdict(list)
