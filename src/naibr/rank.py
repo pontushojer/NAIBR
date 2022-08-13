@@ -227,7 +227,9 @@ def get_linkedreads(candidate, barcodes, reads_by_barcode, discs_by_barcode, is_
                 linkedread_i = linkedread
             elif near_j(linkedread, candidate):
                 linkedread_j = linkedread
-            if spanning(linkedread, candidate):
+
+            # A single linkedread cannot be spanning two chromosomes
+            if not is_interchrom and spanning(linkedread, candidate):
                 span += [(linkedread[-2][0], linkedread[-2][-1])]  # First and last haplotype on linked read
 
         if linkedread_i and linkedread_j and linkedread_i[1] < linkedread_j[1]:
