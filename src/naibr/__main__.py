@@ -46,7 +46,7 @@ import numpy as np
 if len(sys.argv) < 2 or sys.argv[1] in {"help", "-h", "--help"}:
     sys.exit(__doc__)
 
-from .get_reads import parse_candidate_region, get_distributions, parse_chromosome, get_candidates
+from .get_reads import parse_candidate_region, get_distributions, parse_chromosome, get_candidates, get_interchrom_candidates
 from .global_vars import configs
 from .utils import flatten, parallel_execute, is_proper_chrom, write_novel_adjacencies
 from .rank import predict_novel_adjacencies
@@ -63,7 +63,7 @@ def run_naibr_candidate(cand):
     if configs.MIN_READS > 1:
         reads_by_barcode = {k: v for k, v in reads_by_barcode.items() if len(v) >= configs.MIN_READS}
 
-    p_len, p_rate, overlap = get_distributions(reads_by_barcode)
+    p_len, p_rate, overlap, _ = get_distributions(reads_by_barcode)
     if p_len is None:
         return scores
     scores = predict_novel_adjacencies(
@@ -90,9 +90,10 @@ def run_naibr(chrom):
         reads_by_barcode = {k: v for k, v in reads_by_barcode.items() if len(v) >= configs.MIN_READS}
 
     novel_adjacencies = []
+    linkedreads_by_barcode = collections.defaultdict(list)
     if len(reads_by_barcode) > 0:
         t_get_candidates = time.time()
-        cands, p_len, p_rate = get_candidates(discs, reads_by_barcode)
+        cands, p_len, p_rate, linkedreads_by_barcode = get_candidates(discs, reads_by_barcode)
         print(f"Got candidate noval adjacencies from data: {time.time() - t_get_candidates:.4f} s")
         if cands is None:
             print("No candidates from %s" % chrom)
@@ -110,7 +111,7 @@ def run_naibr(chrom):
             )
     else:
         print("No candidates from %s" % chrom)
-    return reads_by_barcode, barcodes_by_pos, discs_by_barcode, interchrom_discs, coverage, novel_adjacencies
+    return linkedreads_by_barcode, barcodes_by_pos, discs_by_barcode, interchrom_discs, coverage, novel_adjacencies
 
 
 def main():
@@ -154,34 +155,28 @@ def main():
             chroms = reads.references
             chroms = [x for x in chroms if is_proper_chrom(x)]
 
-        data = parallel_execute(run_naibr, chroms)
-        reads_by_barcode = collections.defaultdict(list)
+        chroms_data = parallel_execute(run_naibr, chroms)
+        linkedreads_by_barcode = collections.defaultdict(dict)
         barcodes_by_pos = collections.defaultdict(list)
         discs_by_barcode = collections.defaultdict(list)
         interchrom_discs = collections.defaultdict(list)
         coverage = []
         novel_adjacencies = []
-        for (
-            reads_by_barcode_chrom,
-            barcodes_by_pos_chrom,
-            discs_by_barcode_chrom,
-            interchrom_discs_chrom,
-            cov_chrom,
-            nas_chrom,
-        ) in data:
+        for data in chroms_data:
+            linkedreads_by_barcode_chrom, barcodes_by_pos_chrom, discs_by_barcode_chrom, interchrom_discs_chrom, cov_chrom, nas_chrom = data
             if nas_chrom:
-                reads_by_barcode.update(reads_by_barcode_chrom)
+                linkedreads_by_barcode.update(linkedreads_by_barcode_chrom)
                 barcodes_by_pos.update(barcodes_by_pos_chrom)
                 discs_by_barcode.update(discs_by_barcode_chrom)
                 interchrom_discs.update(interchrom_discs_chrom)
                 coverage.append(cov_chrom)
                 novel_adjacencies += nas_chrom
 
-        cands, p_len, p_rate = get_candidates(interchrom_discs, reads_by_barcode)
+        cands, p_len, p_rate = get_interchrom_candidates(interchrom_discs, linkedreads_by_barcode)
         if cands is not None:
             print("ranking %i interchromosomal candidates" % len(cands))
             novel_adjacencies += predict_novel_adjacencies(
-                reads_by_barcode,
+                linkedreads_by_barcode,
                 barcodes_by_pos,
                 discs_by_barcode,
                 cands,

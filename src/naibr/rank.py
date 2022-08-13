@@ -94,20 +94,6 @@ def phred_probability(mapq: int) -> float:
     return math.pow(10, (mapq / -10.0))
 
 
-def score_pair(candidate, plen, prate, discs_by_barcode, barcodes_by_pos, reads_by_barcode):
-    candidate_splits, spans = get_candidate_splits(
-        candidate, barcodes_by_pos, reads_by_barcode, discs_by_barcode
-    )
-
-    candidate.add_spans(spans)
-    for candidate_split in candidate_splits:
-        c = CandSplitMol()
-        c.calculate_score(candidate_split, plen, prate)
-        candidate.add_score(c)
-
-    return candidate
-
-
 def near_i(x, candidate):
     chrm = x[0]
     start = x[1]
@@ -221,16 +207,19 @@ def linked_reads(barcode, chrm, candidate, reads_by_barcode):
     return linkedreads, span
 
 
-def get_linkedreads(candidate, barcodes, reads_by_barcode, discs_by_barcode):
+def get_linkedreads(candidate, barcodes, reads_by_barcode, discs_by_barcode, is_interchrom):
     candidate_splits = []
     spans = []
     for barcode in barcodes:
         span = []
-        linkedreads, s = linked_reads(barcode, candidate.chrm1, candidate, reads_by_barcode)
-        span.extend(s)
-        if candidate.is_interchromosomal():
-            linkedreads2, _ = linked_reads(barcode, candidate.chrm2, candidate, reads_by_barcode)
+        if is_interchrom:
+            # When is_interchrom reads_by_barcode is a map of chromosomes to barcodes to linkedreads.
+            linkedreads = reads_by_barcode[candidate.chrm1][barcode]
+            linkedreads2 = reads_by_barcode[candidate.chrm2][barcode]
             linkedreads.extend(linkedreads2)
+        else:
+            linkedreads, s = linked_reads(barcode, candidate.chrm1, candidate, reads_by_barcode)
+            span.extend(s)
 
         linkedread_i, linkedread_j = [None, None]
         for linkedread in linkedreads:
@@ -249,7 +238,7 @@ def get_linkedreads(candidate, barcodes, reads_by_barcode, discs_by_barcode):
     return candidate_splits, spans
 
 
-def get_candidate_splits(candidate: NovelAdjacency, barcodes_by_pos, reads_by_barcode, discs_by_barcode):
+def get_candidate_splits(candidate: NovelAdjacency, barcodes_by_pos, reads_by_barcode, discs_by_barcode, is_interchrom):
     # Get normalized positions for candidate split molecule
     candidate_break1_norm = roundto(candidate.break1, configs.MAX_LINKED_DIST)
     candidate_break2_norm = roundto(candidate.break2, configs.MAX_LINKED_DIST)
@@ -268,15 +257,28 @@ def get_candidate_splits(candidate: NovelAdjacency, barcodes_by_pos, reads_by_ba
 
     barcodes_intersect = break1_barcodes.intersection(break2_barcodes)
     candidate_splits, spans = get_linkedreads(
-        candidate, barcodes_intersect, reads_by_barcode, discs_by_barcode
+        candidate, barcodes_intersect, reads_by_barcode, discs_by_barcode, is_interchrom
     )
     return candidate_splits, spans
+
+
+def score_pair(candidate, plen, prate, discs_by_barcode, barcodes_by_pos, reads_by_barcode, is_interchrom):
+    candidate_splits, spans = get_candidate_splits(
+        candidate, barcodes_by_pos, reads_by_barcode, discs_by_barcode, is_interchrom
+    )
+
+    candidate.add_spans(spans)
+    for candidate_split in candidate_splits:
+        c = CandSplitMol()
+        c.calculate_score(candidate_split, plen, prate)
+        candidate.add_score(c)
+
+    return candidate
 
 
 def get_cand_score(
     candidates, is_interchrom, plen, prate, discs_by_barcode, barcodes_by_pos, reads_by_barcode
 ):
-    scores = []
     score_pair_with_args = partial(
         score_pair,
         plen=plen,
@@ -284,15 +286,14 @@ def get_cand_score(
         discs_by_barcode=discs_by_barcode,
         barcodes_by_pos=barcodes_by_pos,
         reads_by_barcode=reads_by_barcode,
+        is_interchrom=is_interchrom
     )
-    if not is_interchrom or configs.NUM_THREADS == 1:
+    # If the current process is a child of the main process we cannot run on multiple threads
+    if configs.NUM_THREADS > 1 and mp.current_process().name == "MainProcess":
+        with mp.Pool(min(5, configs.NUM_THREADS), maxtasksperchild=1) as pool:
+            scores = pool.map(score_pair_with_args, candidates)
+    else:
         scores = map(score_pair_with_args, candidates)
-    elif is_interchrom and configs.NUM_THREADS != 1:
-        pool = mp.Pool(min(5, configs.NUM_THREADS), maxtasksperchild=1)
-        scores = pool.map(score_pair_with_args, candidates)
-        pool.close()
-        pool.join()
-    # TODO - Based on this if NUM_THREADS is 1 no interchrom candidates will be evaluated.
 
     rets = []
     for novel_adjacency in scores:

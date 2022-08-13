@@ -97,7 +97,7 @@ def get_internal_overlap(barcode_linkedreads, barcode_overlap):
     """Tally up the internal overlapp of normalized positions with linked reads
     for a barcode"""
     for linkedread in barcode_linkedreads:
-        chrom, start, end, count = linkedread
+        chrom, start, end, *_ = linkedread
         if end - start < configs.MAX_LINKED_DIST:
             continue
 
@@ -114,8 +114,8 @@ def get_pairwise_overlap(barcode_linkedreads, barcode_overlap):
     for linkedread1, linkedread2 in itertools.combinations(barcode_linkedreads, 2):
         if linkedread1[0] > linkedread2[0] or linkedread1[1] > linkedread2[1]:
             linkedread1, linkedread2 = linkedread2, linkedread1
-        chr1, start1, end1, count1 = linkedread1
-        chr2, start2, end2, count2 = linkedread2
+        chr1, start1, end1, *_ = linkedread1
+        chr2, start2, end2, *_ = linkedread2
         norm_start1 = roundto(start1, configs.MAX_LINKED_DIST)
         norm_end1 = roundto(end1, configs.MAX_LINKED_DIST) + configs.MAX_LINKED_DIST
         norm_start2 = roundto(start2, configs.MAX_LINKED_DIST)
@@ -129,16 +129,24 @@ def get_pairwise_overlap(barcode_linkedreads, barcode_overlap):
 
 
 def get_distributions(reads_by_barcode):
-    linkedreads = []
     linkedreads_by_barcode = collections.defaultdict(list)
-    barcode_overlap = collections.defaultdict(int)
-
     for (chrom, barcode), reads in reads_by_barcode.items():
         barcode_linkedreads = linked_reads(reads, chrom)
-        linkedreads.extend(barcode_linkedreads)
-        linkedreads_by_barcode[barcode].extend(barcode_linkedreads)
+
+        if barcode_linkedreads:
+            linkedreads_by_barcode[barcode].extend(barcode_linkedreads)
+
+    p_len, p_rate, barcode_overlap = get_linkedread_distributions(linkedreads_by_barcode)
+    return p_len, p_rate, barcode_overlap, linkedreads_by_barcode
+
+
+def get_linkedread_distributions(linkedreads_by_barcode):
+    linkedreads = []
+    barcode_overlap = collections.defaultdict(int)
 
     for barcode, barcode_linkedreads in linkedreads_by_barcode.items():
+        linkedreads.extend(barcode_linkedreads)
+
         get_internal_overlap(barcode_linkedreads, barcode_overlap)
         if len(barcode_linkedreads) > 1:
             get_pairwise_overlap(barcode_linkedreads, barcode_overlap)

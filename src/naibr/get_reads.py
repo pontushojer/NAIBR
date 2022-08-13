@@ -5,7 +5,7 @@ import numpy as np
 
 from .utils import PERead, roundto, is_proper_chrom, get_barcode, NovelAdjacency
 from .global_vars import configs
-from .distributions import get_distributions
+from .distributions import get_distributions, get_linkedread_distributions
 
 
 def inblacklist(chrom, pos):
@@ -171,12 +171,8 @@ def disc_intersection(disc_reads):
     return 0, 0, 0, 0
 
 
-def get_candidates(discs, reads_by_barcode):
+def get_candidates_from_discs(discs, barcode_overlap):
     candidates = []
-    p_len, p_rate, barcode_overlap = get_distributions(reads_by_barcode)
-    if p_len is None or p_rate is None:
-        return None, None, None
-
     for position, disc_reads in discs.items():
         # Skip positions with too few discs
         if len(disc_reads) < configs.MIN_DISCS:
@@ -207,6 +203,25 @@ def get_candidates(discs, reads_by_barcode):
             # Check that not already added
             if not any(cand == x for x in candidates):
                 candidates.append(cand)
+    return candidates
+
+
+def get_candidates(discs, reads_by_barcode):
+    p_len, p_rate, barcode_overlap, barcode_linkedreads = get_distributions(reads_by_barcode)
+    if p_len is None or p_rate is None:
+        return None, None, None, None
+
+    candidates = get_candidates_from_discs(discs, barcode_overlap)
+    return candidates, p_len, p_rate, barcode_linkedreads
+
+
+def get_interchrom_candidates(interchrom_discs, linkedreads_by_barcode):
+    p_len, p_rate, barcode_overlap = get_linkedread_distributions(linkedreads_by_barcode)
+
+    if p_len is None or p_rate is None:
+        return None, None, None
+
+    candidates = get_candidates_from_discs(interchrom_discs, barcode_overlap)
     return candidates, p_len, p_rate
 
 
