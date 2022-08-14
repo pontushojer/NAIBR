@@ -1,7 +1,6 @@
 import collections
 from functools import partial, cache
 import math
-import multiprocessing as mp
 import numpy as np
 
 from .utils import (
@@ -290,12 +289,7 @@ def get_cand_score(
         reads_by_barcode=reads_by_barcode,
         is_interchrom=is_interchrom
     )
-    # If the current process is a child of the main process we cannot run on multiple threads
-    if configs.NUM_THREADS > 1 and mp.current_process().name == "MainProcess":
-        with mp.Pool(min(5, configs.NUM_THREADS), maxtasksperchild=1) as pool:
-            scores = pool.map(score_pair_with_args, candidates)
-    else:
-        scores = map(score_pair_with_args, candidates)
+    scores = map(score_pair_with_args, candidates)
 
     rets = []
     for novel_adjacency in scores:
