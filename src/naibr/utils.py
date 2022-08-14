@@ -118,11 +118,7 @@ class NovelAdjacency:
                 s += max(0, self.score_by_hap[(0, 0)])
                 d += self.discs_by_hap[(0, 0)]
 
-            if (
-                s > best_score
-                and self.pairs_by_hap[hap] > 0
-                and self.pairs_by_hap[hap] >= self.spans_by_hap[hap]
-            ):
+            if s > best_score and self.pairs_by_hap[hap] > 0 and self.pairs_by_hap[hap] >= self.spans_by_hap[hap]:
                 best_score = s
                 best_haps = hap
 
@@ -212,14 +208,16 @@ class NovelAdjacency:
     def to_bedpe(self, name: str):
         """10x-style BEDPE format according suitable for IGV visualization
         see https://support.10xgenomics.com/genome-exome/software/pipelines/latest/output/bedpe"""
-        info = ";".join([
-            f"LENGTH={len(self)}",
-            f"NUM_SPLIT_MOLECULES={self.pairs}",
-            f"NUM_DISCORDANT_READS={self.discs}",
-            f"ORIENTATION={self.orient}",
-            f"HAPLOTYPE={self.haps[0]},{self.haps[1]}",
-            f"SVTYPE={self.svtype()}",
-        ])
+        info = ";".join(
+            [
+                f"LENGTH={len(self)}",
+                f"NUM_SPLIT_MOLECULES={self.pairs}",
+                f"NUM_DISCORDANT_READS={self.discs}",
+                f"ORIENTATION={self.orient}",
+                f"HAPLOTYPE={self.haps[0]},{self.haps[1]}",
+                f"SVTYPE={self.svtype()}",
+            ]
+        )
         return "\t".join(
             [
                 self.chrm1,
@@ -238,32 +236,36 @@ class NovelAdjacency:
         )
 
     def to_vcf(self, name):
-        info = ';'.join((
-            f'END={self.break2}',
-            f'SVTYPE={self.svtype()}',
-            f'SVLEN={len(self)}',
-            f'SVSCORE={self.score}',
-            f"NUM_SPLIT_MOLECULES={self.pairs}",
-            f"NUM_DISCORDANT_READS={self.discs}",
-            f"HAPLOTYPE={self.haps[0]},{self.haps[1]}",
-        ))
+        info = ";".join(
+            (
+                f"END={self.break2}",
+                f"SVTYPE={self.svtype()}",
+                f"SVLEN={len(self)}",
+                f"SVSCORE={self.score}",
+                f"NUM_SPLIT_MOLECULES={self.pairs}",
+                f"NUM_DISCORDANT_READS={self.discs}",
+                f"HAPLOTYPE={self.haps[0]},{self.haps[1]}",
+            )
+        )
         if self.is_interchromosomal():
             info += f";CHR1={self.chrm2}"
 
-        return "\t".join([
-            self.chrm1,
-            str(self.break1),
-            name,
-            'N',
-            f'<{self.svtype()}>',
-            str(self.score),
-            "PASS" if self.pass_threshold else "FAIL",
-            info,
-            'GT',
-            # TODO - This is not the correct genotype, but using './.' corresponds to
-            #  a "non-called" variant in downstream applications.
-            '1/1',
-        ])
+        return "\t".join(
+            [
+                self.chrm1,
+                str(self.break1),
+                name,
+                "N",
+                f"<{self.svtype()}>",
+                str(self.score),
+                "PASS" if self.pass_threshold else "FAIL",
+                info,
+                "GT",
+                # TODO - This is not the correct genotype, but using './.' corresponds to
+                #  a "non-called" variant in downstream applications.
+                "1/1",
+            ]
+        )
 
 
 class LinkedRead:
@@ -502,12 +504,12 @@ def write_novel_adjacencies(novel_adjacencies):
     print(f"Writing results to {os.path.join(configs.DIR, fname3)}")
     with open(os.path.join(configs.DIR, fname3), "w") as f:
         # Build header
-        header_string = '''##fileformat=VCFv4.2
-##source=NAIBR'''
+        header_string = """##fileformat=VCFv4.2
+##source=NAIBR"""
 
-        header_string += ''.join([f"\n##contig=<ID={c},length={l}>" for c, l in get_chrom_lengths()])
+        header_string += "".join([f"\n##contig=<ID={c},length={l}>" for c, l in get_chrom_lengths()])
 
-        header_string += '''
+        header_string += """
 ##FILTER=<ID=PASS,Description="Passed the software filter">
 ##FILTER=<ID=FAIL,Description="Failed the software filter">
 ##INFO=<ID=END,Number=1,Type=Integer,Description="End position of the structural variant">
@@ -518,7 +520,7 @@ def write_novel_adjacencies(novel_adjacencies):
 ##INFO=<ID=NUM_SPLIT_MOLECULES,Number=1,Type=Integer,Description="Number of supporting split molecules">
 ##INFO=<ID=HAPLOTYPE,Number=1,Type=String,Description="Haplotype string from NAIBR">
 ##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype, All set to 1/1.">
-#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	SAMPLE'''
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	SAMPLE"""
 
         print(header_string, file=f)
         for nr, na in enumerate(novel_adjacencies, start=1):

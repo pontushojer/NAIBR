@@ -197,9 +197,7 @@ def get_candidates_from_discs(discs, barcode_overlap):
         norm_i = roundto(i, configs.MAX_LINKED_DIST)
         norm_j = roundto(j, configs.MAX_LINKED_DIST)
         barcode_overlaps = barcode_overlap[(chrm, norm_i, nextchrm, norm_j)]
-        if (
-            chrm == nextchrm and j - i < configs.MAX_LINKED_DIST
-        ) or barcode_overlaps >= configs.MIN_BC_OVERLAP:
+        if (chrm == nextchrm and j - i < configs.MAX_LINKED_DIST) or barcode_overlaps >= configs.MIN_BC_OVERLAP:
             # Check that not already added
             if not any(cand == x for x in candidates):
                 candidates.append(cand)

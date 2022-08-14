@@ -46,7 +46,13 @@ import numpy as np
 if len(sys.argv) < 2 or sys.argv[1] in {"help", "-h", "--help"}:
     sys.exit(__doc__)
 
-from .get_reads import parse_candidate_region, get_distributions, parse_chromosome, get_candidates, get_interchrom_candidates
+from .get_reads import (
+    parse_candidate_region,
+    get_distributions,
+    parse_chromosome,
+    get_candidates,
+    get_interchrom_candidates,
+)
 from .global_vars import configs
 from .utils import flatten, parallel_execute, is_proper_chrom, write_novel_adjacencies
 from .rank import predict_novel_adjacencies
@@ -187,7 +193,14 @@ def main():
         coverage = []
         novel_adjacencies = []
         for data in chroms_data:
-            linkedreads_by_barcode_chrom, barcodes_by_pos_chrom, discs_by_barcode_chrom, interchrom_discs_chrom, cov_chrom, nas_chrom = data
+            (
+                linkedreads_by_barcode_chrom,
+                barcodes_by_pos_chrom,
+                discs_by_barcode_chrom,
+                interchrom_discs_chrom,
+                cov_chrom,
+                nas_chrom,
+            ) = data
             if nas_chrom:
                 linkedreads_by_barcode.update(linkedreads_by_barcode_chrom)
                 barcodes_by_pos.update(barcodes_by_pos_chrom)

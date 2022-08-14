@@ -24,12 +24,7 @@ class NegBin(object):
 
     @staticmethod
     def _nbin(k, p, r):
-        return (
-            mpmath.gamma(k + r)
-            / (mpmath.gamma(k + 1) * mpmath.gamma(r))
-            * np.power(1 - p, r)
-            * np.power(p, k)
-        )
+        return mpmath.gamma(k + r) / (mpmath.gamma(k + 1) * mpmath.gamma(r)) * np.power(1 - p, r) * np.power(p, k)
 
     @staticmethod
     def mle(par, data, sm):

@@ -60,9 +60,7 @@ class CandSplitMol:
                 + plen(lenLi) * prate(rateLi0) * plen(lenLj) * prate(rateLj0) * mapqi0 * mapqj0 * mapqdisc0
             )
         else:
-            scoreH0 = log(
-                0 + plen(lenLi) * prate(rateLi0) * plen(lenLj) * prate(rateLj0) * mapqi0 * mapqj0 * mapqdisc0
-            )
+            scoreH0 = log(0 + plen(lenLi) * prate(rateLi0) * plen(lenLj) * prate(rateLj0) * mapqi0 * mapqj0 * mapqdisc0)
         self.scoreHA = scoreHA
         self.scoreH0 = scoreH0
         self.hap_i = hap_i
@@ -99,10 +97,7 @@ def near_i(x, candidate):
     end = x[2]
     neari = (
         (candidate.orient[0] == "+" and end - configs.LMAX < candidate.break1 < end + configs.MAX_LINKED_DIST)
-        or (
-            candidate.orient[0] == "-"
-            and start + configs.LMAX > candidate.break1 > start - configs.MAX_LINKED_DIST
-        )
+        or (candidate.orient[0] == "-" and start + configs.LMAX > candidate.break1 > start - configs.MAX_LINKED_DIST)
     ) and candidate.chrm1 == chrm
     return neari
 
@@ -113,10 +108,7 @@ def near_j(x, candidate):
     end = x[2]
     nearj = (
         (candidate.orient[1] == "+" and end - configs.LMAX < candidate.break2 < end + configs.MAX_LINKED_DIST)
-        or (
-            candidate.orient[1] == "-"
-            and start + configs.LMAX > candidate.break2 > start - configs.MAX_LINKED_DIST
-        )
+        or (candidate.orient[1] == "-" and start + configs.LMAX > candidate.break2 > start - configs.MAX_LINKED_DIST)
     ) and candidate.chrm2 == chrm
     return nearj
 
@@ -168,7 +160,7 @@ def linked_reads(barcode, chrm, candidate, reads_by_barcode):
 
     # Get indexes where the distance of neigbouring reads exceeds the MAX_LINKED_DIST.
     # These reads most likely originate from different molecuels.
-    dist_break = (pair_dists > configs.MAX_LINKED_DIST)
+    dist_break = pair_dists > configs.MAX_LINKED_DIST
 
     # Get indexes neigbouring reads span the candidate. These reads could originate the
     # same molecule. Not for interchromsomal candidates.
@@ -277,9 +269,7 @@ def score_pair(candidate, plen, prate, discs_by_barcode, barcodes_by_pos, reads_
     return candidate
 
 
-def get_cand_score(
-    candidates, is_interchrom, plen, prate, discs_by_barcode, barcodes_by_pos, reads_by_barcode
-):
+def get_cand_score(candidates, is_interchrom, plen, prate, discs_by_barcode, barcodes_by_pos, reads_by_barcode):
     score_pair_with_args = partial(
         score_pair,
         plen=plen,
@@ -287,7 +277,7 @@ def get_cand_score(
         discs_by_barcode=discs_by_barcode,
         barcodes_by_pos=barcodes_by_pos,
         reads_by_barcode=reads_by_barcode,
-        is_interchrom=is_interchrom
+        is_interchrom=is_interchrom,
     )
     scores = map(score_pair_with_args, candidates)
 
