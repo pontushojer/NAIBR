@@ -54,7 +54,7 @@ def parse_chromosome(chrom):
     """
     print("Getting candidates for chromosome %s" % chrom)
     cov = 0
-    reads = pysam.AlignmentFile(configs.BAM_FILE, "rb")
+    reads = pysam.AlignmentFile(configs.BAM_FILE, "rb", threads=configs.COMPRESSION_THREADS)
     reads_start = reads.lengths[list(reads.references).index(chrom)]
     reads_end = 0
     reads_by_barcode = collections.defaultdict(list)
@@ -234,7 +234,7 @@ def parse_candidate_region(candidate):
     """
     w = configs.MAX_LEN - configs.MAX_LINKED_DIST
     cov = 0
-    reads = pysam.AlignmentFile(configs.BAM_FILE, "rb")
+    reads = pysam.AlignmentFile(configs.BAM_FILE, "rb", threads=configs.COMPRESSION_THREADS)
     reads_by_barcode = collections.defaultdict(list)
     discs_by_barcode = collections.defaultdict(list)
     barcodes_by_pos = collections.defaultdict(set)

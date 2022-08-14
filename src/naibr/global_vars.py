@@ -78,6 +78,7 @@ class Configs:
     DIR: str = ""
     MAX_LINKED_DIST: int = 10_000
     NUM_THREADS: int = 1
+    COMPRESSION_THREADS: int = 1
     SD_MULT: int = 2
     LMIN: int = None
     LMAX: int = None

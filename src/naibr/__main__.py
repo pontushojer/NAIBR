@@ -168,6 +168,7 @@ def main():
                 els = line.strip().split("\t")
                 if len(els) > 4:
                     cands.append([els[0], int(els[1]), els[3], int(els[4]), els[-1]])
+        configs.COMPRESSION_THREADS = 2 if configs.NUM_THREADS / len(cands) > 2 else 1
         novel_adjacencies = flatten(parallel_execute(run_naibr_candidate, cands))
         write_novel_adjacencies(novel_adjacencies)
 
@@ -177,6 +178,7 @@ def main():
             sys.exit("ERROR: BAM does not contain BX and HP tagged reads.")
         print(f"Found {len(chromosomes)} chromosome{'s' if len(chromosomes) > 1 else ''} with data in BAM")
 
+        configs.COMPRESSION_THREADS = 2 if configs.NUM_THREADS / len(chromosomes) > 2 else 1
         chroms_data = parallel_execute(run_naibr, chromosomes)
         linkedreads_by_barcode = collections.defaultdict(dict)
         barcodes_by_pos = collections.defaultdict(list)
