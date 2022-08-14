@@ -526,7 +526,7 @@ def write_novel_adjacencies(novel_adjacencies):
 
 
 def parallel_execute(function, input_list):
-    if configs.NUM_THREADS != 1:
+    if configs.NUM_THREADS > 1 and len(input_list) > 1:
         with mp.Pool(configs.NUM_THREADS, maxtasksperchild=1) as pool:
             print("running on %s threads" % str(configs.NUM_THREADS))
             data = pool.map(function, input_list)
