@@ -19,30 +19,39 @@ def inblacklist(chrom, pos):
 
 def parse_mapped_pairs(iterator):
     mates = {}
-    t0 = time.time()
-    for nr, read in enumerate(iterator, start=1):
-        # Print progress at regular intervals
-        if nr % 1_000_000 == 0:
-            print(f"Processed {nr:,} reads ({1_000_000 // (time.time()-t0):,.0f} reads/second).")
-            t0 = time.time()
-
+    for read in iterator:
         if read.mapping_quality < configs.MIN_MAPQ:
             continue
 
-        if read.is_unmapped or read.is_duplicate or read.is_supplementary or read.is_secondary:
+        if read.is_duplicate or read.is_supplementary or read.is_secondary:
             continue
 
-        if read.reference_name != read.next_reference_name:
-            # Interchromosomal discordant reads
-            if is_proper_chrom(read.next_reference_name) and read.reference_name < read.next_reference_name:
-                yield read, None
-        elif read.query_name in mates:
-            if read.reference_start < read.next_reference_start:
-                yield read, mates.pop(read.query_name)
-            else:
-                yield mates.pop(read.query_name), read
+        if read.query_name in mates:
+            yield mates.pop(read.query_name), read
         else:
+            if read.is_unmapped or read.mate_is_unmapped:
+                continue
+
+            if read.reference_name != read.next_reference_name:
+                # Interchromosomal discordant reads
+                if is_proper_chrom(read.next_reference_name) and read.reference_name < read.next_reference_name:
+                    yield read, None
+
             mates[read.query_name] = read
+
+
+def progress(iterator, desc=None, step=1_000_000, unit=None):
+    """Simple progress meter"""
+    desc = "Processed" if desc is None else desc
+    unit = "els" if unit is None else unit
+    nr = 0
+    t0 = time.perf_counter()
+    for nr, el in enumerate(iterator, start=1):
+        yield el
+
+        if nr % step == 0:
+            print(f"{desc} {nr:,} {unit} ({1_000_000 // (time.perf_counter()-t0):,.0f} {unit}/s).")
+            t0 = time.perf_counter()
 
 
 def parse_chromosome(chrom):
@@ -63,9 +72,7 @@ def parse_chromosome(chrom):
     interchrom_discs = collections.defaultdict(list)
     barcodes_by_pos = collections.defaultdict(set)
     iterator = reads.fetch(chrom)
-    nr = 0
-    for read, mate in parse_mapped_pairs(iterator):
-        nr += 2
+    for read, mate in progress(parse_mapped_pairs(iterator), unit="pairs"):
         if mate is not None:
             reads_start = min(reads_start, read.reference_start)
             reads_end = max(reads_end, mate.reference_end)
@@ -107,8 +114,7 @@ def parse_chromosome(chrom):
     #      - Use configuration to allow user input?
     #      - Otherwise calculate accurately across each chromosome (or subsection).
     coverage = cov / abs(reads_end - reads_start)
-    if nr > 0:
-        print(f"Done reading chromosome {chrom}: coverage = {coverage:.3f}, reads = {nr:,}")
+    print(f"Done reading chromosome {chrom}: coverage = {coverage:.3f}")
 
     readarray_by_barcode = {}
     dtype = [("start", int), ("end", int), ("hap", np.uint), ("mapq", int)]
@@ -253,7 +259,7 @@ def parse_candidate_region(candidate):
     for chrm, s, e in window:
         lengths += e - s
         iterator = reads.fetch(chrm, max(0, s), e)
-        for read, mate in parse_mapped_pairs(iterator):
+        for read, mate in progress(parse_mapped_pairs(iterator), unit="pairs"):
             if mate is not None:
                 cov += read.query_alignment_length + mate.query_alignment_length
             else:
