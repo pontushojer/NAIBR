@@ -1,4 +1,4 @@
-import math
+from math import log
 import os
 import collections
 import multiprocessing as mp

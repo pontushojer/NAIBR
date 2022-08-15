@@ -4,7 +4,7 @@ import math
 import numpy as np
 
 from .utils import (
-    log,
+    safe_log,
     NovelAdjacency,
     is_close,
     roundto,
@@ -50,17 +50,17 @@ class CandSplitMol:
         mapqj0 = self.map_prob(mapq_j)
         mapqdiscA = self.map_prob(discs_mapqs)
         mapqdisc0 = self.mismap_prob(discs_mapqs)
-        scoreHA = log(
+        scoreHA = safe_log(
             plen(lenA) * prate(rateA) * mapqiA * mapqjA * mapqdiscA
             + plen(lenLi) * prate(rateLiA) * plen(lenLj) * prate(rateLjA) * mapqiA * mapqjA * mapqdiscA
         )
         if chrm_i == chrm_j:
-            scoreH0 = log(
+            scoreH0 = safe_log(
                 plen(len0) * prate(rate0) * mapqi0 * mapqj0 * mapqdisc0
                 + plen(lenLi) * prate(rateLi0) * plen(lenLj) * prate(rateLj0) * mapqi0 * mapqj0 * mapqdisc0
             )
         else:
-            scoreH0 = log(0 + plen(lenLi) * prate(rateLi0) * plen(lenLj) * prate(rateLj0) * mapqi0 * mapqj0 * mapqdisc0)
+            scoreH0 = safe_log(0 + plen(lenLi) * prate(rateLi0) * plen(lenLj) * prate(rateLj0) * mapqi0 * mapqj0 * mapqdisc0)
         self.scoreHA = scoreHA
         self.scoreH0 = scoreH0
         self.hap_i = hap_i
