@@ -335,9 +335,7 @@ def first_read(read):
 
 
 def is_proper_chrom(chrom):
-    if chrom is not None:
-        return "Un" not in chrom and "random" not in chrom and "hs37d5" not in chrom
-    return False
+    return "Un" not in chrom and "random" not in chrom and "hs37d5" not in chrom
 
 
 def get_read_orientation(read):
