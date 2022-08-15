@@ -341,15 +341,8 @@ def is_proper_chrom(chrom):
 
 
 def get_read_orientation(read):
-    a = ""
-    if read.is_reverse:
-        a += "-"
-    else:
-        a += "+"
-    if read.mate_is_reverse:
-        a += "-"
-    else:
-        a += "+"
+    a = "-" if read.is_reverse else "+"
+    a += "-" if read.mate_is_reverse else "+"
     return a
 
 
