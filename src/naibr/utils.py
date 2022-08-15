@@ -1,6 +1,6 @@
 from math import log
 import os
-import collections
+from collections import defaultdict
 import multiprocessing as mp
 import itertools
 import pysam
@@ -35,15 +35,15 @@ class NovelAdjacency:
         self.orient = orient
 
         self.score = -float("inf")
-        self.score_by_hap = collections.defaultdict(int)
+        self.score_by_hap = defaultdict(int)
 
         self.haps = (0, 0)
         self.spans = 0
         self.discs = 0
         self.pairs = 0
-        self.spans_by_hap = collections.defaultdict(int)
-        self.discs_by_hap = collections.defaultdict(int)
-        self.pairs_by_hap = collections.defaultdict(int)
+        self.spans_by_hap = defaultdict(int)
+        self.discs_by_hap = defaultdict(int)
+        self.pairs_by_hap = defaultdict(int)
 
         self.pass_threshold = None
 
@@ -389,15 +389,15 @@ def get_barcode(read):
 def plog(x, num):
     ret = 0
     for i in range(num):
-        ret += log(x)
+        ret += safe_log(x)
     return ret
 
 
-def log(x):
+def safe_log(x):
     try:
-        return math.log(x)
-    except:
-        return math.log(1e-300)
+        return log(x)
+    except ValueError:
+        return log(1e-300)
 
 
 def is_close(index, read_pos, orient):
