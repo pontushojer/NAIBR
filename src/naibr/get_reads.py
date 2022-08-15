@@ -29,7 +29,8 @@ def parse_mapped_pairs(iterator):
         if read.query_name in mates:
             yield mates.pop(read.query_name), read
         else:
-            if read.is_unmapped or read.mate_is_unmapped:
+            # Only check for unmapped mate as the any accessed reads here should be mapped.
+            if read.mate_is_unmapped:
                 continue
 
             if read.reference_name != read.next_reference_name:
