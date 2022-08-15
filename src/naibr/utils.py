@@ -510,5 +510,5 @@ def parallel_execute(function, input_list):
 
 
 def roundto(number: int, step: int) -> int:
-    """Round number to down the nearset multiple of step"""
+    """Round number to down the nearest multiple of step"""
     return number - number % step
