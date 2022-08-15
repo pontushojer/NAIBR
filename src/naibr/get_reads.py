@@ -64,8 +64,7 @@ def parse_chromosome(chrom):
     print("Getting candidates for chromosome %s" % chrom)
     cov = 0
     reads = pysam.AlignmentFile(configs.BAM_FILE, "rb", threads=configs.COMPRESSION_THREADS)
-    reads_start = reads.lengths[list(reads.references).index(chrom)]
-    reads_end = 0
+
     reads_by_barcode = collections.defaultdict(list)
     discs_by_barcode = collections.defaultdict(list)
     discs = collections.defaultdict(list)
@@ -74,12 +73,8 @@ def parse_chromosome(chrom):
     iterator = reads.fetch(chrom)
     for read, mate in progress(parse_mapped_pairs(iterator), unit="pairs"):
         if mate is not None:
-            reads_start = min(reads_start, read.reference_start)
-            reads_end = max(reads_end, mate.reference_end)
             cov += read.query_alignment_length + mate.query_alignment_length
         else:
-            reads_start = min(reads_start, read.reference_start)
-            reads_end = max(reads_end, read.reference_end)
             cov += read.query_alignment_length
 
         barcode = get_barcode(read)
@@ -110,18 +105,22 @@ def parse_chromosome(chrom):
             norm_mid = roundto(peread.mid(), configs.MAX_LINKED_DIST)
             barcodes_by_pos[(peread.chrm, norm_mid)].add(peread.barcode)
 
-    # TODO - think about how to handle coverage a bit more accurate.
-    #      - Use configuration to allow user input?
-    #      - Otherwise calculate accurately across each chromosome (or subsection).
-    coverage = cov / abs(reads_end - reads_start)
-    print(f"Done reading chromosome {chrom}: coverage = {coverage:.3f}")
-
+    reads_start = float("inf")
+    reads_end = 0
     readarray_by_barcode = {}
     dtype = [("start", int), ("end", int), ("hap", np.uint), ("mapq", int)]
     for barcode, reads in reads_by_barcode.items():
         readarray = np.array(reads, dtype=dtype)
         readarray.sort(order="start")
         readarray_by_barcode[barcode] = readarray
+        reads_start = min(reads_start, readarray["start"][0])
+        reads_end = max(reads_end, readarray["end"][-1])
+
+    # TODO - think about how to handle coverage a bit more accurate.
+    #      - Use configuration to allow user input?
+    #      - Otherwise calculate accurately across each chromosome (or subsection).
+    coverage = cov / (reads_end - reads_start)
+    print(f"Done reading chromosome {chrom}: coverage = {coverage:.3f}")
 
     return (
         readarray_by_barcode,
