@@ -134,10 +134,6 @@ def discs(candidate, barcode, discs_by_barcode):
     return ds
 
 
-def crossing(start, end, i):
-    return start < i < end
-
-
 def majority_vote(haps):
     """From a list of haplotypes select the most numerous that's not 0 (unphased)
     unless all are 0"""
