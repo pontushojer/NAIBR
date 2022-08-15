@@ -268,25 +268,6 @@ class NovelAdjacency:
         )
 
 
-class LinkedRead:
-    __slots__ = ["barcode", "chrm", "start", "disc", "end", "hap", "num"]
-
-    def __init__(self, barcode):
-        self.chrm = 0
-        self.start = 0
-        self.end = 0
-        self.hap = 0
-        self.num = 1
-        self.disc = []
-        self.barcode = barcode
-
-    def add_num(self):
-        self.num += 1
-
-    def length(self):
-        return float(self.end - self.start)
-
-
 class PERead:
     __slots__ = [
         "barcode",
