@@ -107,7 +107,7 @@ def run_naibr(chrom):
         if cands is None:
             print("No candidates from %s" % chrom)
         else:
-            print("ranking %i candidates from %s" % (len(cands), chrom))
+            print("Ranking %i candidates from %s" % (len(cands), chrom))
             novel_adjacencies = predict_novel_adjacencies(
                 reads_by_barcode,
                 barcodes_by_pos,
@@ -118,6 +118,11 @@ def run_naibr(chrom):
                 coverage,
                 False,
             )
+            if novel_adjacencies:
+                n_pass = sum([na.pass_threshold for na in novel_adjacencies])
+                n_total = len(novel_adjacencies)
+                print(f"Found {n_total:,} SVs on {chrom} of which {n_pass:,} ({n_pass / n_total:.1%}) passed the threshold")
+
     else:
         print("No candidates from %s" % chrom)
     return linkedreads_by_barcode, barcodes_by_pos, discs_by_barcode, interchrom_discs, coverage, novel_adjacencies

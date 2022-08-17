@@ -301,9 +301,4 @@ def predict_novel_adjacencies(
     novel_adjacencies = filter_chrY(novel_adjacencies)
     novel_adjacencies = collapse_novel_adjacencies(novel_adjacencies)
     evaluate_threshold(novel_adjacencies, threshold(cov))
-
-    if novel_adjacencies:
-        n_pass = sum([na.pass_threshold for na in novel_adjacencies])
-        n_total = len(novel_adjacencies)
-        print(f"Found {n_total:,} SVs of which {n_pass:,} ({n_pass / n_total:.1%}) passed the threshold")
     return novel_adjacencies
