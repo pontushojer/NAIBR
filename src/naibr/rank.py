@@ -224,7 +224,8 @@ def get_linkedreads(candidate, barcodes, reads_by_barcode, discs_by_barcode, is_
             candidate_split = [linkedread_i, discs_mapqs, linkedread_j]
             candidate_splits.append(candidate_split)
         spans.extend(span)
-    return candidate_splits, spans
+    candidate.add_spans(spans)
+    return candidate_splits
 
 
 def get_candidate_splits(candidate: NovelAdjacency, barcodes_by_pos, reads_by_barcode, discs_by_barcode, is_interchrom):
@@ -245,18 +246,12 @@ def get_candidate_splits(candidate: NovelAdjacency, barcodes_by_pos, reads_by_ba
     )
 
     barcodes_intersect = break1_barcodes.intersection(break2_barcodes)
-    candidate_splits, spans = get_linkedreads(
-        candidate, barcodes_intersect, reads_by_barcode, discs_by_barcode, is_interchrom
-    )
-    return candidate_splits, spans
+    candidate_splits = get_linkedreads(candidate, barcodes_intersect, reads_by_barcode, discs_by_barcode, is_interchrom)
+    return candidate_splits
 
 
 def score_pair(candidate, plen, prate, discs_by_barcode, barcodes_by_pos, reads_by_barcode, is_interchrom):
-    candidate_splits, spans = get_candidate_splits(
-        candidate, barcodes_by_pos, reads_by_barcode, discs_by_barcode, is_interchrom
-    )
-
-    candidate.add_spans(spans)
+    candidate_splits = get_candidate_splits(candidate, barcodes_by_pos, reads_by_barcode, discs_by_barcode, is_interchrom)
     for candidate_split in candidate_splits:
         c = CandSplitMol()
         c.calculate_score(candidate_split, plen, prate)
