@@ -66,6 +66,12 @@ class NovelAdjacency:
     def __len__(self):
         return self.length()
 
+    def distance(self, other):
+        if self.chrm1 == other.chrm1 and self.chrm2 == other.chrm2:
+            return abs(self.break1 - other.break1), abs(self.break2 - other.break2)
+        else:
+            return float("inf"), float("inf")
+
     def coordinates(self):
         return self.chrm1, self.break1, self.chrm2, self.break2, self.orient
 

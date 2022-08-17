@@ -48,7 +48,6 @@ if len(sys.argv) < 2 or sys.argv[1] in {"help", "-h", "--help"}:
 
 from .get_reads import (
     parse_candidate_region,
-    get_distributions,
     parse_chromosome,
     get_candidates,
     get_interchrom_candidates,
@@ -62,18 +61,22 @@ def run_naibr_candidate(cand):
     """
     use user input candidate novel adjacencies
     """
-    scores = 0
-    reads_by_barcode, barcodes_by_pos, discs_by_barcode, cands, coverage = parse_candidate_region(cand)
+    reads_by_barcode, barcodes_by_pos, discs_by_barcode, discs, cand, coverage = parse_candidate_region(cand)
 
     # Filter out barcodes with too few reads
     if configs.MIN_READS > 1:
         reads_by_barcode = {k: v for k, v in reads_by_barcode.items() if len(v) >= configs.MIN_READS}
 
-    p_len, p_rate, overlap, _ = get_distributions(reads_by_barcode)
+    # See if there are other candidates in close proximity
+    candidates, p_len, p_rate, barcode_linkedreads = get_candidates(discs, reads_by_barcode)
+    candidates = [c for c in candidates if max(c.distance(cand)) < configs.LMAX]
+    candidates.append(cand)
+
     if p_len is None:
-        return scores
+        return []
+
     scores = predict_novel_adjacencies(
-        reads_by_barcode, barcodes_by_pos, discs_by_barcode, cands, p_len, p_rate, coverage, False
+        reads_by_barcode, barcodes_by_pos, discs_by_barcode, candidates, p_len, p_rate, coverage, False
     )
     return scores
 
@@ -174,8 +177,10 @@ def main():
                 els = line.strip().split("\t")
                 if len(els) > 4:
                     cands.append([els[0], int(els[1]), els[3], int(els[4]), els[-1]])
+        print(f"Found {len(cands)} candidates to evaluate")
         configs.COMPRESSION_THREADS = 2 if configs.NUM_THREADS / len(cands) > 2 else 1
         novel_adjacencies = flatten(parallel_execute(run_naibr_candidate, cands))
+        print(f"Evaluation yeilded {len(novel_adjacencies)} viable novel adjacencies")
         write_novel_adjacencies(novel_adjacencies)
 
     else:

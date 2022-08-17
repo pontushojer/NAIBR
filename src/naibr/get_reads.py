@@ -240,6 +240,7 @@ def parse_candidate_region(candidate):
     reads_by_barcode = collections.defaultdict(list)
     discs_by_barcode = collections.defaultdict(list)
     barcodes_by_pos = collections.defaultdict(set)
+    discs = collections.defaultdict(list)
     lengths = 0
 
     chrm1, break1, chrm2, break2, orientation = candidate
@@ -270,6 +271,8 @@ def parse_candidate_region(candidate):
             peread = PERead(read, barcode, mate=mate)
             if peread.is_disc():
                 discs_by_barcode[(peread.chrm, peread.nextchrm, peread.barcode)].append(peread)
+                if peread.chrm == peread.nextchrm:
+                    add_disc(peread, discs)
             elif peread.is_proper():
                 reads_by_barcode[(peread.chrm, peread.barcode)].append(
                     (peread.start, peread.nextend, peread.hap, peread.mean_mapq)
@@ -289,4 +292,4 @@ def parse_candidate_region(candidate):
     coverage = cov / lengths
     if configs.DEBUG:
         print(f"Candidate {candidate}: coverage = {coverage}")
-    return readarray_by_barcode, barcodes_by_pos, discs_by_barcode, [cand], coverage
+    return readarray_by_barcode, barcodes_by_pos, discs_by_barcode, discs, cand, coverage
