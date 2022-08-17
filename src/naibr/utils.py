@@ -282,17 +282,17 @@ class PERead:
         "nextend",
         "i",
         "j",
-        "disc",
+        "proper_pair",
     ]
 
     def __init__(self, read, barcode, mate=None):
         self.barcode = barcode
-        self.orient = get_read_orientation(read)
+        self._set_read_orientation(read)
 
         self.chrm = read.reference_name
         self.start = read.reference_start
         self.end = read.reference_end
-        self.hap = get_haplotype(read)
+        self.hap = get_tag_default(read, "HP", default=0)
 
         self.nextchrm = read.next_reference_name
         self.nextstart = read.next_reference_start
@@ -306,26 +306,33 @@ class PERead:
 
         self.i = self.start if read.is_reverse else self.end
         self.j = self.nextstart if read.mate_is_reverse else self.nextend
-        self.disc = self.is_disc() and not read.is_proper_pair
+        self.proper_pair = read.is_proper_pair
 
     def __repr__(self):
         return (
             f"PERead({self.chrm=}, {self.start=}, {self.end=}, {self.nextchrm=}, "
             f"{self.nextstart=}, {self.nextend=}, {self.barcode=}, {self.hap=}, {self.orient=}, "
-            f"{self.i=}, {self.j}, {self.disc=}, {self.fragment_length()=})"
+            f"{self.i=}, {self.j}, {self.proper_pair=})"
         )
 
+    def _set_read_orientation(self, read):
+        a = "-" if read.is_reverse else "+"
+        a += "-" if read.mate_is_reverse else "+"
+        self.orient = a
+
     def is_disc(self):
-        return self.chrm != self.nextchrm or (self.j - self.i) > configs.MIN_SV
+        return (self.chrm != self.nextchrm or (self.j - self.i) > configs.MIN_SV) and not self.proper_pair
+
+    def is_proper(self):
+        # TODO - consider removing minimum fragment_length as these are still properly
+        #        paired with passing mapq.
+        return self.fragment_length() > configs.LMIN and self.proper_pair
 
     def fragment_length(self):
         return max(self.end, self.nextend) - min(self.start, self.nextstart)
 
     def mid(self):
-        if self.disc:
-            return int((self.end + self.start) / 2)
-        else:
-            return int((self.i + self.j) / 2)
+        return int((self.i + self.j) / 2)
 
 
 def first_read(read):
@@ -344,18 +351,11 @@ def get_read_orientation(read):
     return a
 
 
-def get_haplotype(read):
+def get_tag_default(read, tag, default=None):
     try:
-        return read.get_tag("HP")
+        return read.get_tag(tag)
     except KeyError:
-        return 0
-
-
-def get_barcode(read):
-    try:
-        return read.get_tag("BX")
-    except KeyError:
-        return None
+        return default
 
 
 def plog(x, num):

@@ -3,7 +3,7 @@ import collections
 import time
 import numpy as np
 
-from .utils import PERead, roundto, is_proper_chrom, get_barcode, NovelAdjacency
+from .utils import roundto, is_proper_chrom, NovelAdjacency, PERead, get_tag_default
 from .global_vars import configs
 from .distributions import get_distributions, get_linkedread_distributions
 
@@ -51,7 +51,7 @@ def progress(iterator, desc=None, step=1_000_000, unit=None):
         yield el
 
         if nr % step == 0:
-            print(f"{desc} {nr:,} {unit} ({1_000_000 // (time.perf_counter()-t0):,.0f} {unit}/s).")
+            print(f"{desc} {nr:,} {unit} ({step // (time.perf_counter()-t0):,.0f} {unit}/s).")
             t0 = time.perf_counter()
 
 
@@ -78,12 +78,12 @@ def parse_chromosome(chrom):
         else:
             cov += read.query_alignment_length
 
-        barcode = get_barcode(read)
+        barcode = get_tag_default(read, "BX")
         if barcode is None:
             continue
 
         peread = PERead(read, barcode, mate=mate)
-        if peread.disc:
+        if peread.is_disc():
             discs_by_barcode[(peread.chrm, peread.nextchrm, peread.barcode)].append(peread)
             if peread.chrm == peread.nextchrm:
                 add_disc(peread, discs)
@@ -97,9 +97,7 @@ def parse_chromosome(chrom):
                         peread.orient,
                     )
                 ].append(peread)
-        # TODO - consider removing minimum fragment_length as these are still properly
-        #        paired with passing mapq.
-        elif read.is_proper_pair and peread.fragment_length() > configs.LMIN:
+        elif peread.is_proper():
             reads_by_barcode[(peread.chrm, peread.barcode)].append(
                 (peread.start, peread.nextend, peread.hap, peread.mean_mapq)
             )
@@ -265,16 +263,14 @@ def parse_candidate_region(candidate):
             else:
                 cov += read.query_alignment_length
 
-            barcode = get_barcode(read)
+            barcode = get_tag_default(read, "BX")
             if barcode is None:
                 continue
 
             peread = PERead(read, barcode, mate=mate)
-            if peread.disc:
+            if peread.is_disc():
                 discs_by_barcode[(peread.chrm, peread.nextchrm, peread.barcode)].append(peread)
-            # TODO - consider removing minimum fragment_length as these are still properly
-            #        paired with passing mapq.
-            elif read.is_proper_pair and peread.fragment_length() > configs.LMIN:
+            elif peread.is_proper():
                 reads_by_barcode[(peread.chrm, peread.barcode)].append(
                     (peread.start, peread.nextend, peread.hap, peread.mean_mapq)
                 )
