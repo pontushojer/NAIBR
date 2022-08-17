@@ -72,6 +72,9 @@ def parse_chromosome(chrom):
     interchrom_discs = collections.defaultdict(list)
     barcodes_by_pos = collections.defaultdict(set)
     iterator = reads.fetch(chrom)
+    n_disc = 0
+    n_conc = 0
+    n_total = 0
     for read, mate in progress(parse_mapped_pairs(iterator), unit="pairs"):
         if mate is not None:
             cov += read.query_alignment_length + mate.query_alignment_length
@@ -82,8 +85,10 @@ def parse_chromosome(chrom):
         if barcode is None:
             continue
 
+        n_total += 1
         peread = PERead(read, barcode, mate=mate)
-        if peread.is_disc():
+        if peread.is_discordant():
+            n_disc += 1
             discs_by_barcode[(peread.chrm, peread.nextchrm, peread.barcode)].append(peread)
             if peread.chrm == peread.nextchrm:
                 add_disc(peread, discs)
@@ -97,7 +102,8 @@ def parse_chromosome(chrom):
                         peread.orient,
                     )
                 ].append(peread)
-        elif peread.is_proper():
+        elif peread.is_concordant():
+            n_conc += 1
             reads_by_barcode[(peread.chrm, peread.barcode)].append(
                 (peread.start, peread.nextend, peread.hap, peread.mean_mapq)
             )
@@ -119,7 +125,8 @@ def parse_chromosome(chrom):
     #      - Use configuration to allow user input?
     #      - Otherwise calculate accurately across each chromosome (or subsection).
     coverage = cov / (reads_end - reads_start)
-    print(f"Done reading chromosome {chrom}: coverage = {coverage:.3f}")
+    print(f"Done reading chromosome {chrom}: coverage = {coverage:.3f}, total pairs = {n_total:,}, "
+          f"discordant = {n_disc:,} ({n_disc/n_total:.2%}), concordant = {n_conc:,} ({n_conc/n_total:.2%})")
 
     return (
         readarray_by_barcode,
@@ -269,11 +276,11 @@ def parse_candidate_region(candidate):
                 continue
 
             peread = PERead(read, barcode, mate=mate)
-            if peread.is_disc():
+            if peread.is_discordant():
                 discs_by_barcode[(peread.chrm, peread.nextchrm, peread.barcode)].append(peread)
                 if peread.chrm == peread.nextchrm:
                     add_disc(peread, discs)
-            elif peread.is_proper():
+            elif peread.is_concordant():
                 reads_by_barcode[(peread.chrm, peread.barcode)].append(
                     (peread.start, peread.nextend, peread.hap, peread.mean_mapq)
                 )

@@ -326,12 +326,19 @@ class PERead:
         a += "-" if read.mate_is_reverse else "+"
         self.orient = a
 
-    def is_disc(self):
+    def is_discordant(self):
+        """Returns True if the read should be considered discordant"""
+        # TODO - Which reads should acctually be considered discordant? Ususally it is base on orientation and
+        #  pairwise distance.
+        #
+        # Note: The fact that MIN_SV is used as distance cutoff here is so we don't have candidate NAs below this size.
         return (self.chrm != self.nextchrm or (self.j - self.i) > configs.MIN_SV) and not self.proper_pair
 
-    def is_proper(self):
-        # TODO - consider removing minimum fragment_length as these are still properly
-        #        paired with passing mapq.
+    def is_concordant(self):
+        # TODO - Which reads should acctually be considered concordant? From the paper it is stated: ' A read-pair
+        #  〈x,y〉 is concordant provided the distance between aligned reads f=ry−lx is between lmin and lmax and
+        #  the orientations are ox=+,oy=-'. This is basically achived by `proper_pair` here. Why is to short fragments
+        #  not concordant?
         return self.fragment_length() > configs.LMIN and self.proper_pair
 
     def fragment_length(self):
