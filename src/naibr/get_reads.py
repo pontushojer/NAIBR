@@ -183,8 +183,8 @@ def disc_intersection(disc_reads):
 
 
 def get_candidates_from_discs(discs, barcode_overlap):
-    candidates = []
-    for position, disc_reads in discs.items():
+    candidates = set()
+    for position, disc_reads in progress(discs.items(), desc="Parsing discs", unit="pos", step=10_000):
         # Skip positions with too few discs
         if len(disc_reads) < configs.MIN_DISCS:
             continue
@@ -209,10 +209,8 @@ def get_candidates_from_discs(discs, barcode_overlap):
         norm_j = roundto(j, configs.MAX_LINKED_DIST)
         barcode_overlaps = barcode_overlap[(chrm, norm_i, nextchrm, norm_j)]
         if (chrm == nextchrm and j - i < configs.MAX_LINKED_DIST) or barcode_overlaps >= configs.MIN_BC_OVERLAP:
-            # Check that not already added
-            if not any(cand == x for x in candidates):
-                candidates.append(cand)
-    return candidates
+            candidates.add(cand)
+    return list(candidates)
 
 
 def get_candidates(discs, reads_by_barcode):
