@@ -49,10 +49,10 @@ class NovelAdjacency:
 
     def __repr__(self):
         return (
-            f"NovelAdjacency({self.chrm1=}, {self.break1=}, {self.chrm2=}, {self.break2=}, {self.haps=}, "
-            f"{self.spans=}, {self.discs=}, {self.pairs=}, {self.score=}, spans_by_hap={dict(self.spans_by_hap)}, "
-            f"discs_by_hap={dict(self.discs_by_hap)}, pairs_by_hap={dict(self.pairs_by_hap)}, "
-            f"score_by_hap={dict(self.score_by_hap)}"
+            f"NovelAdjacency(chrm1={self.chrm1}, break1={self.break1}, chrm2={self.chrm2}, break2={self.break2}, orient={self.orient}, "
+            f"haps={self.haps}, spans{self.spans}, discs={self.discs}, pairs={self.pairs}, score={self.score}, "
+            f"spans_by_hap={dict(self.spans_by_hap)}, discs_by_hap={dict(self.discs_by_hap)}, pairs_by_hap={dict(self.pairs_by_hap)}, "
+            f"score_by_hap={dict(self.score_by_hap)}, pass_threshold={self.pass_threshold}"
         )
 
     def __eq__(self, other):
