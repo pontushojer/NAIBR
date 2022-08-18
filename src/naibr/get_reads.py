@@ -164,10 +164,6 @@ def add_disc(peread, discs):
                 discs[(peread.chrm, norm_ia, peread.nextchrm, norm_jb, peread.orient)].append(peread)
 
 
-def coordinates(s, e, orient):
-    return s if orient == "+" else e
-
-
 def disc_intersection(disc_reads):
     intersection = [0, float("Inf"), 0, float("Inf")]
     disc_reads.sort(key=lambda x: x.i)
@@ -197,8 +193,8 @@ def get_candidates_from_discs(discs, barcode_overlap):
         chrm = position[0]
         nextchrm = position[2]
         orient = position[4]
-        i = coordinates(si, ei, orient[0])
-        j = coordinates(sj, ej, orient[1])
+        i = si if orient[0] == "+" else ei
+        j = sj if orient[1] == "+" else ej
 
         # Skip if positions overlaps blacklist
         if inblacklist(chrm, i) or inblacklist(nextchrm, j):
