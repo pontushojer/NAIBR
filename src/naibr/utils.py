@@ -58,6 +58,9 @@ class NovelAdjacency:
     def __eq__(self, other):
         return self.coordinates() == other.coordinates()
 
+    def __hash__(self):
+        return hash(self.coordinates())
+
     def length(self):
         if not self.is_interchromosomal():
             return abs(self.break2 - self.break1)
