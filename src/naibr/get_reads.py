@@ -180,7 +180,8 @@ def disc_intersection(disc_reads):
 
 def get_candidates_from_discs(discs, barcode_overlap):
     candidates = set()
-    for position, disc_reads in progress(discs.items(), desc="Parsing discs", unit="pos", step=10_000):
+    print(f"Found {len(discs):,} positions with discordant reads.")
+    for position, disc_reads in progress(discs.items(), desc="Parsing discs", unit="pos", step=100_000):
         # Skip positions with too few discs
         if len(disc_reads) < configs.MIN_DISCS:
             continue
