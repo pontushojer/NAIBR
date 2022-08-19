@@ -1,6 +1,6 @@
 # NAIBR - Novel Adjacency Identification with Barcoded Reads
 
-*NB! This is a re-factoring of the code from [raphael-group/NAIBR](https://github.com/raphael-group/NAIBR) to make the tool a bit more user-friendly.*
+*NB! This is a re-factoring of the code from [raphael-group/NAIBR](https://github.com/raphael-group/NAIBR) to make the tool a bit more user-friendly and adds some additional features.*
 
 ## Overview
 
@@ -40,7 +40,30 @@ A template config file can be found in example/example.config. The following par
 
 ## Output
 
-NAIBR outputs a BEDPE file containing all novel scored novel adjacencies. Predicted novel adjacencies with scores greater than the threshold c are labelled 'PASS' and others are labelled 'FAIL'. 
+Scored novel adjacencies are outputted in three different file formats to the output directory
+
+### `NAIBR.bedpe` 
+BEDPE-like file in same format as outputted in [raphael-group/NAIBR](https://github.com/raphael-group/NAIBR). Note that this file does not follow any actual BEDPE format. The file has a header with column descriptions.
+
+**Columns:**
+1. Chr1: Chromosome of 1st breakpoint
+2. Break1: Position of 1st breakpoint
+3. Chr2: Chromosome of 2nd breakpoint
+4. Break2: Position of 2nd breakpoint
+5. Split molecules: Number of split molecule supporting NA
+6. Discordant reads: Number of discordant reads supporting NA 
+7. Orientation: Orientation of NA. "+-" ~ DEL, "++"/"--" ~ INV, "-+" ~ "DUP"
+8. Haplotype
+9. Score: log-likelihood score for NA
+10. Pass filter: "PASS" if passes filter threshold, otherwice "FAIL"
+
+### `NAIBR.reformat.bedpe`
+Reformatted BEDPE that follows the [10x Genomics BEDPE format](https://support.10xgenomics.com/genome-exome/software/pipelines/latest/output/bedpe) suitable for IGV visualization
+
+
+### `NAIBR.vcf`
+
+NAs translated to the VCF format. Useful for operation using e.g. [truvari](https://github.com/ACEnglish/truvari).
 
 ## Example
 Example files are provided in the 'example' directory. Running
