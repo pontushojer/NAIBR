@@ -1,6 +1,6 @@
 # NAIBR - Novel Adjacency Identification with Barcoded Reads
 
-NB! This is a re-factoring of the code from https://github.com/raphael-group/NAIBR to make the tool a bit more user-friendly.
+*NB! This is a re-factoring of the code from [raphael-group/NAIBR](https://github.com/raphael-group/NAIBR) to make the tool a bit more user-friendly.*
 
 ## Overview
 
@@ -50,6 +50,14 @@ naibr example/example.config
 ```
 
 will produce the file 'example/NAIBR_SVs.bedpe'.
+
+## Converting NAIBR BEDPE to VCF
+
+The repository includes a utility script `scripts/bedpe_to_vcf.py` for converting from NAIBR's BEDPE format to a VCF. For detail on how to use it run:
+
+```
+python scripts/bedpe_to_vcf.py --help
+```
 
 ### Citing NAIBR
 Elyanow, Rebecca, Hsin-Ta Wu, and Benjamin J. Raphael. *Identifying 
