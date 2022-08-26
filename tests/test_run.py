@@ -44,7 +44,7 @@ def test_missing_bam_file_raises_error(tmp_path):
 
 
 def test_candidates(tmp_path):
-    config_file = io.StringIO(f"bam_file={BAM}\ncandidates={CANDIDATES}\noutdir={tmp_path}\n")
+    config_file = io.StringIO(f"bam_file={BAM}\ncandidates={CANDIDATES}\noutdir={tmp_path}\nDEBUG=True\n")
     configs = Configs.from_file(config_file)
 
     exitcode = run(configs)
@@ -113,7 +113,7 @@ def test_candidates_parallel(tmp_path):
 
 
 def test_novel(tmp_path):
-    config_file = io.StringIO(f"bam_file={BAM}\noutdir={tmp_path}\n")
+    config_file = io.StringIO(f"bam_file={BAM}\noutdir={tmp_path}\nDEBUG=True\n")
     configs = Configs.from_file(config_file)
 
     exitcode = run(configs)
