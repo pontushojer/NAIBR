@@ -170,9 +170,7 @@ def linked_reads(barcode, chrm, candidate, reads_by_barcode, configs):
     # same molecule. Not for interchromsomal candidates.
     cand_break = np.full(np.shape(dist_break), False)
     if not candidate.is_interchromosomal():
-        cand_break = (reads["end"][:-1] < candidate.break1) & (
-            reads["start"][1:] > candidate.break2
-        )
+        cand_break = (reads["end"][:-1] < candidate.break1) & (reads["start"][1:] > candidate.break2)
 
     breaks = np.where(dist_break | cand_break)[0] + 1
 
