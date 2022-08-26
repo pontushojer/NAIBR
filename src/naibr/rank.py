@@ -60,7 +60,9 @@ class CandSplitMol:
                 + plen(lenLi) * prate(rateLi0) * plen(lenLj) * prate(rateLj0) * mapqi0 * mapqj0 * mapqdisc0
             )
         else:
-            scoreH0 = safe_log(0 + plen(lenLi) * prate(rateLi0) * plen(lenLj) * prate(rateLj0) * mapqi0 * mapqj0 * mapqdisc0)
+            scoreH0 = safe_log(
+                0 + plen(lenLi) * prate(rateLi0) * plen(lenLj) * prate(rateLj0) * mapqi0 * mapqj0 * mapqdisc0
+            )
         self.scoreHA = scoreHA
         self.scoreH0 = scoreH0
         self.hap_i = hap_i
@@ -97,7 +99,10 @@ def near_i(x, candidate):
     end = x[2]
     neari = (
         (candidate.orient[0] == "+" and end - configs.LMAX < candidate.break1 < end + configs.MAX_LINKED_DIST)
-        or (candidate.orient[0] == "-" and start + configs.LMAX > candidate.break1 > start - configs.MAX_LINKED_DIST)
+        or (
+            candidate.orient[0] == "-"
+            and start + configs.LMAX > candidate.break1 > start - configs.MAX_LINKED_DIST
+        )
     ) and candidate.chrm1 == chrm
     return neari
 
@@ -108,14 +113,18 @@ def near_j(x, candidate):
     end = x[2]
     nearj = (
         (candidate.orient[1] == "+" and end - configs.LMAX < candidate.break2 < end + configs.MAX_LINKED_DIST)
-        or (candidate.orient[1] == "-" and start + configs.LMAX > candidate.break2 > start - configs.MAX_LINKED_DIST)
+        or (
+            candidate.orient[1] == "-"
+            and start + configs.LMAX > candidate.break2 > start - configs.MAX_LINKED_DIST
+        )
     ) and candidate.chrm2 == chrm
     return nearj
 
 
-def spanning(x, candidate):
-    start = x[1]
-    end = x[2]
+def spanning(linkedread, candidate):
+    """Return True if the candidate is within the bounds of the linked reads"""
+    start = linkedread[1]
+    end = linkedread[2]
     span = start < candidate.break1 and end > candidate.break2
     return span
 
@@ -179,7 +188,9 @@ def linked_reads(barcode, chrm, candidate, reads_by_barcode):
         mapq = list(reads_group["mapq"])
         hap = list(reads_group["hap"])
         nr_reads = len(mapq)
-        if (only_cands or prev_break_only_cands) or (nr_reads >= configs.MIN_READS and end - start >= configs.MIN_LEN):
+        if (only_cands or prev_break_only_cands) or (
+            nr_reads >= configs.MIN_READS and end - start >= configs.MIN_LEN
+        ):
             linkedreads.append([chrm, start, end, mapq, hap, barcode])
 
         prev_break_only_cands = only_cands
@@ -228,7 +239,9 @@ def get_linkedreads(candidate, barcodes, reads_by_barcode, discs_by_barcode, is_
     return candidate_splits
 
 
-def get_candidate_splits(candidate: NovelAdjacency, barcodes_by_pos, reads_by_barcode, discs_by_barcode, is_interchrom):
+def get_candidate_splits(
+    candidate: NovelAdjacency, barcodes_by_pos, reads_by_barcode, discs_by_barcode, is_interchrom
+):
     # Get normalized positions for candidate split molecule
     candidate_break1_norm = roundto(candidate.break1, configs.MAX_LINKED_DIST)
     candidate_break2_norm = roundto(candidate.break2, configs.MAX_LINKED_DIST)
@@ -246,12 +259,16 @@ def get_candidate_splits(candidate: NovelAdjacency, barcodes_by_pos, reads_by_ba
     )
 
     barcodes_intersect = break1_barcodes.intersection(break2_barcodes)
-    candidate_splits = get_linkedreads(candidate, barcodes_intersect, reads_by_barcode, discs_by_barcode, is_interchrom)
+    candidate_splits = get_linkedreads(
+        candidate, barcodes_intersect, reads_by_barcode, discs_by_barcode, is_interchrom
+    )
     return candidate_splits
 
 
 def score_pair(candidate, plen, prate, discs_by_barcode, barcodes_by_pos, reads_by_barcode, is_interchrom):
-    candidate_splits = get_candidate_splits(candidate, barcodes_by_pos, reads_by_barcode, discs_by_barcode, is_interchrom)
+    candidate_splits = get_candidate_splits(
+        candidate, barcodes_by_pos, reads_by_barcode, discs_by_barcode, is_interchrom
+    )
     for candidate_split in candidate_splits:
         c = CandSplitMol()
         c.calculate_score(candidate_split, plen, prate)
@@ -260,7 +277,9 @@ def score_pair(candidate, plen, prate, discs_by_barcode, barcodes_by_pos, reads_
     return candidate
 
 
-def get_cand_score(candidates, is_interchrom, plen, prate, discs_by_barcode, barcodes_by_pos, reads_by_barcode):
+def get_cand_score(
+    candidates, is_interchrom, plen, prate, discs_by_barcode, barcodes_by_pos, reads_by_barcode
+):
     score_pair_with_args = partial(
         score_pair,
         plen=plen,

@@ -127,7 +127,11 @@ class NovelAdjacency:
                 s += max(0, self.score_by_hap[(0, 0)])
                 d += self.discs_by_hap[(0, 0)]
 
-            if s > best_score and self.pairs_by_hap[hap] > 0 and self.pairs_by_hap[hap] >= self.spans_by_hap[hap]:
+            if (
+                s > best_score
+                and self.pairs_by_hap[hap] > 0
+                and self.pairs_by_hap[hap] >= self.spans_by_hap[hap]
+            ):
                 best_score = s
                 best_haps = hap
 
@@ -334,14 +338,15 @@ class PERead:
         # TODO - Which reads should acctually be considered discordant? Ususally it is base on orientation and
         #  pairwise distance.
         #
-        # Note: The fact that MIN_SV is used as distance cutoff here is so we don't have candidate NAs below this size.
+        # Note: The fact that MIN_SV is used as distance cutoff here is so we don't have candidate NAs
+        # below this size.
         return (self.chrm != self.nextchrm or (self.j - self.i) > configs.MIN_SV) and not self.proper_pair
 
     def is_concordant(self):
-        # TODO - Which reads should acctually be considered concordant? From the paper it is stated: ' A read-pair
-        #  〈x,y〉 is concordant provided the distance between aligned reads f=ry−lx is between lmin and lmax and
-        #  the orientations are ox=+,oy=-'. This is basically achived by `proper_pair` here. Why is to short fragments
-        #  not concordant?
+        # TODO - Which reads should acctually be considered concordant? From the paper it is stated: '
+        #  A read-pair〈x,y〉 is concordant provided the distance between aligned reads f=ry−lx is
+        #  between lmin and lmax and the orientations are ox=+,oy=-'. This is basically achived by
+        #  `proper_pair` here. Why is to short fragments not concordant?
         return self.fragment_length() > configs.LMIN and self.proper_pair
 
     def fragment_length(self):

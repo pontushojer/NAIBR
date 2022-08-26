@@ -24,7 +24,12 @@ class NegBin(object):
 
     @staticmethod
     def _nbin(k, p, r):
-        return mpmath.gamma(k + r) / (mpmath.gamma(k + 1) * mpmath.gamma(r)) * np.power(1 - p, r) * np.power(p, k)
+        return (
+            mpmath.gamma(k + r)
+            / (mpmath.gamma(k + 1) * mpmath.gamma(r))
+            * np.power(1 - p, r)
+            * np.power(p, k)
+        )
 
     @staticmethod
     def mle(par, data, sm):
@@ -61,8 +66,6 @@ def plot_distribution(p, distr, xlab, ylab, title):
     plt.xlabel(xlab)
     plt.ylabel(ylab)
     plt.title(title)
-    x0 = max(n)
-    xmax = max(bins)
     plt.axis([0, max(bins), 0, max(max(y), max(n))])
     fig.savefig(os.path.join(configs.DIR, fname + ".pdf"), format="pdf")
     plt.close("all")

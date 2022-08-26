@@ -121,11 +121,21 @@ def run_naibr(chrom):
             if novel_adjacencies:
                 n_pass = sum([na.pass_threshold for na in novel_adjacencies])
                 n_total = len(novel_adjacencies)
-                print(f"Found {n_total:,} SVs on {chrom} of which {n_pass:,} ({n_pass / n_total:.1%}) passed the threshold")
+                print(
+                    f"Found {n_total:,} SVs on {chrom} of which {n_pass:,} "
+                    f"({n_pass / n_total:.1%}) passed the threshold"
+                )
 
     else:
         print("No candidates from %s" % chrom)
-    return linkedreads_by_barcode, barcodes_by_pos, discs_by_barcode, interchrom_discs, coverage, novel_adjacencies
+    return (
+        linkedreads_by_barcode,
+        barcodes_by_pos,
+        discs_by_barcode,
+        interchrom_discs,
+        coverage,
+        novel_adjacencies,
+    )
 
 
 def chromosome_has_haplotyped_reads(chromosome, max_iter=100_000):

@@ -10,7 +10,7 @@ import contextlib
 def smart_open(filename=None):
     # From https://stackoverflow.com/questions/17602878/how-to-handle-both-with-open-and-sys-stdout-nicely
     if filename and filename is not None and filename != "-":
-        fh = open(filename, 'w')
+        fh = open(filename, "w")
     else:
         fh = sys.stdout
 
@@ -103,7 +103,7 @@ def main(args):
             score = float(els[8])
             pass_threshold = els[9] == "PASS"
             name = f"NAIBR_{nr:05}"
-            length = break2-break1 if chrom1 == chrom2 else 0
+            length = break2 - break1 if chrom1 == chrom2 else 0
             svtype = get_svtype(orient, chrom1, chrom2)
 
             info = ";".join(
@@ -147,5 +147,11 @@ if __name__ == "__main__":
     arg("-r", "--ref", required=True, help="List of chromosome lengths e.g. `*.fai`")
     arg("-o", "--output-vcf", default="-", help="Output VCF. Default: write to stdout")
     arg("--add-chr", action="store_true", help="Prepend 'chr' to chromsome names")
-    arg("-s", "--sample-name", type=lambda x: str(x).upper(), default="SAMPLE", help="Sample name. Default: %(default)s")
+    arg(
+        "-s",
+        "--sample-name",
+        type=lambda x: str(x).upper(),
+        default="SAMPLE",
+        help="Sample name. Default: %(default)s",
+    )
     main(parser.parse_args())

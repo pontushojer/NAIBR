@@ -35,7 +35,10 @@ def parse_mapped_pairs(iterator):
 
             if read.reference_name != read.next_reference_name:
                 # Interchromosomal discordant reads
-                if is_proper_chrom(read.next_reference_name) and read.reference_name < read.next_reference_name:
+                if (
+                    is_proper_chrom(read.next_reference_name)
+                    and read.reference_name < read.next_reference_name
+                ):
                     yield read, None
 
             mates[read.query_name] = read
@@ -125,8 +128,10 @@ def parse_chromosome(chrom):
     #      - Use configuration to allow user input?
     #      - Otherwise calculate accurately across each chromosome (or subsection).
     coverage = cov / (reads_end - reads_start)
-    print(f"Done reading chromosome {chrom}: coverage = {coverage:.3f}, total pairs = {n_total:,}, "
-          f"discordant = {n_disc:,} ({n_disc/n_total:.2%}), concordant = {n_conc:,} ({n_conc/n_total:.2%})")
+    print(
+        f"Done reading chromosome {chrom}: coverage = {coverage:.3f}, total pairs = {n_total:,}, "
+        f"discordant = {n_disc:,} ({n_disc/n_total:.2%}), concordant = {n_conc:,} ({n_conc/n_total:.2%})"
+    )
 
     return (
         readarray_by_barcode,
@@ -205,7 +210,9 @@ def get_candidates_from_discs(discs, barcode_overlap):
         norm_i = roundto(i, configs.MAX_LINKED_DIST)
         norm_j = roundto(j, configs.MAX_LINKED_DIST)
         barcode_overlaps = barcode_overlap[(chrm, norm_i, nextchrm, norm_j)]
-        if (chrm == nextchrm and j - i < configs.MAX_LINKED_DIST) or barcode_overlaps >= configs.MIN_BC_OVERLAP:
+        if (
+            chrm == nextchrm and j - i < configs.MAX_LINKED_DIST
+        ) or barcode_overlaps >= configs.MIN_BC_OVERLAP:
             candidates.add(cand)
     return list(candidates)
 
