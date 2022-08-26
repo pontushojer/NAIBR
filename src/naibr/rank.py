@@ -170,8 +170,8 @@ def linked_reads(barcode, chrm, candidate, reads_by_barcode, configs):
     # same molecule. Not for interchromsomal candidates.
     cand_break = np.full(np.shape(dist_break), False)
     if not candidate.is_interchromosomal():
-        cand_break = (proximal_reads["end"][:-1] < candidate.break1) & (
-            proximal_reads["start"][1:] > candidate.break2
+        cand_break = (reads["end"][:-1] < candidate.break1) & (
+            reads["start"][1:] > candidate.break2
         )
 
     breaks = np.where(dist_break | cand_break)[0] + 1
@@ -184,7 +184,7 @@ def linked_reads(barcode, chrm, candidate, reads_by_barcode, configs):
     # If the prevous reads were split because of spanning the candidate the next reads should
     # be filtered the same way
     prev_break_only_cands = False
-    for reads_group, only_cands in zip(np.split(proximal_reads, breaks), break_only_cands):
+    for reads_group, only_cands in zip(np.split(reads, breaks), break_only_cands):
         start = reads_group["start"].min()
         end = reads_group["end"].max()
         mapq = list(reads_group["mapq"])
