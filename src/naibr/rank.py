@@ -207,7 +207,6 @@ def linked_reads(barcode, chrm, candidate, reads_by_barcode, configs):
     return linkedreads, span
 
 
-
 def get_linkedreads(candidate, barcodes, reads_by_barcode, discs_by_barcode, is_interchrom, configs):
     candidate_splits = []
     spans = []
