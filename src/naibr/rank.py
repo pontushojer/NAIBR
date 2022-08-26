@@ -13,7 +13,6 @@ from .utils import (
     threshold,
     evaluate_threshold,
 )
-from .global_vars import configs
 
 
 class CandSplitMol:
@@ -93,7 +92,7 @@ def phred_probability(mapq: int) -> float:
     return math.pow(10, (mapq / -10.0))
 
 
-def near_i(x, candidate):
+def near_i(x, candidate, configs):
     chrm = x[0]
     start = x[1]
     end = x[2]
@@ -107,7 +106,7 @@ def near_i(x, candidate):
     return neari
 
 
-def near_j(x, candidate):
+def near_j(x, candidate, configs):
     chrm = x[0]
     start = x[1]
     end = x[2]
@@ -129,15 +128,15 @@ def spanning(linkedread, candidate):
     return span
 
 
-def discs(candidate, barcode, discs_by_barcode):
+def discs(candidate, barcode, discs_by_barcode, lmax):
     ds = discs_by_barcode[(candidate.chrm1, candidate.chrm2, barcode)]
     ds = [
         read.mean_mapq
         for read in ds
         if candidate.chrm1 == read.chrm
         and not candidate.is_interchromosomal()
-        and is_close(candidate.break1, read.i, read.orient[0])
-        and is_close(candidate.break2, read.j, read.orient[1])
+        and is_close(candidate.break1, read.i, read.orient[0], lmax)
+        and is_close(candidate.break2, read.j, read.orient[1], lmax)
         and candidate.orient == read.orient
     ]
     return ds
@@ -155,7 +154,7 @@ def majority_vote(haps):
         return 2
 
 
-def linked_reads(barcode, chrm, candidate, reads_by_barcode):
+def linked_reads(barcode, chrm, candidate, reads_by_barcode, configs):
     if (chrm, barcode) not in reads_by_barcode:
         return [], []
 
@@ -171,7 +170,9 @@ def linked_reads(barcode, chrm, candidate, reads_by_barcode):
     # same molecule. Not for interchromsomal candidates.
     cand_break = np.full(np.shape(dist_break), False)
     if not candidate.is_interchromosomal():
-        cand_break = (reads["end"][:-1] < candidate.break1) & (reads["start"][1:] > candidate.break2)
+        cand_break = (proximal_reads["end"][:-1] < candidate.break1) & (
+            proximal_reads["start"][1:] > candidate.break2
+        )
 
     breaks = np.where(dist_break | cand_break)[0] + 1
 
@@ -183,7 +184,7 @@ def linked_reads(barcode, chrm, candidate, reads_by_barcode):
     # If the prevous reads were split because of spanning the candidate the next reads should
     # be filtered the same way
     prev_break_only_cands = False
-    for reads_group, only_cands in zip(np.split(reads, breaks), break_only_cands):
+    for reads_group, only_cands in zip(np.split(proximal_reads, breaks), break_only_cands):
         start = reads_group["start"].min()
         end = reads_group["end"].max()
         mapq = list(reads_group["mapq"])
@@ -206,7 +207,8 @@ def linked_reads(barcode, chrm, candidate, reads_by_barcode):
     return linkedreads, span
 
 
-def get_linkedreads(candidate, barcodes, reads_by_barcode, discs_by_barcode, is_interchrom):
+
+def get_linkedreads(candidate, barcodes, reads_by_barcode, discs_by_barcode, is_interchrom, configs):
     candidate_splits = []
     spans = []
     for barcode in barcodes:
@@ -217,14 +219,14 @@ def get_linkedreads(candidate, barcodes, reads_by_barcode, discs_by_barcode, is_
             linkedreads2 = reads_by_barcode[candidate.chrm2][barcode]
             linkedreads.extend(linkedreads2)
         else:
-            linkedreads, s = linked_reads(barcode, candidate.chrm1, candidate, reads_by_barcode)
+            linkedreads, s = linked_reads(barcode, candidate.chrm1, candidate, reads_by_barcode, configs)
             span.extend(s)
 
         linkedread_i, linkedread_j = [None, None]
         for linkedread in linkedreads:
-            if near_i(linkedread, candidate):
+            if near_i(linkedread, candidate, configs):
                 linkedread_i = linkedread
-            elif near_j(linkedread, candidate):
+            elif near_j(linkedread, candidate, configs):
                 linkedread_j = linkedread
 
             # A single linkedread cannot be spanning two chromosomes
@@ -232,7 +234,7 @@ def get_linkedreads(candidate, barcodes, reads_by_barcode, discs_by_barcode, is_
                 span += [(linkedread[-2][0], linkedread[-2][-1])]  # First and last haplotype on linked read
 
         if linkedread_i and linkedread_j and linkedread_i[1] < linkedread_j[1]:
-            discs_mapqs = discs(candidate, barcode, discs_by_barcode)
+            discs_mapqs = discs(candidate, barcode, discs_by_barcode, lmax=configs.LMAX)
             candidate_split = [linkedread_i, discs_mapqs, linkedread_j]
             candidate_splits.append(candidate_split)
         spans.extend(span)
@@ -241,7 +243,12 @@ def get_linkedreads(candidate, barcodes, reads_by_barcode, discs_by_barcode, is_
 
 
 def get_candidate_splits(
-    candidate: NovelAdjacency, barcodes_by_pos, reads_by_barcode, discs_by_barcode, is_interchrom
+    candidate: NovelAdjacency,
+    barcodes_by_pos,
+    reads_by_barcode,
+    discs_by_barcode,
+    is_interchrom,
+    configs,
 ):
     # Get normalized positions for candidate split molecule
     candidate_break1_norm = roundto(candidate.break1, configs.MAX_LINKED_DIST)
@@ -261,14 +268,21 @@ def get_candidate_splits(
 
     barcodes_intersect = break1_barcodes.intersection(break2_barcodes)
     candidate_splits = get_linkedreads(
-        candidate, barcodes_intersect, reads_by_barcode, discs_by_barcode, is_interchrom
+        candidate,
+        barcodes_intersect,
+        reads_by_barcode,
+        discs_by_barcode,
+        is_interchrom,
+        configs,
     )
     return candidate_splits
 
 
-def score_pair(candidate, plen, prate, discs_by_barcode, barcodes_by_pos, reads_by_barcode, is_interchrom):
+def score_pair(
+    candidate, plen, prate, discs_by_barcode, barcodes_by_pos, reads_by_barcode, is_interchrom, configs
+):
     candidate_splits = get_candidate_splits(
-        candidate, barcodes_by_pos, reads_by_barcode, discs_by_barcode, is_interchrom
+        candidate, barcodes_by_pos, reads_by_barcode, discs_by_barcode, is_interchrom, configs
     )
     for candidate_split in candidate_splits:
         c = CandSplitMol()
@@ -279,7 +293,7 @@ def score_pair(candidate, plen, prate, discs_by_barcode, barcodes_by_pos, reads_
 
 
 def get_cand_score(
-    candidates, is_interchrom, plen, prate, discs_by_barcode, barcodes_by_pos, reads_by_barcode
+    candidates, is_interchrom, plen, prate, discs_by_barcode, barcodes_by_pos, reads_by_barcode, configs
 ):
     score_pair_with_args = partial(
         score_pair,
@@ -289,6 +303,7 @@ def get_cand_score(
         barcodes_by_pos=barcodes_by_pos,
         reads_by_barcode=reads_by_barcode,
         is_interchrom=is_interchrom,
+        configs=configs,
     )
     scores = map(score_pair_with_args, candidates)
 
@@ -309,11 +324,12 @@ def predict_novel_adjacencies(
     prate,
     cov,
     interchrom,
+    configs,
 ):
     novel_adjacencies = get_cand_score(
-        candidates, interchrom, plen, prate, discs_by_barcode, barcodes_by_pos, reads_by_barcode
+        candidates, interchrom, plen, prate, discs_by_barcode, barcodes_by_pos, reads_by_barcode, configs
     )
     novel_adjacencies = filter_chrY(novel_adjacencies)
-    novel_adjacencies = collapse_novel_adjacencies(novel_adjacencies)
+    novel_adjacencies = collapse_novel_adjacencies(novel_adjacencies, lmax=configs.LMAX)
     evaluate_threshold(novel_adjacencies, threshold(cov))
     return novel_adjacencies

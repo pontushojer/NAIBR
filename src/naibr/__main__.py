@@ -37,14 +37,13 @@ Citation:
     sequencing data. Bioinformatics. 2018 Jan 15;34(2):353-360.
     doi: 10.1093/bioinformatics/btx712
 """
+import functools
 import sys
 import time
+import os
 import pysam
 import collections
 import numpy as np
-
-if len(sys.argv) < 2 or sys.argv[1] in {"help", "-h", "--help"}:
-    sys.exit(__doc__)
 
 from .get_reads import (
     parse_candidate_region,
@@ -52,23 +51,25 @@ from .get_reads import (
     get_candidates,
     get_interchrom_candidates,
 )
-from .global_vars import configs
+from .global_vars import Configs
 from .utils import flatten, parallel_execute, is_proper_chrom, write_novel_adjacencies
 from .rank import predict_novel_adjacencies
 
 
-def run_naibr_candidate(cand):
+def run_naibr_candidate(cand, configs):
     """
     use user input candidate novel adjacencies
     """
-    reads_by_barcode, barcodes_by_pos, discs_by_barcode, discs, cand, coverage = parse_candidate_region(cand)
+    reads_by_barcode, barcodes_by_pos, discs_by_barcode, discs, cand, coverage = parse_candidate_region(
+        cand, configs
+    )
 
     # Filter out barcodes with too few reads
     if configs.MIN_READS > 1:
         reads_by_barcode = {k: v for k, v in reads_by_barcode.items() if len(v) >= configs.MIN_READS}
 
     # See if there are other candidates in close proximity
-    candidates, p_len, p_rate, barcode_linkedreads = get_candidates(discs, reads_by_barcode)
+    candidates, p_len, p_rate, barcode_linkedreads = get_candidates(discs, reads_by_barcode, configs)
     candidates = [c for c in candidates if max(c.distance(cand)) < configs.LMAX]
     candidates.append(cand)
 
@@ -76,12 +77,20 @@ def run_naibr_candidate(cand):
         return []
 
     scores = predict_novel_adjacencies(
-        reads_by_barcode, barcodes_by_pos, discs_by_barcode, candidates, p_len, p_rate, coverage, False
+        reads_by_barcode,
+        barcodes_by_pos,
+        discs_by_barcode,
+        candidates,
+        p_len,
+        p_rate,
+        coverage,
+        False,
+        configs,
     )
     return scores
 
 
-def run_naibr(chrom):
+def run_naibr(chrom, configs):
     """
     automatically identify candidate novel adjacencies
     """
@@ -92,7 +101,7 @@ def run_naibr(chrom):
         discs,
         interchrom_discs,
         coverage,
-    ) = parse_chromosome(chrom)
+    ) = parse_chromosome(chrom, configs)
 
     # Filter out barcodes with too few reads
     if configs.MIN_READS > 1:
@@ -102,7 +111,7 @@ def run_naibr(chrom):
     linkedreads_by_barcode = collections.defaultdict(list)
     if len(reads_by_barcode) > 0:
         t_get_candidates = time.time()
-        cands, p_len, p_rate, linkedreads_by_barcode = get_candidates(discs, reads_by_barcode)
+        cands, p_len, p_rate, linkedreads_by_barcode = get_candidates(discs, reads_by_barcode, configs)
         print(f"Got candidate noval adjacencies from data: {time.time() - t_get_candidates:.4f} s")
         if cands is None:
             print("No candidates from %s" % chrom)
@@ -117,6 +126,7 @@ def run_naibr(chrom):
                 p_rate,
                 coverage,
                 False,
+                configs,
             )
             if novel_adjacencies:
                 n_pass = sum([na.pass_threshold for na in novel_adjacencies])
@@ -138,9 +148,9 @@ def run_naibr(chrom):
     )
 
 
-def chromosome_has_haplotyped_reads(chromosome, max_iter=100_000):
+def chromosome_has_haplotyped_reads(chromosome, bam_file, max_iter=100_000):
     """True if found BX and HP tagged read on chromsome within the first `max_iter` reads."""
-    with pysam.AlignmentFile(configs.BAM_FILE, "rb") as reads:
+    with pysam.AlignmentFile(bam_file, "rb") as reads:
         for nr, read in enumerate(reads.fetch(chromosome)):
             if read.has_tag("BX") and read.has_tag("HP"):
                 return True
@@ -150,17 +160,17 @@ def chromosome_has_haplotyped_reads(chromosome, max_iter=100_000):
     return False
 
 
-def get_chromosomes_with_reads():
+def get_chromosomes_with_reads(bam_file):
     """Returns a list of chromosomes/contigs which has reads containing BX and HP tags"""
-    with pysam.AlignmentFile(configs.BAM_FILE, "rb") as reads:
+    with pysam.AlignmentFile(bam_file, "rb") as reads:
         all_chroms = reads.references
         all_chroms = [x for x in all_chroms if is_proper_chrom(x)]
 
-    chroms = [chrom for chrom in all_chroms if chromosome_has_haplotyped_reads(chrom)]
+    chroms = [chrom for chrom in all_chroms if chromosome_has_haplotyped_reads(chrom, bam_file)]
     return chroms
 
 
-def main():
+def main(configs):
     starttime = time.time()
 
     print("========= NAIBR =========")
@@ -184,6 +194,7 @@ def main():
     print(f"  DEBUG =     {str(configs.DEBUG).rjust(9)}")
     print("-------------------------")
 
+    novel_adjacencies = []
     if configs.CANDIDATES:
         print("Using user defined candidates")
         cands = []
@@ -194,18 +205,19 @@ def main():
                     cands.append([els[0], int(els[1]), els[3], int(els[4]), els[-1]])
         print(f"Found {len(cands)} candidates to evaluate")
         configs.COMPRESSION_THREADS = 2 if configs.NUM_THREADS / len(cands) > 2 else 1
-        novel_adjacencies = flatten(parallel_execute(run_naibr_candidate, cands))
+        run_with_configs = functools.partial(run_naibr_candidate, configs=configs)
+        novel_adjacencies = flatten(parallel_execute(run_with_configs, cands, threads=configs.NUM_THREADS))
         print(f"Evaluation yeilded {len(novel_adjacencies)} viable novel adjacencies")
-        write_novel_adjacencies(novel_adjacencies)
 
     else:
-        chromosomes = get_chromosomes_with_reads()
+        chromosomes = get_chromosomes_with_reads(bam_file=configs.BAM_FILE)
         if len(chromosomes) == 0:
             sys.exit("ERROR: BAM does not contain BX and HP tagged reads.")
         print(f"Found {len(chromosomes)} chromosome{'s' if len(chromosomes) > 1 else ''} with data in BAM")
 
         configs.COMPRESSION_THREADS = 2 if configs.NUM_THREADS / len(chromosomes) > 2 else 1
-        chroms_data = parallel_execute(run_naibr, chromosomes)
+        run_with_configs = functools.partial(run_naibr, configs=configs)
+        chroms_data = parallel_execute(run_with_configs, chromosomes, threads=configs.NUM_THREADS)
         linkedreads_by_barcode = collections.defaultdict(dict)
         barcodes_by_pos = collections.defaultdict(list)
         discs_by_barcode = collections.defaultdict(list)
@@ -229,7 +241,7 @@ def main():
                 coverage.append(cov_chrom)
                 novel_adjacencies += nas_chrom
 
-        cands, p_len, p_rate = get_interchrom_candidates(interchrom_discs, linkedreads_by_barcode)
+        cands, p_len, p_rate = get_interchrom_candidates(interchrom_discs, linkedreads_by_barcode, configs)
         if cands is not None:
             print("ranking %i interchromosomal candidates" % len(cands))
             novel_adjacencies += predict_novel_adjacencies(
@@ -241,14 +253,25 @@ def main():
                 p_rate,
                 np.mean(coverage),
                 True,
+                configs,
             )
         else:
             print("No interchromosomal candidates")
-        write_novel_adjacencies(novel_adjacencies)
+
+    write_novel_adjacencies(novel_adjacencies, directory=configs.DIR, bam_file=configs.BAM_FILE)
 
     print("Finished in", (time.time() - starttime) / 60.0, "minutes")
-    return
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    if len(sys.argv) < 2 or sys.argv[1] in {"help", "-h", "--help"}:
+        sys.exit(__doc__)
+
+    if not os.path.exists(sys.argv[1]):
+        sys.exit(sys.exit(f"ERROR: Configs file '{sys.argv[1]}' does not exist"))
+
+    with open(sys.argv[1]) as f:
+        file_configs = Configs.from_file(f)
+
+    sys.exit(main(file_configs))

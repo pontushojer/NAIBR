@@ -152,29 +152,22 @@ class Configs:
             self.BLACKLIST = parse_blacklist(constants["blacklist"])
 
     @classmethod
-    def from_file(cls, file):
-        constants = cls.parse_configs(file)
+    def from_file(cls, open_file):
+        constants = cls.parse_configs(open_file)
         c = cls()
         c.update(constants)
         return c
 
     @staticmethod
-    def parse_configs(fname):
-        if not os.path.exists(fname):
-            sys.exit(f"ERROR: '{fname}' is not a config file")
-
+    def parse_configs(iterator):
         fileconfigs = {}
-        with open(fname) as f:
-            for line in f:
-                line = line.strip()
-                if line == "" or line.startswith("#"):
-                    continue
+        for line in iterator:
+            line = line.strip()
+            if line == "" or line.startswith("#"):
+                continue
 
-                name, val = line.split("=")
-                name = name.strip(" ")
-                val = val.strip(" ")
-                fileconfigs[name] = val
+            name, val = line.split("=")
+            name = name.strip(" ")
+            val = val.strip(" ")
+            fileconfigs[name] = val
         return fileconfigs
-
-
-configs = Configs.from_file(sys.argv[1])

@@ -5,8 +5,6 @@ import multiprocessing as mp
 import itertools
 import pysam
 
-from .global_vars import configs
-
 
 class NovelAdjacency:
     __slots__ = [
@@ -335,21 +333,21 @@ class PERead:
         a += "-" if read.mate_is_reverse else "+"
         self.orient = a
 
-    def is_discordant(self):
+    def is_discordant(self, min_sv):
         """Returns True if the read should be considered discordant"""
         # TODO - Which reads should acctually be considered discordant? Ususally it is base on orientation and
         #  pairwise distance.
         #
         # Note: The fact that MIN_SV is used as distance cutoff here is so we don't have candidate NAs
         # below this size.
-        return (self.chrm != self.nextchrm or (self.j - self.i) > configs.MIN_SV) and not self.proper_pair
+        return (self.chrm != self.nextchrm or (self.j - self.i) > min_sv) and not self.proper_pair
 
-    def is_concordant(self):
+    def is_concordant(self, lmin):
         # TODO - Which reads should acctually be considered concordant? From the paper it is stated: '
         #  A read-pair〈x,y〉 is concordant provided the distance between aligned reads f=ry−lx is
         #  between lmin and lmax and the orientations are ox=+,oy=-'. This is basically achived by
         #  `proper_pair` here. Why is to short fragments not concordant?
-        return self.fragment_length() > configs.LMIN and self.proper_pair
+        return self.fragment_length() > lmin and self.proper_pair
 
     def fragment_length(self):
         return max(self.end, self.nextend) - min(self.start, self.nextstart)
@@ -395,11 +393,11 @@ def safe_log(x):
         return log(1e-300)
 
 
-def is_close(index, read_pos, orient):
+def is_close(index, read_pos, orient, lmax):
     if orient == "+":
-        return abs(index - read_pos) <= configs.LMAX
+        return abs(index - read_pos) <= lmax
     else:
-        return abs(index - read_pos) <= configs.LMAX
+        return abs(index - read_pos) <= lmax
 
 
 def is_convergent(read, mate):
@@ -427,8 +425,8 @@ def filter_chrY(novel_adjacencies):
     return filtered
 
 
-def collapse_novel_adjacencies(novel_adjacencies):
-    r = roundto(configs.LMAX, 100) * 5
+def collapse_novel_adjacencies(novel_adjacencies, lmax):
+    r = roundto(lmax, 100) * 5
 
     # Sort on decreasing score
     novel_adjacencies.sort(key=lambda x: x.score, reverse=True)
@@ -459,16 +457,16 @@ def evaluate_threshold(novel_adjacencies, threshold_value):
         na.evaluate(threshold_value)
 
 
-def get_chrom_lengths():
-    reads = pysam.AlignmentFile(configs.BAM_FILE, "rb")
+def get_chrom_lengths(bam_file):
+    reads = pysam.AlignmentFile(bam_file, "rb")
     for chrom, length in zip(reads.references, reads.lengths):
         yield chrom, length
 
 
-def write_novel_adjacencies(novel_adjacencies):
+def write_novel_adjacencies(novel_adjacencies, directory, bam_file):
     fname = "NAIBR_SVs.bedpe"
-    print(f"Writing results to {os.path.join(configs.DIR, fname)}")
-    with open(os.path.join(configs.DIR, fname), "w") as f:
+    print(f"Writing results to {os.path.join(directory, fname)}")
+    with open(os.path.join(directory, fname), "w") as f:
         print(
             "Chr1",
             "Break1",
@@ -487,8 +485,8 @@ def write_novel_adjacencies(novel_adjacencies):
             print(na.to_naibr(), file=f)
 
     fname2 = "NAIBR_SVs.reformat.bedpe"
-    print(f"Writing results to {os.path.join(configs.DIR, fname2)}")
-    with open(os.path.join(configs.DIR, fname2), "w") as f:
+    print(f"Writing results to {os.path.join(directory, fname2)}")
+    with open(os.path.join(directory, fname2), "w") as f:
         # This header is needed to recoginze it as a 10x-style BEDPE
         # see https://github.com/igvteam/igv/wiki/BedPE-Support
         print("#chrom1	start1	stop1	chrom2	start2	stop2	name	qual	strand1	strand2	filters	info", file=f)
@@ -496,13 +494,13 @@ def write_novel_adjacencies(novel_adjacencies):
             print(na.to_bedpe(f"NAIBR_{nr:05}"), file=f)
 
     fname3 = "NAIBR_SVs.vcf"
-    print(f"Writing results to {os.path.join(configs.DIR, fname3)}")
-    with open(os.path.join(configs.DIR, fname3), "w") as f:
+    print(f"Writing results to {os.path.join(directory, fname3)}")
+    with open(os.path.join(directory, fname3), "w") as f:
         # Build header
         header_string = """##fileformat=VCFv4.2
 ##source=NAIBR"""
 
-        header_string += "".join([f"\n##contig=<ID={c},length={l}>" for c, l in get_chrom_lengths()])
+        header_string += "".join([f"\n##contig=<ID={c},length={l}>" for c, l in get_chrom_lengths(bam_file)])
 
         header_string += """
 ##FILTER=<ID=PASS,Description="Passed the software filter">
@@ -522,10 +520,10 @@ def write_novel_adjacencies(novel_adjacencies):
             print(na.to_vcf(f"NAIBR_{nr:05}"), file=f)
 
 
-def parallel_execute(function, input_list):
-    if configs.NUM_THREADS > 1 and len(input_list) > 1:
-        with mp.Pool(configs.NUM_THREADS, maxtasksperchild=1) as pool:
-            print("running on %s threads" % str(configs.NUM_THREADS))
+def parallel_execute(function, input_list, threads=1):
+    if threads > 1 and len(input_list) > 1:
+        with mp.Pool(threads, maxtasksperchild=1) as pool:
+            print("running on %s threads" % str(threads))
             data = pool.map(function, input_list)
     else:
         data = map(function, input_list)

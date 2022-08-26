@@ -10,7 +10,6 @@ import scipy.optimize as optimize
 import numpy as np
 import mpmath
 
-from .global_vars import configs
 from .utils import roundto
 
 mpl.use("Agg")
@@ -55,7 +54,7 @@ class NegBin(object):
         return self.nbin(k, self.p, self.r).astype("float64")
 
 
-def plot_distribution(p, distr, xlab, ylab, title):
+def plot_distribution(p, distr, xlab, ylab, title, directory):
     fname = "_".join(title.split(" "))
     nbins = 50
     fig, ax = plt.subplots()
@@ -67,12 +66,12 @@ def plot_distribution(p, distr, xlab, ylab, title):
     plt.ylabel(ylab)
     plt.title(title)
     plt.axis([0, max(bins), 0, max(max(y), max(n))])
-    fig.savefig(os.path.join(configs.DIR, fname + ".pdf"), format="pdf")
+    fig.savefig(os.path.join(directory, fname + ".pdf"), format="pdf")
     plt.close("all")
     return
 
 
-def linked_reads(reads, chrom):
+def linked_reads(reads, chrom, configs):
     # Calculate the distance between neighbouring reads
     pair_dists = reads["start"][1:] - reads["end"][:-1]
 
@@ -91,7 +90,7 @@ def linked_reads(reads, chrom):
     return linkedreads
 
 
-def get_internal_overlap(barcode_linkedreads, barcode_overlap):
+def get_internal_overlap(barcode_linkedreads, barcode_overlap, configs):
     """Tally up the internal overlapp of normalized positions with linked reads
     for a barcode"""
     for linkedread in barcode_linkedreads:
@@ -106,7 +105,7 @@ def get_internal_overlap(barcode_linkedreads, barcode_overlap):
             barcode_overlap[(chrom, s, chrom, e)] += 1
 
 
-def get_pairwise_overlap(barcode_linkedreads, barcode_overlap):
+def get_pairwise_overlap(barcode_linkedreads, barcode_overlap, configs):
     """Tally up the pair-wise overlapp of normalized positions between linked reads
     within a barcode"""
     for linkedread1, linkedread2 in itertools.combinations(barcode_linkedreads, 2):
@@ -126,28 +125,28 @@ def get_pairwise_overlap(barcode_linkedreads, barcode_overlap):
                 barcode_overlap[(chr1, id1, chr2, id2)] += 1
 
 
-def get_distributions(reads_by_barcode):
+def get_distributions(reads_by_barcode, configs):
     linkedreads_by_barcode = collections.defaultdict(list)
     for (chrom, barcode), reads in reads_by_barcode.items():
-        barcode_linkedreads = linked_reads(reads, chrom)
+        barcode_linkedreads = linked_reads(reads, chrom, configs)
 
         if barcode_linkedreads:
             linkedreads_by_barcode[barcode].extend(barcode_linkedreads)
 
-    p_len, p_rate, barcode_overlap = get_linkedread_distributions(linkedreads_by_barcode)
+    p_len, p_rate, barcode_overlap = get_linkedread_distributions(linkedreads_by_barcode, configs)
     return p_len, p_rate, barcode_overlap, linkedreads_by_barcode
 
 
-def get_linkedread_distributions(linkedreads_by_barcode):
+def get_linkedread_distributions(linkedreads_by_barcode, configs):
     linkedreads = []
     barcode_overlap = collections.defaultdict(int)
 
     for barcode, barcode_linkedreads in linkedreads_by_barcode.items():
         linkedreads.extend(barcode_linkedreads)
 
-        get_internal_overlap(barcode_linkedreads, barcode_overlap)
+        get_internal_overlap(barcode_linkedreads, barcode_overlap, configs)
         if len(barcode_linkedreads) > 1:
-            get_pairwise_overlap(barcode_linkedreads, barcode_overlap)
+            get_pairwise_overlap(barcode_linkedreads, barcode_overlap, configs)
 
     if len(linkedreads) < 100:
         return None, None, None

@@ -4,23 +4,22 @@ import time
 import numpy as np
 
 from .utils import roundto, is_proper_chrom, NovelAdjacency, PERead, get_tag_default
-from .global_vars import configs
 from .distributions import get_distributions, get_linkedread_distributions
 
 
-def inblacklist(chrom, pos):
+def inblacklist(chrom, pos, blacklist):
     """
     True if position overlaps with interval in blacklist
     """
-    if not configs.BLACKLIST:
+    if not blacklist:
         return False
-    return any(s < pos < e for s, e in configs.BLACKLIST[chrom])
+    return any(s < pos < e for s, e in blacklist[chrom])
 
 
-def parse_mapped_pairs(iterator):
+def parse_mapped_pairs(iterator, min_mapq):
     mates = {}
     for read in iterator:
-        if read.mapping_quality < configs.MIN_MAPQ:
+        if read.mapping_quality < min_mapq:
             continue
 
         if read.is_duplicate or read.is_supplementary or read.is_secondary:
@@ -58,7 +57,7 @@ def progress(iterator, desc=None, step=1_000_000, unit=None):
             t0 = time.perf_counter()
 
 
-def parse_chromosome(chrom):
+def parse_chromosome(chrom, configs):
     """
     Args: chromosome
     Function: Parses postion sorted BAM file and extracts relevant information
@@ -78,7 +77,7 @@ def parse_chromosome(chrom):
     n_disc = 0
     n_conc = 0
     n_total = 0
-    for read, mate in progress(parse_mapped_pairs(iterator), unit="pairs"):
+    for read, mate in progress(parse_mapped_pairs(iterator, min_mapq=configs.MIN_MAPQ), unit="pairs"):
         if mate is not None:
             cov += read.query_alignment_length + mate.query_alignment_length
         else:
@@ -90,11 +89,11 @@ def parse_chromosome(chrom):
 
         n_total += 1
         peread = PERead(read, barcode, mate=mate)
-        if peread.is_discordant():
+        if peread.is_discordant(min_sv=configs.MIN_SV):
             n_disc += 1
             discs_by_barcode[(peread.chrm, peread.nextchrm, peread.barcode)].append(peread)
             if peread.chrm == peread.nextchrm:
-                add_disc(peread, discs)
+                add_disc(peread, discs, lmax=configs.LMAX)
             else:
                 interchrom_discs[
                     (
@@ -105,7 +104,7 @@ def parse_chromosome(chrom):
                         peread.orient,
                     )
                 ].append(peread)
-        elif peread.is_concordant():
+        elif peread.is_concordant(lmin=configs.LMIN):
             n_conc += 1
             reads_by_barcode[(peread.chrm, peread.barcode)].append(
                 (peread.start, peread.nextend, peread.hap, peread.mean_mapq)
@@ -143,38 +142,38 @@ def parse_chromosome(chrom):
     )
 
 
-def signi(disc):
+def signi(disc, configs):
     if disc.orient[0] == "+":
         return disc.i + configs.LMIN, disc.i + configs.LMAX
     else:
         return disc.i - configs.LMAX, disc.i - configs.LMIN
 
 
-def signj(disc):
+def signj(disc, configs):
     if disc.orient[1] == "+":
         return disc.j + configs.LMIN, disc.j + configs.LMAX
     else:
         return disc.j - configs.LMAX, disc.j - configs.LMIN
 
 
-def add_disc(peread, discs):
-    half_lmax = configs.LMAX / 2
-    norm_i = roundto(peread.i, configs.LMAX)
-    norm_j = roundto(peread.j, configs.LMAX)
+def add_disc(peread, discs, lmax):
+    half_lmax = lmax / 2
+    norm_i = roundto(peread.i, lmax)
+    norm_j = roundto(peread.j, lmax)
     for a in [-half_lmax, 0, half_lmax]:
-        norm_ia = roundto(peread.i + a, configs.LMAX)
+        norm_ia = roundto(peread.i + a, lmax)
         for b in [-half_lmax, 0, half_lmax]:
-            norm_jb = roundto(peread.j + b, configs.LMAX)
+            norm_jb = roundto(peread.j + b, lmax)
             if (a == 0 or norm_ia != norm_i) and (b == 0 or norm_jb != norm_j):
                 discs[(peread.chrm, norm_ia, peread.nextchrm, norm_jb, peread.orient)].append(peread)
 
 
-def disc_intersection(disc_reads):
+def disc_intersection(disc_reads, configs):
     intersection = [0, float("Inf"), 0, float("Inf")]
     disc_reads.sort(key=lambda x: x.i)
     for disc_read in disc_reads:
-        starti, endi = signi(disc_read)
-        startj, endj = signj(disc_read)
+        starti, endi = signi(disc_read, configs)
+        startj, endj = signj(disc_read, configs)
         si, ei, sj, ej = intersection
         intersection = [max(si, starti), min(ei, endi), max(sj, startj), min(ej, endj)]
     si, ei, sj, ej = intersection
@@ -183,7 +182,7 @@ def disc_intersection(disc_reads):
     return 0, 0, 0, 0
 
 
-def get_candidates_from_discs(discs, barcode_overlap):
+def get_candidates_from_discs(discs, barcode_overlap, configs):
     candidates = set()
     print(f"Found {len(discs):,} positions with discordant reads.")
     for position, disc_reads in progress(discs.items(), desc="Parsing discs", unit="pos", step=100_000):
@@ -192,7 +191,7 @@ def get_candidates_from_discs(discs, barcode_overlap):
             continue
 
         # Try to intersect read pair positions
-        si, ei, sj, ej = disc_intersection(disc_reads)
+        si, ei, sj, ej = disc_intersection(disc_reads, configs)
         if si == 0 or sj == 0:
             continue
 
@@ -203,7 +202,9 @@ def get_candidates_from_discs(discs, barcode_overlap):
         j = sj if orient[1] == "+" else ej
 
         # Skip if positions overlaps blacklist
-        if inblacklist(chrm, i) or inblacklist(nextchrm, j):
+        if inblacklist(chrm, i, blacklist=configs.BLACKLIST) or inblacklist(
+            nextchrm, j, blacklist=configs.BLACKLIST
+        ):
             continue
 
         cand = NovelAdjacency(chrm1=chrm, chrm2=nextchrm, indi=i, indj=j, orient=orient)
@@ -217,26 +218,26 @@ def get_candidates_from_discs(discs, barcode_overlap):
     return list(candidates)
 
 
-def get_candidates(discs, reads_by_barcode):
-    p_len, p_rate, barcode_overlap, barcode_linkedreads = get_distributions(reads_by_barcode)
+def get_candidates(discs, reads_by_barcode, configs):
+    p_len, p_rate, barcode_overlap, barcode_linkedreads = get_distributions(reads_by_barcode, configs)
     if p_len is None or p_rate is None:
         return None, None, None, None
 
-    candidates = get_candidates_from_discs(discs, barcode_overlap)
+    candidates = get_candidates_from_discs(discs, barcode_overlap, configs)
     return candidates, p_len, p_rate, barcode_linkedreads
 
 
-def get_interchrom_candidates(interchrom_discs, linkedreads_by_barcode):
-    p_len, p_rate, barcode_overlap = get_linkedread_distributions(linkedreads_by_barcode)
+def get_interchrom_candidates(interchrom_discs, linkedreads_by_barcode, configs):
+    p_len, p_rate, barcode_overlap = get_linkedread_distributions(linkedreads_by_barcode, configs)
 
     if p_len is None or p_rate is None:
         return None, None, None
 
-    candidates = get_candidates_from_discs(interchrom_discs, barcode_overlap)
+    candidates = get_candidates_from_discs(interchrom_discs, barcode_overlap, configs)
     return candidates, p_len, p_rate
 
 
-def parse_candidate_region(candidate):
+def parse_candidate_region(candidate, configs):
     """
     Args: candidate novel adjacency input by user
     Function: Parses postion sorted BAM file and extracts positions indicated by candidate NAs
@@ -267,7 +268,7 @@ def parse_candidate_region(candidate):
     for chrm, s, e in window:
         lengths += e - s
         iterator = reads.fetch(chrm, max(0, s), e)
-        for read, mate in progress(parse_mapped_pairs(iterator), unit="pairs"):
+        for read, mate in progress(parse_mapped_pairs(iterator, min_mapq=configs.MIN_MAPQ), unit="pairs"):
             if mate is not None:
                 cov += read.query_alignment_length + mate.query_alignment_length
             else:
@@ -278,11 +279,11 @@ def parse_candidate_region(candidate):
                 continue
 
             peread = PERead(read, barcode, mate=mate)
-            if peread.is_discordant():
+            if peread.is_discordant(min_sv=configs.MIN_SV):
                 discs_by_barcode[(peread.chrm, peread.nextchrm, peread.barcode)].append(peread)
                 if peread.chrm == peread.nextchrm:
-                    add_disc(peread, discs)
-            elif peread.is_concordant():
+                    add_disc(peread, discs, lmax=configs.LMAX)
+            elif peread.is_concordant(lmin=configs.LMIN):
                 reads_by_barcode[(peread.chrm, peread.barcode)].append(
                     (peread.start, peread.nextend, peread.hap, peread.mean_mapq)
                 )
