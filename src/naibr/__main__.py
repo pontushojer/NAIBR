@@ -170,7 +170,21 @@ def get_chromosomes_with_reads(bam_file):
     return chroms
 
 
-def main(configs):
+def parse_args(args):
+    if len(args) != 1 or args[0] in {"help", "-h", "--help"}:
+        print(__doc__)
+        sys.exit(0)
+
+    if not os.path.exists(args[0]):
+        sys.exit(f"ERROR: Configs file '{args[0]}' does not exist")
+
+    with open(args[0]) as f:
+        file_configs = Configs.from_file(f)
+
+    return file_configs
+
+
+def run(configs):
     starttime = time.time()
 
     print("========= NAIBR =========")
@@ -264,14 +278,13 @@ def main(configs):
     return 0
 
 
+def main(args=None):
+    if args is None:
+        args = sys.argv[1:] if len(sys.argv) > 1 else []
+
+    file_configs = parse_args(args)
+    return run(file_configs)
+
+
 if __name__ == "__main__":
-    if len(sys.argv) < 2 or sys.argv[1] in {"help", "-h", "--help"}:
-        sys.exit(__doc__)
-
-    if not os.path.exists(sys.argv[1]):
-        sys.exit(sys.exit(f"ERROR: Configs file '{sys.argv[1]}' does not exist"))
-
-    with open(sys.argv[1]) as f:
-        file_configs = Configs.from_file(f)
-
-    sys.exit(main(file_configs))
+    sys.exit(main())

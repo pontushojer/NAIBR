@@ -1,7 +1,9 @@
 import io
 from pathlib import Path
 
-from naibr.__main__ import main
+import pytest
+
+from naibr.__main__ import main, run
 from naibr.global_vars import Configs
 
 BAM = Path("tests/data/example_chr21.bam").absolute()
@@ -20,7 +22,7 @@ def test_candidates(tmp_path):
     config_file = io.StringIO(f"bam_file={BAM}\ncandidates={CANDIDATES}\noutdir={tmp_path}\n")
     configs = Configs.from_file(config_file)
 
-    exitcode = main(configs)
+    exitcode = run(configs)
     assert exitcode == 0
     output = tmp_path / "NAIBR_SVs.bedpe"
     with open(output) as f:
@@ -38,7 +40,7 @@ def test_blacklist(tmp_path):
     config_file = io.StringIO(f"bam_file={BAM}\nblacklist={BLACKLIST}\noutdir={tmp_path}\n")
     configs = Configs.from_file(config_file)
 
-    exitcode = main(configs)
+    exitcode = run(configs)
     assert exitcode == 0
     output = tmp_path / "NAIBR_SVs.bedpe"
     with open(output) as f:
@@ -55,7 +57,7 @@ def test_candidates_reversed(tmp_path):
     config_file = io.StringIO(f"bam_file={BAM}\ncandidates={CANDIDATES_REV}\noutdir={tmp_path}\n")
     configs = Configs.from_file(config_file)
 
-    exitcode = main(configs)
+    exitcode = run(configs)
     assert exitcode == 0
     output = tmp_path / "NAIBR_SVs.bedpe"
     with open(output) as f:
@@ -72,7 +74,7 @@ def test_candidates_parallel(tmp_path):
     config_file = io.StringIO(f"bam_file={BAM}\ncandidates={CANDIDATES}\noutdir={tmp_path}\nthreads=2\n")
     configs = Configs.from_file(config_file)
 
-    exitcode = main(configs)
+    exitcode = run(configs)
     assert exitcode == 0
     output = tmp_path / "NAIBR_SVs.bedpe"
     with open(output) as f:
@@ -89,7 +91,7 @@ def test_novel(tmp_path):
     config_file = io.StringIO(f"bam_file={BAM}\noutdir={tmp_path}\n")
     configs = Configs.from_file(config_file)
 
-    exitcode = main(configs)
+    exitcode = run(configs)
     assert exitcode == 0
     output = tmp_path / "NAIBR_SVs.bedpe"
     with open(output) as f:
@@ -106,7 +108,7 @@ def test_novel_parallel(tmp_path):
     config_file = io.StringIO(f"bam_file={BAM}\noutdir={tmp_path}\nthreads=2\n")
     configs = Configs.from_file(config_file)
 
-    exitcode = main(configs)
+    exitcode = run(configs)
     assert exitcode == 0
     output = tmp_path / "NAIBR_SVs.bedpe"
     with open(output) as f:
@@ -124,7 +126,7 @@ def test_consistent(tmp_path):
     config_file = io.StringIO(f"bam_file={BAM}\noutdir={tmp_path / 'novel'}\nthreads=2\n")
     configs = Configs.from_file(config_file)
 
-    exitcode = main(configs)
+    exitcode = run(configs)
     assert exitcode == 0
     output = tmp_path / "novel" / "NAIBR_SVs.bedpe"
 
@@ -141,7 +143,7 @@ def test_consistent(tmp_path):
     )
     rerun_configs = Configs.from_file(rerun_config_file)
 
-    exitcode = main(rerun_configs)
+    exitcode = run(rerun_configs)
     assert exitcode == 0
     output_rerun = tmp_path / "rerun" / "NAIBR_SVs.bedpe"
     with open(output_rerun) as f:
