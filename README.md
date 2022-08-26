@@ -1,3 +1,4 @@
+[![CI](https://github.com/pontushojer/NAIBR/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/pontushojer/NAIBR/actions/workflows/ci.yml)
 # NAIBR - Novel Adjacency Identification with Barcoded Reads
 
 *NB! This is a re-factoring of the code from [raphael-group/NAIBR](https://github.com/raphael-group/NAIBR) to make the tool a bit more user-friendly and adds some additional features. This means that the resulting output might differ from what you would get from `raphael-group/NAIBR`.*
