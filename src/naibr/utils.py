@@ -49,10 +49,12 @@ class NovelAdjacency:
 
     def __repr__(self):
         return (
-            f"NovelAdjacency(chrm1={self.chrm1}, break1={self.break1}, chrm2={self.chrm2}, break2={self.break2}, orient={self.orient}, "
-            f"haps={self.haps}, spans{self.spans}, discs={self.discs}, pairs={self.pairs}, score={self.score}, "
-            f"spans_by_hap={dict(self.spans_by_hap)}, discs_by_hap={dict(self.discs_by_hap)}, pairs_by_hap={dict(self.pairs_by_hap)}, "
-            f"score_by_hap={dict(self.score_by_hap)}, pass_threshold={self.pass_threshold}"
+            f"NovelAdjacency(chrm1={self.chrm1}, break1={self.break1}, chrm2={self.chrm2}, "
+            f"break2={self.break2}, orient={self.orient}, haps={self.haps}, spans{self.spans}, "
+            f"discs={self.discs}, pairs={self.pairs}, score={self.score}, "
+            f"spans_by_hap={dict(self.spans_by_hap)}, discs_by_hap={dict(self.discs_by_hap)}, "
+            f"pairs_by_hap={dict(self.pairs_by_hap)}, score_by_hap={dict(self.score_by_hap)}, "
+            f"pass_threshold={self.pass_threshold}"
         )
 
     def __eq__(self, other):
@@ -323,9 +325,9 @@ class PERead:
 
     def __repr__(self):
         return (
-            f"PERead({self.chrm=}, {self.start=}, {self.end=}, {self.nextchrm=}, "
-            f"{self.nextstart=}, {self.nextend=}, {self.barcode=}, {self.hap=}, {self.orient=}, "
-            f"{self.i=}, {self.j}, {self.proper_pair=})"
+            f"PERead(chrm={self.chrm}, start={self.start}, end={self.end}, nextchrm={self.nextchrm}, "
+            f"nextstart={self.nextstart}, nextend={self.nextend}, barcode={self.barcode}, hap={self.hap}, "
+            f"orient={self.orient}, i={self.i}, j={self.j}, proper_pair={self.proper_pair})"
         )
 
     def _set_read_orientation(self, read):

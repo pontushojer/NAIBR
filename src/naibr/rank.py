@@ -180,7 +180,8 @@ def linked_reads(barcode, chrm, candidate, reads_by_barcode):
     break_only_cands = [b not in set(np.where(dist_break)[0] + 1) for b in breaks] + [False]
     linkedreads = []
 
-    # If the prevous reads were split because of spanning the candidate the next reads should be filtered the same way
+    # If the prevous reads were split because of spanning the candidate the next reads should
+    # be filtered the same way
     prev_break_only_cands = False
     for reads_group, only_cands in zip(np.split(reads, breaks), break_only_cands):
         start = reads_group["start"].min()
