@@ -1,35 +1,13 @@
-import os
-import subprocess
-from dataclasses import dataclass
+import io
 from pathlib import Path
+
+from naibr.__main__ import main
+from naibr.global_vars import Configs
 
 BAM = Path("tests/data/example_chr21.bam").absolute()
 CANDIDATES = Path("tests/data/example_candidates.bedpe").absolute()
 CANDIDATES_REV = Path("tests/data/example_candidates_reversed.bedpe").absolute()
 BLACKLIST = Path("tests/data/example_blacklist.bedpe").absolute()
-
-
-@dataclass
-class Configs:
-    """Write configs for NAIBR"""
-
-    bam_file: os.PathLike
-    outdir: os.PathLike
-    min_mapq: int = 40
-    blacklist: os.PathLike = None
-    candidates: os.PathLike = None
-    d: int = 10000
-    min_sv: int = 1000
-    threads: int = 1
-    k: int = 3
-    DEBUG: bool = True
-
-    def write_to(self, file):
-        with open(file, "w") as f:
-            for k, v in vars(self).items():
-                if v is None:
-                    v = ""
-                print(f"{k}={v}", file=f)
 
 
 def same_pairwise_elements(list1, list2):
@@ -39,10 +17,11 @@ def same_pairwise_elements(list1, list2):
 
 
 def test_candidates(tmp_path):
-    configs = Configs(bam_file=BAM, candidates=CANDIDATES, outdir=tmp_path)
-    configs.write_to(tmp_path / "naibr.configs")
+    config_file = io.StringIO(f"bam_file={BAM}\ncandidates={CANDIDATES}\noutdir={tmp_path}\n")
+    configs = Configs.from_file(config_file)
 
-    subprocess.run(["naibr", tmp_path / "naibr.configs"])
+    exitcode = main(configs)
+    assert exitcode == 0
     output = tmp_path / "NAIBR_SVs.bedpe"
     with open(output) as f:
         lines = f.readlines()
@@ -55,10 +34,11 @@ def test_candidates(tmp_path):
 
 
 def test_candidates_reversed(tmp_path):
-    configs = Configs(bam_file=BAM, candidates=CANDIDATES_REV, outdir=tmp_path)
-    configs.write_to(tmp_path / "naibr.configs")
+    config_file = io.StringIO(f"bam_file={BAM}\ncandidates={CANDIDATES_REV}\noutdir={tmp_path}\n")
+    configs = Configs.from_file(config_file)
 
-    subprocess.run(["naibr", tmp_path / "naibr.configs"])
+    exitcode = main(configs)
+    assert exitcode == 0
     output = tmp_path / "NAIBR_SVs.bedpe"
     with open(output) as f:
         lines = f.readlines()
@@ -71,10 +51,11 @@ def test_candidates_reversed(tmp_path):
 
 
 def test_candidates_parallel(tmp_path):
-    configs = Configs(bam_file=BAM, candidates=CANDIDATES, outdir=tmp_path, threads=2)
-    configs.write_to(tmp_path / "naibr.configs")
+    config_file = io.StringIO(f"bam_file={BAM}\ncandidates={CANDIDATES}\noutdir={tmp_path}\nthreads=2\n")
+    configs = Configs.from_file(config_file)
 
-    subprocess.run(["naibr", tmp_path / "naibr.configs"])
+    exitcode = main(configs)
+    assert exitcode == 0
     output = tmp_path / "NAIBR_SVs.bedpe"
     with open(output) as f:
         lines = f.readlines()
@@ -87,10 +68,11 @@ def test_candidates_parallel(tmp_path):
 
 
 def test_novel(tmp_path):
-    configs = Configs(bam_file=BAM, outdir=tmp_path)
-    configs.write_to(tmp_path / "naibr.configs")
+    config_file = io.StringIO(f"bam_file={BAM}\noutdir={tmp_path}\n")
+    configs = Configs.from_file(config_file)
 
-    subprocess.run(["naibr", tmp_path / "naibr.configs"])
+    exitcode = main(configs)
+    assert exitcode == 0
     output = tmp_path / "NAIBR_SVs.bedpe"
     with open(output) as f:
         lines = f.readlines()
@@ -103,10 +85,11 @@ def test_novel(tmp_path):
 
 
 def test_novel_parallel(tmp_path):
-    configs = Configs(bam_file=BAM, outdir=tmp_path, threads=2)
-    configs.write_to(tmp_path / "naibr.configs")
+    config_file = io.StringIO(f"bam_file={BAM}\noutdir={tmp_path}\nthreads=2\n")
+    configs = Configs.from_file(config_file)
 
-    subprocess.run(["naibr", tmp_path / "naibr.configs"])
+    exitcode = main(configs)
+    assert exitcode == 0
     output = tmp_path / "NAIBR_SVs.bedpe"
     with open(output) as f:
         lines = f.readlines()
@@ -120,10 +103,11 @@ def test_novel_parallel(tmp_path):
 
 def test_consistent(tmp_path):
     # Run without candidates
-    configs = Configs(bam_file=BAM, outdir=tmp_path / "novel")
-    configs.write_to(tmp_path / "novel.configs")
+    config_file = io.StringIO(f"bam_file={BAM}\noutdir={tmp_path / 'novel'}\nthreads=2\n")
+    configs = Configs.from_file(config_file)
 
-    subprocess.run(["naibr", tmp_path / "novel.configs"])
+    exitcode = main(configs)
+    assert exitcode == 0
     output = tmp_path / "novel" / "NAIBR_SVs.bedpe"
 
     # Generate candidates.bedpe base on results
@@ -134,10 +118,13 @@ def test_consistent(tmp_path):
         print(chr1, pos1, pos1, chr2, pos2, pos2, orient, sep="\t", file=outfile)
 
     # Run with generated candidates
-    configs = Configs(bam_file=BAM, candidates=new_candidates, outdir=tmp_path / "rerun")
-    configs.write_to(tmp_path / "rerun.configs")
+    rerun_config_file = io.StringIO(
+        f"bam_file={BAM}\ncandidates={new_candidates}\noutdir={tmp_path / 'rerun'}\nthreads=2\n"
+    )
+    rerun_configs = Configs.from_file(rerun_config_file)
 
-    subprocess.run(["naibr", tmp_path / "rerun.configs"])
+    exitcode = main(rerun_configs)
+    assert exitcode == 0
     output_rerun = tmp_path / "rerun" / "NAIBR_SVs.bedpe"
     with open(output_rerun) as f:
         new_line = f.readlines()[1]
