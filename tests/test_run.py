@@ -18,6 +18,31 @@ def same_pairwise_elements(list1, list2):
         assert l1 == l2
 
 
+def test_help_return_zero():
+    for arg in ["-h", "--help", "help"]:
+        with pytest.raises(SystemExit):
+            errorcode = main([arg])
+            assert errorcode == 0
+
+
+def test_empty_return_zero():
+    with pytest.raises(SystemExit):
+        errorcode = main([])
+        assert errorcode == 0
+
+
+def test_missing_config_raises_error():
+    with pytest.raises(SystemExit):
+        errorcode = main(["some_non_existing.config"])
+        assert errorcode != 0
+
+
+def test_missing_bam_file_raises_error(tmp_path):
+    config_file_without_bam = io.StringIO("")
+    with pytest.raises(SystemExit):
+        _ = Configs.from_file(config_file_without_bam)
+
+
 def test_candidates(tmp_path):
     config_file = io.StringIO(f"bam_file={BAM}\ncandidates={CANDIDATES}\noutdir={tmp_path}\n")
     configs = Configs.from_file(config_file)
