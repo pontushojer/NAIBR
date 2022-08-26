@@ -7,7 +7,7 @@ from naibr.global_vars import Configs
 BAM = Path("tests/data/example_chr21.bam").absolute()
 CANDIDATES = Path("tests/data/example_candidates.bedpe").absolute()
 CANDIDATES_REV = Path("tests/data/example_candidates_reversed.bedpe").absolute()
-BLACKLIST = Path("tests/data/example_blacklist.bedpe").absolute()
+BLACKLIST = Path("tests/data/example_blacklist.bed").absolute()
 
 
 def same_pairwise_elements(list1, list2):
@@ -30,6 +30,24 @@ def test_candidates(tmp_path):
         same_pairwise_elements(
             lines[1].strip().split("\t"),
             "chr21	18759465	chr21	18906782	28	0	--	1,1	567.174	PASS".split("\t"),
+        )
+
+
+def test_blacklist(tmp_path):
+    assert BLACKLIST.exists()
+    config_file = io.StringIO(f"bam_file={BAM}\nblacklist={BLACKLIST}\noutdir={tmp_path}\n")
+    configs = Configs.from_file(config_file)
+
+    exitcode = main(configs)
+    assert exitcode == 0
+    output = tmp_path / "NAIBR_SVs.bedpe"
+    with open(output) as f:
+        lines = f.readlines()
+
+        assert len(lines) == 2
+        same_pairwise_elements(
+            lines[1].strip().split("\t"),
+            "chr21	18842204	chr21	18860085	2	0	++	0,0	18.002	FAIL".split("\t"),
         )
 
 
