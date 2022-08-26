@@ -1,5 +1,5 @@
 import collections
-from functools import partial, cache
+from functools import partial, lru_cache
 import math
 import numpy as np
 
@@ -88,7 +88,7 @@ class CandSplitMol:
         return prob
 
 
-@cache
+@lru_cache(maxsize=None)
 def phred_probability(mapq: int) -> float:
     return math.pow(10, (mapq / -10.0))
 
