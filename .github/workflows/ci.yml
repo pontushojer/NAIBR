@@ -21,7 +21,7 @@ jobs:
     - name: Run tox ${{ matrix.toxenv }}
       run: tox -e ${{ matrix.toxenv }}
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v2
   test:
     timeout-minutes: 10
     runs-on: ${{ matrix.os }}
