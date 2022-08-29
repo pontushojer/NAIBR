@@ -159,8 +159,17 @@ def linked_reads(barcode, chrm, candidate, reads_by_barcode, configs):
         return [], []
 
     reads = reads_by_barcode[(chrm, barcode)]
+
+    # Select only reads with proximal to the start and end of the candidate
+    gt_d_start = reads["start"] > (candidate.break1 - 2 * configs.MAX_LINKED_DIST)
+    lt_d_end = reads["end"] < (candidate.break2 + 2 * configs.MAX_LINKED_DIST)
+
+    proximal_reads = reads[gt_d_start & lt_d_end].copy()
+    if len(proximal_reads) == 0:
+        return [], []
+
     # Calculate the distance between neighbouring reads
-    pair_dists = reads["start"][1:] - reads["end"][:-1]
+    pair_dists = proximal_reads["start"][1:] - proximal_reads["end"][:-1]
 
     # Get indexes where the distance of neigbouring reads exceeds the MAX_LINKED_DIST.
     # These reads most likely originate from different molecuels.
@@ -170,7 +179,7 @@ def linked_reads(barcode, chrm, candidate, reads_by_barcode, configs):
     # same molecule. Not for interchromsomal candidates.
     cand_break = np.full(np.shape(dist_break), False)
     if not candidate.is_interchromosomal():
-        cand_break = (reads["end"][:-1] < candidate.break1) & (reads["start"][1:] > candidate.break2)
+        cand_break = (proximal_reads["end"][:-1] < candidate.break1) & (proximal_reads["start"][1:] > candidate.break2)
 
     breaks = np.where(dist_break | cand_break)[0] + 1
 
@@ -182,7 +191,7 @@ def linked_reads(barcode, chrm, candidate, reads_by_barcode, configs):
     # If the prevous reads were split because of spanning the candidate the next reads should
     # be filtered the same way
     prev_break_only_cands = False
-    for reads_group, only_cands in zip(np.split(reads, breaks), break_only_cands):
+    for reads_group, only_cands in zip(np.split(proximal_reads, breaks), break_only_cands):
         start = reads_group["start"].min()
         end = reads_group["end"].max()
         mapq = list(reads_group["mapq"])
