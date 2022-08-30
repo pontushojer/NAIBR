@@ -2,6 +2,7 @@ import collections
 from functools import partial, lru_cache
 import math
 import numpy as np
+import logging
 
 from .utils import (
     safe_log,
@@ -13,6 +14,8 @@ from .utils import (
     threshold,
     evaluate_threshold,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class CandSplitMol:
@@ -179,7 +182,9 @@ def linked_reads(barcode, chrm, candidate, reads_by_barcode, configs):
     # same molecule. Not for interchromsomal candidates.
     cand_break = np.full(np.shape(dist_break), False)
     if not candidate.is_interchromosomal():
-        cand_break = (proximal_reads["end"][:-1] < candidate.break1) & (proximal_reads["start"][1:] > candidate.break2)
+        cand_break = (proximal_reads["end"][:-1] < candidate.break1) & (
+            proximal_reads["start"][1:] > candidate.break2
+        )
 
     breaks = np.where(dist_break | cand_break)[0] + 1
 

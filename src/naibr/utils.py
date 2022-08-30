@@ -3,7 +3,11 @@ import os
 from collections import defaultdict
 import multiprocessing as mp
 import itertools
+import logging
+
 import pysam
+
+logger = logging.getLogger(__name__)
 
 
 class NovelAdjacency:
@@ -412,7 +416,7 @@ def threshold(cov):
     # In the publication the threshold relative coverage was determined by subsetting
     # down to 10X coverage. Below that it is uncertain how accurate it is.
     if cov < 10:
-        print(f"WARNING: Low coverage ({cov:.3f}X < 10X), the threshold value might not be accurate.")
+        logger.warning(f"Low coverage ({cov:.3f}X < 10X), the threshold value might not be accurate.")
     return round(6.943 * cov - 37.33, 3)
 
 
@@ -465,7 +469,7 @@ def get_chrom_lengths(bam_file):
 
 def write_novel_adjacencies(novel_adjacencies, directory, bam_file):
     fname = "NAIBR_SVs.bedpe"
-    print(f"Writing results to {os.path.join(directory, fname)}")
+    logger.info(f"Writing results to {os.path.join(directory, fname)}")
     with open(os.path.join(directory, fname), "w") as f:
         print(
             "Chr1",
@@ -485,7 +489,7 @@ def write_novel_adjacencies(novel_adjacencies, directory, bam_file):
             print(na.to_naibr(), file=f)
 
     fname2 = "NAIBR_SVs.reformat.bedpe"
-    print(f"Writing results to {os.path.join(directory, fname2)}")
+    logger.info(f"Writing results to {os.path.join(directory, fname2)}")
     with open(os.path.join(directory, fname2), "w") as f:
         # This header is needed to recoginze it as a 10x-style BEDPE
         # see https://github.com/igvteam/igv/wiki/BedPE-Support
@@ -494,7 +498,7 @@ def write_novel_adjacencies(novel_adjacencies, directory, bam_file):
             print(na.to_bedpe(f"NAIBR_{nr:05}"), file=f)
 
     fname3 = "NAIBR_SVs.vcf"
-    print(f"Writing results to {os.path.join(directory, fname3)}")
+    logger.info(f"Writing results to {os.path.join(directory, fname3)}")
     with open(os.path.join(directory, fname3), "w") as f:
         # Build header
         header_string = """##fileformat=VCFv4.2
@@ -523,7 +527,7 @@ def write_novel_adjacencies(novel_adjacencies, directory, bam_file):
 def parallel_execute(function, input_list, threads=1):
     if threads > 1 and len(input_list) > 1:
         with mp.Pool(threads, maxtasksperchild=1) as pool:
-            print("running on %s threads" % str(threads))
+            logger.info("running on %s threads" % str(threads))
             data = pool.map(function, input_list)
     else:
         data = map(function, input_list)

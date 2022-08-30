@@ -2,9 +2,12 @@ import pysam
 import collections
 import time
 import numpy as np
+import logging
 
 from .utils import roundto, is_proper_chrom, NovelAdjacency, PERead, get_tag_default
 from .distributions import get_distributions, get_linkedread_distributions
+
+logger = logging.getLogger(__name__)
 
 
 def inblacklist(chrom, pos, blacklist):
@@ -47,7 +50,6 @@ def progress(iterator, desc=None, step=1_000_000, unit=None):
     """Simple progress meter"""
     desc = "Processed" if desc is None else desc
     unit = "els" if unit is None else unit
-    nr = 0
     t0 = time.perf_counter()
     for nr, el in enumerate(iterator, start=1):
         yield el
@@ -64,7 +66,7 @@ def parse_chromosome(chrom, configs):
     Returns: dict barcoded reads, dict of reads overlapping ref positions,
     discordant reads, candidate NAs, total coverage
     """
-    print("Getting candidates for chromosome %s" % chrom)
+    logger.info("Getting candidates for chromosome %s" % chrom)
     cov = 0
     reads = pysam.AlignmentFile(configs.BAM_FILE, "rb", threads=configs.COMPRESSION_THREADS)
 
@@ -77,7 +79,9 @@ def parse_chromosome(chrom, configs):
     n_disc = 0
     n_conc = 0
     n_total = 0
-    for read, mate in progress(parse_mapped_pairs(iterator, min_mapq=configs.MIN_MAPQ), unit="pairs"):
+    for read, mate in progress(
+        parse_mapped_pairs(iterator, min_mapq=configs.MIN_MAPQ), desc=f"Processing {chrom}", unit="pairs"
+    ):
         if mate is not None:
             cov += read.query_alignment_length + mate.query_alignment_length
         else:
@@ -127,9 +131,10 @@ def parse_chromosome(chrom, configs):
     #      - Use configuration to allow user input?
     #      - Otherwise calculate accurately across each chromosome (or subsection).
     coverage = cov / (reads_end - reads_start)
-    print(
-        f"Done reading chromosome {chrom}: coverage = {coverage:.3f}, total pairs = {n_total:,}, "
-        f"discordant = {n_disc:,} ({n_disc/n_total:.2%}), concordant = {n_conc:,} ({n_conc/n_total:.2%})"
+    logger.info(f"Done reading chromosome {chrom}: coverage = {coverage:.3f}X")
+    logger.info(
+        f"{chrom}: total pairs: {n_total:,}, discordant: {n_disc:,} ({n_disc/n_total:.2%}), concordant: {n_conc:,} "
+        f"({n_conc/n_total:.2%})"
     )
 
     return (
@@ -267,7 +272,11 @@ def parse_candidate_region(candidate, configs):
     for chrm, s, e in window:
         lengths += e - s
         iterator = reads.fetch(chrm, max(0, s), e)
-        for read, mate in progress(parse_mapped_pairs(iterator, min_mapq=configs.MIN_MAPQ), unit="pairs"):
+        for read, mate in progress(
+            parse_mapped_pairs(iterator, min_mapq=configs.MIN_MAPQ),
+            desc=f"Readning {chrm}:{s}-{e}",
+            unit="pairs",
+        ):
             if mate is not None:
                 cov += read.query_alignment_length + mate.query_alignment_length
             else:
@@ -299,6 +308,5 @@ def parse_candidate_region(candidate, configs):
     cand = NovelAdjacency(chrm1=chrm1, chrm2=chrm2, indi=break1, indj=break2, orient=orientation)
 
     coverage = cov / lengths
-    if configs.DEBUG:
-        print(f"Candidate {candidate}: coverage = {coverage}")
+    logger.debug(f"Candidate {candidate}: coverage = {coverage}")
     return readarray_by_barcode, barcodes_by_pos, discs_by_barcode, discs, cand, coverage

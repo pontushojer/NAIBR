@@ -44,6 +44,7 @@ import os
 import pysam
 import collections
 import numpy as np
+import logging
 
 from .get_reads import (
     parse_candidate_region,
@@ -54,6 +55,8 @@ from .get_reads import (
 from .global_vars import Configs
 from .utils import flatten, parallel_execute, is_proper_chrom, write_novel_adjacencies
 from .rank import predict_novel_adjacencies
+
+logger = logging.getLogger(__name__)
 
 
 def run_naibr_candidate(cand, configs):
@@ -69,7 +72,7 @@ def run_naibr_candidate(cand, configs):
         reads_by_barcode = {k: v for k, v in reads_by_barcode.items() if len(v) >= configs.MIN_READS}
 
     # See if there are other candidates in close proximity
-    print(f"For candidate {cand.coordinates()} - found {len(discs):,} positions with discordant reads.")
+    logger.info(f"For candidate {cand.coordinates()} - found {len(discs):,} positions with discordant reads.")
     candidates, p_len, p_rate, barcode_linkedreads = get_candidates(discs, reads_by_barcode, configs)
     candidates = [c for c in candidates if max(c.distance(cand)) < configs.LMAX]
     candidates.append(cand)
@@ -112,13 +115,13 @@ def run_naibr(chrom, configs):
     linkedreads_by_barcode = collections.defaultdict(list)
     if len(reads_by_barcode) > 0:
         t_get_candidates = time.time()
-        print(f"For chromsome {chrom} - found {len(discs):,} positions with discordant reads.")
+        logger.info(f"For chromsome {chrom} - found {len(discs):,} positions with discordant reads.")
         cands, p_len, p_rate, linkedreads_by_barcode = get_candidates(discs, reads_by_barcode, configs)
-        print(f"Got candidate noval adjacencies from data: {time.time() - t_get_candidates:.4f} s")
+        logger.info(f"Got candidate noval adjacencies from data: {time.time() - t_get_candidates:.4f} s")
         if cands is None:
-            print("No candidates from %s" % chrom)
+            logger.info("No candidates from %s" % chrom)
         else:
-            print("Ranking %i candidates from %s" % (len(cands), chrom))
+            logger.info("Ranking %i candidates from %s" % (len(cands), chrom))
             novel_adjacencies = predict_novel_adjacencies(
                 reads_by_barcode,
                 barcodes_by_pos,
@@ -133,13 +136,13 @@ def run_naibr(chrom, configs):
             if novel_adjacencies:
                 n_pass = sum([na.pass_threshold for na in novel_adjacencies])
                 n_total = len(novel_adjacencies)
-                print(
+                logger.info(
                     f"Found {n_total:,} SVs on {chrom} of which {n_pass:,} "
                     f"({n_pass / n_total:.1%}) passed the threshold"
                 )
 
     else:
-        print("No candidates from %s" % chrom)
+        logger.info("No candidates from %s" % chrom)
     return (
         linkedreads_by_barcode,
         barcodes_by_pos,
@@ -178,7 +181,8 @@ def parse_args(args):
         sys.exit(0)
 
     if not os.path.exists(args[0]):
-        sys.exit(f"ERROR: Configs file '{args[0]}' does not exist")
+        logger.error(f"Configs file '{args[0]}' does not exist")
+        sys.exit(1)
 
     with open(args[0]) as f:
         file_configs = Configs.from_file(f)
@@ -212,24 +216,28 @@ def run(configs):
 
     novel_adjacencies = []
     if configs.CANDIDATES:
-        print("Using user defined candidates")
+        logger.info("Using user defined candidates")
         cands = []
         with open(configs.CANDIDATES) as f:
             for line in f:
                 els = line.strip().split("\t")
                 if len(els) > 4:
                     cands.append([els[0], int(els[1]), els[3], int(els[4]), els[-1]])
-        print(f"Found {len(cands)} candidates to evaluate")
+        logger.info(f"Found {len(cands)} candidates to evaluate")
         configs.COMPRESSION_THREADS = 2 if configs.NUM_THREADS / len(cands) > 2 else 1
         run_with_configs = functools.partial(run_naibr_candidate, configs=configs)
         novel_adjacencies = flatten(parallel_execute(run_with_configs, cands, threads=configs.NUM_THREADS))
-        print(f"Evaluation yeilded {len(novel_adjacencies)} viable novel adjacencies")
+        logger.info(f"Evaluation yeilded {len(novel_adjacencies)} viable novel adjacencies")
 
     else:
         chromosomes = get_chromosomes_with_reads(bam_file=configs.BAM_FILE)
         if len(chromosomes) == 0:
-            sys.exit("ERROR: BAM does not contain BX and HP tagged reads.")
-        print(f"Found {len(chromosomes)} chromosome{'s' if len(chromosomes) > 1 else ''} with data in BAM")
+            logger.error("BAM does not contain BX and HP tagged reads.")
+            sys.exit(1)
+
+        logger.info(
+            f"Found {len(chromosomes)} chromosome{'s' if len(chromosomes) > 1 else ''} with data in BAM"
+        )
 
         configs.COMPRESSION_THREADS = 2 if configs.NUM_THREADS / len(chromosomes) > 2 else 1
         run_with_configs = functools.partial(run_naibr, configs=configs)
@@ -259,7 +267,7 @@ def run(configs):
 
         cands, p_len, p_rate = get_interchrom_candidates(interchrom_discs, linkedreads_by_barcode, configs)
         if cands is not None:
-            print("ranking %i interchromosomal candidates" % len(cands))
+            logger.info("ranking %i interchromosomal candidates" % len(cands))
             novel_adjacencies += predict_novel_adjacencies(
                 linkedreads_by_barcode,
                 barcodes_by_pos,
@@ -272,11 +280,11 @@ def run(configs):
                 configs,
             )
         else:
-            print("No interchromosomal candidates")
+            logger.info("No interchromosomal candidates")
 
     write_novel_adjacencies(novel_adjacencies, directory=configs.DIR, bam_file=configs.BAM_FILE)
 
-    print("Finished in", (time.time() - starttime) / 60.0, "minutes")
+    logger.info("Finished in", (time.time() - starttime) / 60.0, "minutes")
     return 0
 
 
@@ -285,6 +293,12 @@ def main(args=None):
         args = sys.argv[1:] if len(sys.argv) > 1 else []
 
     file_configs = parse_args(args)
+
+    logging.basicConfig(level=logging.INFO, format="%(module)s - %(levelname)s: %(message)s")
+    if file_configs.DEBUG:
+        root = logging.getLogger()
+        root.setLevel(logging.DEBUG)
+
     return run(file_configs)
 
 
