@@ -56,7 +56,7 @@ def test_candidates(tmp_path):
         assert len(lines) == 2
         same_pairwise_elements(
             lines[1].strip().split("\t"),
-            "chr21	18759465	chr21	18906782	28	0	--	1,1	567.174	PASS".split("\t"),
+            "chr21	18759465	chr21	18906782	28	0	--	1,1	571.967	PASS".split("\t"),
         )
 
 
@@ -74,7 +74,7 @@ def test_blacklist(tmp_path):
         assert len(lines) == 2
         same_pairwise_elements(
             lines[1].strip().split("\t"),
-            "chr21	18842204	chr21	18860085	2	0	++	0,0	18.002	FAIL".split("\t"),
+            "chr21	18842204	chr21	18860085	2	0	++	0,0	19.247	FAIL".split("\t"),
         )
 
 
@@ -91,7 +91,7 @@ def test_candidates_reversed(tmp_path):
         assert len(lines) == 2
         same_pairwise_elements(
             lines[1].strip().split("\t"),
-            "chr21	18759465	chr21	18906782	28	0	--	1,1	567.174	PASS".split("\t"),
+            "chr21	18759465	chr21	18906782	28	0	--	1,1	571.967	PASS".split("\t"),
         )
 
 
@@ -108,7 +108,7 @@ def test_candidates_parallel(tmp_path):
         assert len(lines) == 2
         same_pairwise_elements(
             lines[1].strip().split("\t"),
-            "chr21	18759465	chr21	18906782	28	0	--	1,1	567.174	PASS".split("\t"),
+            "chr21	18759465	chr21	18906782	28	0	--	1,1	571.967	PASS".split("\t"),
         )
 
 
@@ -125,7 +125,7 @@ def test_novel(tmp_path):
         assert len(lines) == 2
         same_pairwise_elements(
             lines[1].strip().split("\t"),
-            "chr21	18842204	chr21	18860085	2	0	++	0,0	18.002	FAIL".split("\t"),
+            "chr21	18842204	chr21	18860085	2	0	++	0,0	19.247	FAIL".split("\t"),
         )
 
 
@@ -142,7 +142,7 @@ def test_novel_parallel(tmp_path):
         assert len(lines) == 2
         same_pairwise_elements(
             lines[1].strip().split("\t"),
-            "chr21	18842204	chr21	18860085	2	0	++	0,0	18.002	FAIL".split("\t"),
+            "chr21	18842204	chr21	18860085	2	0	++	0,0	19.247	FAIL".split("\t"),
         )
 
 
