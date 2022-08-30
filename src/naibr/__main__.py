@@ -69,6 +69,7 @@ def run_naibr_candidate(cand, configs):
         reads_by_barcode = {k: v for k, v in reads_by_barcode.items() if len(v) >= configs.MIN_READS}
 
     # See if there are other candidates in close proximity
+    print(f"For candidate {cand.coordinates()} - found {len(discs):,} positions with discordant reads.")
     candidates, p_len, p_rate, barcode_linkedreads = get_candidates(discs, reads_by_barcode, configs)
     candidates = [c for c in candidates if max(c.distance(cand)) < configs.LMAX]
     candidates.append(cand)
@@ -111,6 +112,7 @@ def run_naibr(chrom, configs):
     linkedreads_by_barcode = collections.defaultdict(list)
     if len(reads_by_barcode) > 0:
         t_get_candidates = time.time()
+        print(f"For chromsome {chrom} - found {len(discs):,} positions with discordant reads.")
         cands, p_len, p_rate, linkedreads_by_barcode = get_candidates(discs, reads_by_barcode, configs)
         print(f"Got candidate noval adjacencies from data: {time.time() - t_get_candidates:.4f} s")
         if cands is None:
