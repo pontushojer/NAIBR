@@ -6,23 +6,23 @@ Usage: naibr input.config
 Running requires a config file with "=" separated parameters and values.
 
 required:
-    bam_file - str - Path to BAM file with phased linked reads, i.e. has BX and HP tags.
+    bam_file   - str  - Path to BAM file with phased linked reads, i.e. has BX and HP tags.
 
 options:
-    outdir - str - Path to output directory. Default: CWD
-    blacklist - str - Path to BED file with regions to ignore
-    candidates - str - Path to BEDPE with candidiate SVs to evaluate
-    d - int - Maximum distance between read-pairs in a linked-read. Default: 10,000
-    min_mapq - int - Minimum mapping quality to evaluate reads. Default: 40
-    k - int - Minimum number of barcode overlaps supporting a candidate NA. Default: 3
-    min_sv - int - Minimum size of structural variant. Default: 1000
-    sd_mult - int - Stddev multiplier for max/min insert size (LMAX/LMIN) calculcation. Default: 2
-    min_len - int - Minimum length of linked read fragment. Default: 2*LMAX
-    max_len - int - TO_BE_ADDED. Default: 200,000
-    min_reads - int - Minimum reads in linked read fragment. Default: 2
-    min_discs - int - Minimum number of discordant reads. Default: 2
-    threads - int - Threads to use. Default: 1
-    DEBUG - bool - Run in debug mode. Default: False
+    outdir     - str  - Path to output directory. Default: CWD
+    blacklist  - str  - Path to BED file with regions to ignore
+    candidates - str  - Path to BEDPE with candidiate SVs to evaluate
+    d          - int  - Maximum distance between read-pairs in a linked-read. Default: 10,000
+    min_mapq   - int  - Minimum mapping quality to evaluate reads. Default: 40
+    k          - int  - Minimum number of barcode overlaps supporting a candidate NA. Default: 3
+    min_sv     - int  - Minimum size of structural variant. Default: 1000
+    sd_mult    - int  - Stddev multiplier for max/min insert size (LMAX/LMIN) calculcation. Default: 2
+    min_len    - int  - Minimum length of linked read fragment. Default: 2*LMAX
+    max_len    - int  - TO_BE_ADDED. Default: 200,000
+    min_reads  - int  - Minimum reads in linked read fragment. Default: 2
+    min_discs  - int  - Minimum number of discordant reads. Default: 2
+    threads    - int  - Threads to use. Default: 1
+    DEBUG      - bool - Run in debug mode. Default: False
 
 About:
 
