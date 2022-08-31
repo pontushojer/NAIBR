@@ -72,7 +72,8 @@ def run_naibr_candidate(cand, configs):
         reads_by_barcode = {k: v for k, v in reads_by_barcode.items() if len(v) >= configs.MIN_READS}
 
     # See if there are other candidates in close proximity
-    logger.info(f"For candidate {cand.coordinates()} - found {len(discs):,} positions with discordant reads.")
+    cand_name = f"{cand.chrm1}:{cand.break1}-{cand.chrm2}:{cand.break2}"
+    logger.info(f"For {cand.svtype()} {cand_name} - found {len(discs):,} discordant positions")
     candidates, p_len, p_rate, barcode_linkedreads = get_candidates(discs, reads_by_barcode, configs)
     candidates = [c for c in candidates if max(c.distance(cand)) < configs.LMAX]
     candidates.append(cand)
