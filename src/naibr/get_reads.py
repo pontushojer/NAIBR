@@ -1,8 +1,11 @@
-import pysam
+import sys
 import collections
 import time
-import numpy as np
 import logging
+from itertools import cycle
+
+import numpy as np
+import pysam
 
 from .utils import roundto, is_proper_chrom, NovelAdjacency, PERead, get_tag_default
 from .distributions import get_distributions, get_linkedread_distributions
@@ -46,17 +49,30 @@ def parse_mapped_pairs(iterator, min_mapq):
             mates[read.query_name] = read
 
 
-def progress(iterator, desc=None, step=1_000_000, unit=None):
+def progress(iterator, desc=None, unit=None, interval=0.5):
     """Simple progress meter"""
+    # Defaults
     desc = "Processed" if desc is None else desc
     unit = "els" if unit is None else unit
+
+    # Initials
     t0 = time.perf_counter()
+    t_start = time.perf_counter()
+    nr = 0
+    prev_nr = 0
+    spinner = cycle(["-", "\\", "|", "/"])
     for nr, el in enumerate(iterator, start=1):
         yield el
 
-        if nr % step == 0:
-            print(f"{desc} {nr:,} {unit} ({step // (time.perf_counter()-t0):,.0f} {unit}/s).")
+        if time.perf_counter() - t0 > interval:
+            step = nr - prev_nr
+            prev_nr += step
+            units_per_s = step // (time.perf_counter()-t0)
+            print(f"\r{desc}: {next(spinner)} {nr:,} {unit} ({units_per_s:,.0f} {unit}/s)", file=sys.stderr, end="\r")
             t0 = time.perf_counter()
+
+    # Final printout
+    print(f"\r{desc}: DONE! {nr:,} {unit} (total time = {time.perf_counter() - t_start:.3f} s)!", file=sys.stderr)
 
 
 def parse_chromosome(chrom, configs):
@@ -189,7 +205,7 @@ def disc_intersection(disc_reads, configs):
 
 def get_candidates_from_discs(discs, barcode_overlap, configs):
     candidates = set()
-    for position, disc_reads in progress(discs.items(), desc="Parsing discs", unit="pos", step=10_000_000):
+    for position, disc_reads in progress(discs.items(), desc="Parsing discs", unit="pos"):
         # Skip positions with too few discs
         if len(disc_reads) < configs.MIN_DISCS:
             continue
