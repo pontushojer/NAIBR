@@ -294,7 +294,11 @@ def main(args=None):
 
     file_configs = parse_args(args)
 
-    logging.basicConfig(level=logging.INFO, format="%(module)s - %(levelname)s: %(message)s")
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(levelname)s: %(message)s",
+        stream=sys.stdout,
+    )
     if file_configs.DEBUG:
         root = logging.getLogger()
         root.setLevel(logging.DEBUG)
