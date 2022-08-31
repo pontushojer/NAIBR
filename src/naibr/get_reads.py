@@ -133,8 +133,8 @@ def parse_chromosome(chrom, configs):
     coverage = cov / (reads_end - reads_start)
     logger.info(f"Done reading chromosome {chrom}: coverage = {coverage:.3f}X")
     logger.info(
-        f"{chrom}: total pairs: {n_total:,}, discordant: {n_disc:,} ({n_disc/n_total:.2%}), concordant: {n_conc:,} "
-        f"({n_conc/n_total:.2%})"
+        f"{chrom}: total pairs: {n_total:,}, discordant: {n_disc:,} ({n_disc/n_total:.2%}), "
+        f"concordant: {n_conc:,} ({n_conc/n_total:.2%})"
     )
 
     return (
@@ -189,7 +189,7 @@ def disc_intersection(disc_reads, configs):
 
 def get_candidates_from_discs(discs, barcode_overlap, configs):
     candidates = set()
-    for position, disc_reads in progress(discs.items(), desc="Parsing discs", unit="pos", step=100_000):
+    for position, disc_reads in progress(discs.items(), desc="Parsing discs", unit="pos", step=10_000_000):
         # Skip positions with too few discs
         if len(disc_reads) < configs.MIN_DISCS:
             continue
