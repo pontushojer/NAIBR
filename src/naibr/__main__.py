@@ -53,7 +53,7 @@ from .get_reads import (
     get_interchrom_candidates,
 )
 from .global_vars import Configs
-from .utils import flatten, parallel_execute, is_proper_chrom, write_novel_adjacencies
+from .utils import flatten, parallel_execute, is_proper_chrom, write_novel_adjacencies, ConditionalFormatter
 from .rank import predict_novel_adjacencies
 
 logger = logging.getLogger(__name__)
@@ -194,26 +194,26 @@ def parse_args(args):
 def run(configs):
     starttime = time.time()
 
-    print("========= NAIBR =========")
-    print("-------- CONFIGS --------")
-    print("FILES")
-    print(f"  bam_file = {configs.BAM_FILE}")
-    print(f"  candidates = {configs.CANDIDATES}")
-    print(f"  blacklist = {configs.BLACKLIST_FILE}")
-    print(f"  outdir = {configs.DIR}")
-    print("PARAMETERS")
-    print(f"  d =         {configs.MAX_LINKED_DIST:>9,}")
-    print(f"  min_mapq =  {configs.MIN_MAPQ:>9}")
-    print(f"  k =         {configs.MIN_BC_OVERLAP:>9}")
-    print(f"  min_sv =    {configs.MIN_SV:>9,}")
-    print(f"  sd_mult =   {configs.SD_MULT:>9}")
-    print(f"  min_len =   {configs.MIN_LEN:>9,}")
-    print(f"  max_len =   {configs.MAX_LEN:>9,}")
-    print(f"  min_reads = {configs.MIN_READS:>9}")
-    print(f"  min_discs = {configs.MIN_DISCS:>9}")
-    print(f"  threads =   {configs.NUM_THREADS:>9}")
-    print(f"  DEBUG =     {str(configs.DEBUG).rjust(9)}")
-    print("-------------------------")
+    logger.info("========= NAIBR =========", extra={"nofmt": True})
+    logger.info("-------- CONFIGS --------", extra={"nofmt": True})
+    logger.info("FILES", extra={"nofmt": True})
+    logger.info(f"  bam_file = {configs.BAM_FILE}", extra={"nofmt": True})
+    logger.info(f"  candidates = {configs.CANDIDATES}", extra={"nofmt": True})
+    logger.info(f"  blacklist = {configs.BLACKLIST_FILE}", extra={"nofmt": True})
+    logger.info(f"  outdir = {configs.DIR}", extra={"nofmt": True})
+    logger.info("PARAMETERS", extra={"nofmt": True})
+    logger.info(f"  d =         {configs.MAX_LINKED_DIST:>9,}", extra={"nofmt": True})
+    logger.info(f"  min_mapq =  {configs.MIN_MAPQ:>9}", extra={"nofmt": True})
+    logger.info(f"  k =         {configs.MIN_BC_OVERLAP:>9}", extra={"nofmt": True})
+    logger.info(f"  min_sv =    {configs.MIN_SV:>9,}", extra={"nofmt": True})
+    logger.info(f"  sd_mult =   {configs.SD_MULT:>9}", extra={"nofmt": True})
+    logger.info(f"  min_len =   {configs.MIN_LEN:>9,}", extra={"nofmt": True})
+    logger.info(f"  max_len =   {configs.MAX_LEN:>9,}", extra={"nofmt": True})
+    logger.info(f"  min_reads = {configs.MIN_READS:>9}", extra={"nofmt": True})
+    logger.info(f"  min_discs = {configs.MIN_DISCS:>9}", extra={"nofmt": True})
+    logger.info(f"  threads =   {configs.NUM_THREADS:>9}", extra={"nofmt": True})
+    logger.info(f"  DEBUG =     {str(configs.DEBUG).rjust(9)}", extra={"nofmt": True})
+    logger.info("-------------------------", extra={"nofmt": True})
 
     novel_adjacencies = []
     if configs.CANDIDATES:
@@ -295,13 +295,29 @@ def main(args=None):
 
     file_configs = parse_args(args)
 
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s - %(levelname)s: %(message)s",
-        stream=sys.stdout,
-    )
+    # Setup logging
+    root = logging.getLogger()
+    root.setLevel(logging.INFO)
+
+    # Special formatter that ca be turned off
+    formatter = ConditionalFormatter("%(asctime)s - %(levelname)s: %(message)s")
+
+    # This prints to stdout
+    streamhandler = logging.StreamHandler(stream=sys.stdout)
+    streamhandler.setFormatter(formatter)
+    root.addHandler(streamhandler)
+
+    # Any existing log file is overwritten
+    log_file = os.path.join(file_configs.DIR, "log.txt")
+    if os.path.exists(log_file):
+        os.remove(log_file)
+
+    # This prints to a log file in the output directory
+    filehandler = logging.FileHandler(log_file)
+    filehandler.setFormatter(formatter)
+    root.addHandler(filehandler)
+
     if file_configs.DEBUG:
-        root = logging.getLogger()
         root.setLevel(logging.DEBUG)
 
     return run(file_configs)

@@ -537,3 +537,12 @@ def parallel_execute(function, input_list, threads=1):
 def roundto(number: int, step: int) -> int:
     """Round number to down the nearest multiple of step"""
     return number - number % step
+
+
+class ConditionalFormatter(logging.Formatter):
+    # Taken from https://stackoverflow.com/a/34954532
+    def format(self, record):
+        if hasattr(record, "nofmt") and record.nofmt:
+            return record.getMessage()
+        else:
+            return logging.Formatter.format(self, record)
