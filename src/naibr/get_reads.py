@@ -67,12 +67,19 @@ def progress(iterator, desc=None, unit=None, interval=0.5):
         if time.perf_counter() - t0 > interval:
             step = nr - prev_nr
             prev_nr += step
-            units_per_s = step // (time.perf_counter()-t0)
-            print(f"\r{desc}: {next(spinner)} {nr:,} {unit} ({units_per_s:,.0f} {unit}/s)", file=sys.stderr, end="\r")
+            units_per_s = step // (time.perf_counter() - t0)
+            print(
+                f"\r{desc}: {next(spinner)} {nr:,} {unit} ({units_per_s:,.0f} {unit}/s)",
+                file=sys.stderr,
+                end="\r",
+            )
             t0 = time.perf_counter()
 
     # Final printout
-    print(f"\r{desc}: DONE! {nr:,} {unit} (total time = {time.perf_counter() - t_start:.3f} s)!", file=sys.stderr)
+    print(
+        f"\r{desc}: DONE! {nr:,} {unit} (total time = {time.perf_counter() - t_start:.3f} s)!",
+        file=sys.stderr,
+    )
 
 
 def parse_chromosome(chrom, configs):
