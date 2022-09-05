@@ -37,12 +37,6 @@ def test_missing_config_raises_error():
         assert errorcode != 0
 
 
-def test_missing_bam_file_raises_error(tmp_path):
-    config_file_without_bam = io.StringIO("")
-    with pytest.raises(SystemExit):
-        _ = Configs.from_file(config_file_without_bam)
-
-
 def test_candidates(tmp_path):
     config_file = io.StringIO(f"bam_file={BAM}\ncandidates={CANDIDATES}\noutdir={tmp_path}\nDEBUG=True\n")
     configs = Configs.from_file(config_file)
