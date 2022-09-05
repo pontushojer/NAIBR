@@ -546,3 +546,18 @@ class ConditionalFormatter(logging.Formatter):
             return record.getMessage()
         else:
             return logging.Formatter.format(self, record)
+
+
+def input_candidates(openfile, min_sv: int = 1000):
+    """Read input candidates from file. Filter out short candidates"""
+    cands = []
+    for line in openfile:
+        els = line.strip().split("\t")
+        if len(els) > 4:
+            cands.append([els[0], int(els[1]), els[3], int(els[4]), els[-1]])
+
+    n_total = len(cands)
+    # Filter out short intrachromosomal candidates
+    cands = [c for c in cands if abs(c[1] - c[3]) > min_sv or c[0] != c[2]]
+    logger.info(f"Found {n_total:,} candidates in file of which {len(cands):,} are long enough")
+    return cands

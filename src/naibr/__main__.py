@@ -53,7 +53,14 @@ from .get_reads import (
     get_interchrom_candidates,
 )
 from .global_vars import Configs
-from .utils import flatten, parallel_execute, is_proper_chrom, write_novel_adjacencies, ConditionalFormatter
+from .utils import (
+    flatten,
+    parallel_execute,
+    is_proper_chrom,
+    write_novel_adjacencies,
+    ConditionalFormatter,
+    input_candidates,
+)
 from .rank import predict_novel_adjacencies
 
 logger = logging.getLogger(__name__)
@@ -75,8 +82,12 @@ def run_naibr_candidate(cand, configs):
     cand_name = f"{cand.chrm1}:{cand.break1}-{cand.chrm2}:{cand.break2}"
     logger.info(f"For {cand.svtype()} {cand_name} - found {len(discs):,} discordant positions")
     candidates, p_len, p_rate, barcode_linkedreads = get_candidates(discs, reads_by_barcode, configs)
-    candidates = [c for c in candidates if max(c.distance(cand)) < configs.LMAX]
-    candidates.append(cand)
+
+    if candidates:
+        candidates = [c for c in candidates if max(c.distance(cand)) < configs.LMAX]
+        candidates.append(cand)
+    else:
+        candidates = [cand]
 
     if p_len is None:
         return []
@@ -218,18 +229,18 @@ def run(configs):
     novel_adjacencies = []
     if configs.CANDIDATES:
         logger.info("Using user defined candidates")
-        cands = []
         with open(configs.CANDIDATES) as f:
-            for line in f:
-                els = line.strip().split("\t")
-                if len(els) > 4:
-                    cands.append([els[0], int(els[1]), els[3], int(els[4]), els[-1]])
-        logger.info(f"Found {len(cands)} candidates to evaluate")
-        configs.COMPRESSION_THREADS = 2 if configs.NUM_THREADS / len(cands) > 2 else 1
-        run_with_configs = functools.partial(run_naibr_candidate, configs=configs)
-        novel_adjacencies = flatten(parallel_execute(run_with_configs, cands, threads=configs.NUM_THREADS))
-        logger.info(f"Evaluation yeilded {len(novel_adjacencies)} viable novel adjacencies")
+            cands = input_candidates(f, min_sv=configs.MIN_SV)
 
+        if len(cands) > 0:
+            configs.COMPRESSION_THREADS = 2 if configs.NUM_THREADS / len(cands) > 2 else 1
+            run_with_configs = functools.partial(run_naibr_candidate, configs=configs)
+            novel_adjacencies = flatten(
+                parallel_execute(run_with_configs, cands, threads=configs.NUM_THREADS)
+            )
+            logger.info(f"Evaluation yielded {len(novel_adjacencies)} viable novel adjacencies")
+        else:
+            logger.warning(f"No valid candidates in file {configs.CANDIDATES}.")
     else:
         chromosomes = get_chromosomes_with_reads(bam_file=configs.BAM_FILE)
         if len(chromosomes) == 0:
