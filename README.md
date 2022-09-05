@@ -1,7 +1,14 @@
 [![CI](https://github.com/pontushojer/NAIBR/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/pontushojer/NAIBR/actions/workflows/ci.yml) [![codecov](https://codecov.io/gh/pontushojer/NAIBR/branch/main/graph/badge.svg?token=lHWwvvKaz1)](https://codecov.io/gh/pontushojer/NAIBR)
 # NAIBR - Novel Adjacency Identification with Barcoded Reads
 
-*NB! This is a re-factoring of the code from [raphael-group/NAIBR](https://github.com/raphael-group/NAIBR) to make the tool a bit more user-friendly and adds some additional features. This means that the resulting output might differ from what you would get from `raphael-group/NAIBR`.*
+*NB! This is a re-factoring of the code from [raphael-group/NAIBR](https://github.com/raphael-group/NAIBR) to make the tool a bit more user-friendly and adds some additional features. This means that the resulting output might differ from what you would get from `raphael-group/NAIBR`. See [Benchmarks](#Benchmarks) for a comparison. 
+
+- [Overview](#Overview)
+- [Install](#Install)
+- [Running NAIBR](#Running-NAIBR)
+- [Converting BEDPE to VCF](#Converting-BEDPE-to-VCF)
+- [Benchmarks](#Benchmarks)
+- [Citing](#Citing)
 
 ## Overview
 
@@ -12,7 +19,7 @@ NAIBR takes as in put a phased BAM, such as those produced by 10X Genomic's
 Long Ranger pipeline, and outputs a BEDPE file containing predicted novel 
 adjacencies and a likelihood score for each adjacency.
 
-## Installing NAIBR
+## Install
 ```
 git clone https://github.com/pontushojer/NAIBR.git
 cd NAIBR
@@ -76,7 +83,7 @@ Reformatted BEDPE that follows the [10x Genomics BEDPE format](https://support.1
 
 NAs translated to the VCF format. Useful for operation using e.g. [truvari](https://github.com/ACEnglish/truvari).
 
-## Converting NAIBR BEDPE to VCF
+## Converting BEDPE to VCF
 
 The repository includes a utility script `scripts/bedpe_to_vcf.py` for converting from NAIBR's BEDPE format to a VCF. For detail on how to use it run:
 
@@ -125,7 +132,7 @@ Sample | Precision | Recall | F1 score | TP-base | TP-call | FP | FN
 
 This fork, i.e. `main_cbbdf01_pass`, had much higher F1 score of 87.0% than the master branch at 25.8%. Also the `main_cbbdf01_all` seems to include a lot of TP calls that are filtered out by NAIBR, possibly filtering should be re-optimized.
 
-### Citing NAIBR
+### Citing
 Elyanow, Rebecca, Hsin-Ta Wu, and Benjamin J. Raphael. *Identifying 
 structural variants using linked-read sequencing data.* Bioinformatics (2017).
 ```
