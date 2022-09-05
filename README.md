@@ -39,11 +39,21 @@ A template config file can be found in example/example.config. The following par
 * min_sv: Minimum size of a structural variant to be detected (default: lmax, the 95th percentile of the paired-end read insert size distribution)
 * k: minimum number of barcode overlaps supporting a candidate NA (default = 3)
 
-## Output
+
+### Run example
+Example files are provided in the 'example' directory. Running
+
+```
+naibr example/example.config
+```
+
+will produce the file 'example/NAIBR_SVs.bedpe'.
+
+### Output
 
 Scored novel adjacencies are outputted in three different file formats to the output directory
 
-### `NAIBR.bedpe` 
+#### `NAIBR.bedpe` 
 BEDPE-like file in same format as outputted in [raphael-group/NAIBR](https://github.com/raphael-group/NAIBR). Note that this file does not follow any actual BEDPE format. The file has a header with column descriptions.
 
 **Columns:**
@@ -58,22 +68,13 @@ BEDPE-like file in same format as outputted in [raphael-group/NAIBR](https://git
 9. Score: log-likelihood score for NA
 10. Pass filter: "PASS" if passes filter threshold, otherwice "FAIL"
 
-### `NAIBR.reformat.bedpe`
+#### `NAIBR.reformat.bedpe`
 Reformatted BEDPE that follows the [10x Genomics BEDPE format](https://support.10xgenomics.com/genome-exome/software/pipelines/latest/output/bedpe) suitable for IGV visualization
 
 
-### `NAIBR.vcf`
+#### `NAIBR.vcf`
 
 NAs translated to the VCF format. Useful for operation using e.g. [truvari](https://github.com/ACEnglish/truvari).
-
-## Example
-Example files are provided in the 'example' directory. Running
-
-```
-naibr example/example.config
-```
-
-will produce the file 'example/NAIBR_SVs.bedpe'.
 
 ## Converting NAIBR BEDPE to VCF
 
