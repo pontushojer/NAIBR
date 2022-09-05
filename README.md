@@ -83,6 +83,47 @@ The repository includes a utility script `scripts/bedpe_to_vcf.py` for convertin
 python scripts/bedpe_to_vcf.py --help
 ```
 
+## Benchmarks
+Benchmarking this fork (labeled `main_<commit>`) versus [raphael-group/NAIBR](https://github.com/raphael-group/NAIBR) (labeled `master`). Master includes https://github.com/raphael-group/NAIBR/pull/22 merged as this removes a lot of FP calls introduced by a code error.
+
+### HG002 
+Run NAIBR on 10x Genomics data for idividual HG002 (NA24385). Dataset from GIAB ([source](https://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/data/AshkenazimTrio/analysis/10XGenomics_ChromiumGenome_LongRanger2.2_Supernova2.0.1_04122018/GRCh37/)) has 51.7x coverage and was run through the Long Ranger pipeline using reference genome GRCh37. 
+
+<details>
+  <summary>NAIBR configs used</summary>
+  <code>
+  min_mapq=40
+  d=10000
+  min_sv=1000
+  threads=10
+  k=3
+  min_reads=2
+  min_discs=2
+</code>
+</details>
+
+Compared deletions (DELs) to [GIAB benchmark](https://doi.org/10.1038%2Fs41587-020-0538-8) set `Tier1` (v0.6) using [truvari](https://github.com/ACEnglish/truvari) (v3.1.0). Compared both all entries (named `*_all`) and only those that passed filters (labeled `*_pass`).
+
+Command for `*_all`:
+```
+truvari bench -b HG002_SVs_Tier1_v0.6.withchr.DELs.vcf.gz -c master/NAIBR_SVs.DELs.vcf.gz -o truvari_bench/master_all --includebed HG002_SVs_Tier1_v0.6.withchr.noY.bed --pctsim 0.5 --pctsize 0.5 --reference /Users/pontus.hojer/analysis/references/hg19_longranger/genome.fa --sizemin 1000 --sizemax 20000000 --multimatch --giabreport
+```
+
+Command for `*_pass`:
+```
+truvari bench -b HG002_SVs_Tier1_v0.6.withchr.DELs.vcf.gz -c master/NAIBR_SVs.DELs.vcf.gz -o truvari_bench/master_pass --includebed HG002_SVs_Tier1_v0.6.withchr.noY.bed --pctsim 0.5 --pctsize 0.5 --reference /Users/pontus.hojer/analysis/references/hg19_longranger/genome.fa --sizemin 1000 --sizemax 20000000 --multimatch --giabreport --passonly
+```
+
+**Results**
+Sample | Precision | Recall | F1 score | TP-base | TP-call | FP | FN
+--- | --- | --- | --- | --- | --- | --- | ---
+`main_cbbdf01_all`  | 67.0% | 59.6% | 63.1% | **480** | **478** | 235 | 325
+`main_cbbdf01_pass` | **99.3%** | **77.4%** | **87.0%** | 411 | 411 | **3** | **120**
+`master_all`        | 34.3% | 28.6% | 31.2% | 230 | 229 | 439 | 575
+`master_pass`       | 96.3% | 14.9% | 25.8% | 79 | 79 | **3** | 452
+
+This fork, i.e. `main_cbbdf01_pass`, had much higher F1 score of 87.0% than the master branch at 25.8%. Also the `main_cbbdf01_all` seems to include a lot of TP calls that are filtered out by NAIBR, possibly filtering should be re-optimized.
+
 ### Citing NAIBR
 Elyanow, Rebecca, Hsin-Ta Wu, and Benjamin J. Raphael. *Identifying 
 structural variants using linked-read sequencing data.* Bioinformatics (2017).
