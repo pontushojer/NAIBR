@@ -29,25 +29,38 @@ class NovelAdjacency:
         "pass_threshold",
     ]
 
-    def __init__(self, chrm1, chrm2, indi, indj, orient):
+    def __init__(
+        self,
+        chrm1,
+        chrm2,
+        indi,
+        indj,
+        orient,
+        score: float = None,
+        haps=None,
+        spans: int = None,
+        discs: int = None,
+        pairs: int = None,
+        pass_threshold: bool = False,
+    ):
         self.chrm1 = chrm1
         self.break1 = indi
         self.chrm2 = chrm2
         self.break2 = indj
         self.orient = orient
 
-        self.score = -float("inf")
+        self.score = -float("inf") if score is None else score
         self.score_by_hap = defaultdict(int)
 
-        self.haps = (0, 0)
-        self.spans = 0
-        self.discs = 0
-        self.pairs = 0
+        self.haps = (0, 0) if haps is None else haps
+        self.spans = 0 if spans is None else spans
+        self.discs = 0 if discs is None else discs
+        self.pairs = 0 if pairs is None else pairs
         self.spans_by_hap = defaultdict(int)
         self.discs_by_hap = defaultdict(int)
         self.pairs_by_hap = defaultdict(int)
 
-        self.pass_threshold = None
+        self.pass_threshold = pass_threshold
 
     def __repr__(self):
         return (
@@ -191,6 +204,26 @@ class NovelAdjacency:
             self.discs = 0
             self.pairs = 0
             self.spans = 0
+
+    @classmethod
+    def from_naibr(cls, line: str, add_chr: bool = False):
+        """Create a NovelAdjacency instance from a NAIBR-format BEDPE line. If add_chr
+        is true 'chr' will be prepended to all chromosomes."""
+        els = line.strip().split("\t")
+        print(els[7])
+        assert len(els) >= 10, "Less columns than expencted in BEDPE"
+        return cls(
+            chrm1=els[0] if not add_chr else f"chr{els[0]}",
+            indi=int(els[1]),
+            chrm2=els[2] if not add_chr else f"chr{els[2]}",
+            indj=int(els[3]),
+            orient=els[6],
+            pairs=int(els[4]),
+            discs=int(els[5]),
+            haps=tuple(int(hap) for hap in els[7].split(",")),
+            score=float(els[8]),
+            pass_threshold=els[9] == "PASS",
+        )
 
     def to_tuple(self):
         return (

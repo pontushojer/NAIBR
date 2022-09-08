@@ -5,6 +5,7 @@ import argparse
 import sys
 import contextlib
 
+from naibr.utils import NovelAdjacency
 
 @contextlib.contextmanager
 def smart_open(filename=None):
@@ -54,16 +55,6 @@ def get_chrom_lengths(reference):
     return chrom_lengths
 
 
-def get_svtype(orient, chrom1, chrom2):
-    """Translation of orientation to DEL, INV and DUP.
-    Based on this: https://github.com/raphael-group/NAIBR/issues/11
-    Note that this is not entirely accurate as the more complex variants are possible."""
-    if chrom1 != chrom2:
-        return "TRA"
-    else:
-        return {"+-": "DEL", "++": "INV", "--": "INV", "-+": "DUP"}.get(orient, "UNK")
-
-
 def main(args):
     chrom_lengths = get_chrom_lengths(args.ref)
 
@@ -73,70 +64,13 @@ def main(args):
         print(vcf_header, file=vcf_writer)
         nr = 0
         for entry in bedpe_reader:
-            # Columns in BEDPE
-            #    1. Chr1
-            #    2. Break1
-            #    3. Chr2
-            #    4. Break2
-            #    5. Split molecules
-            #    6. Discordant reads
-            #    7. Orientation
-            #    8. Haplotype
-            #    9. Score
-            #    10. Pass filter
-
             if entry.startswith("Chr1"):
                 continue
 
             nr += 1
-            els = entry.strip().split("\t")
-            assert len(els) >= 10, "Less columns than expencted in BEDPE"
 
-            chrom1 = els[0] if not args.add_chr else f"chr{els[0]}"
-            break1 = int(els[1])
-            chrom2 = els[2] if not args.add_chr else f"chr{els[2]}"
-            break2 = int(els[3])
-            orient = els[6]
-            pairs = float(els[4])
-            discs = float(els[5])
-            haps = els[7]
-            score = float(els[8])
-            pass_threshold = els[9] == "PASS"
-            name = f"NAIBR_{nr:05}"
-            length = break2 - break1 if chrom1 == chrom2 else 0
-            svtype = get_svtype(orient, chrom1, chrom2)
-
-            info = ";".join(
-                (
-                    f"END={break2}",
-                    f"SVTYPE={svtype}",
-                    f"SVLEN={length}",
-                    f"SVSCORE={score}",
-                    f"NUM_SPLIT_MOLECULES={pairs}",
-                    f"NUM_DISCORDANT_READS={discs}",
-                    f"HAPLOTYPE={haps}",
-                )
-            )
-            if chrom1 != chrom2:
-                info += f";CHR1={chrom2}"
-
-            vcf_entry = "\t".join(
-                [
-                    chrom1,
-                    str(break1),
-                    name,
-                    "N",
-                    f"<{svtype}>",
-                    str(score),
-                    "PASS" if pass_threshold else "FAIL",
-                    info,
-                    "GT",
-                    # TODO - This is not the correct genotype, but using './.' corresponds to
-                    #  a "non-called" variant in downstream applications.
-                    "1/1",
-                ]
-            )
-
+            novel_adjacency = NovelAdjacency.from_naibr(entry, add_chr=args.add_chr)
+            vcf_entry = novel_adjacency.to_vcf(name=f"NAIBR_{nr:05}")
             print(vcf_entry, file=vcf_writer)
 
 
