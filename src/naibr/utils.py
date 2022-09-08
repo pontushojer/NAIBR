@@ -608,11 +608,32 @@ class ConditionalFormatter(logging.Formatter):
 
 def input_candidates(openfile, min_sv: int = 1000):
     """Read input candidates from file. Filter out short candidates"""
+
+    def parse_bedpe(lines):
+        for line in lines:
+            els = line.strip().split("\t")
+            assert len(els) > 4
+            assert els[1].isnumeric() and els[2].isnumeric() and els[-1] in {"+-",  "++", "--", "-+"}
+            yield els[0], int(els[1]), els[3], int(els[4]), els[-1]
+
+    def parse_naibr(lines):
+        for line in lines:
+            els = line.strip().split("\t")
+            assert len(els) > 6
+            assert els[1].isnumeric() and els[3].isnumeric() and els[6] in {"+-", "++", "--", "-+"}
+            yield els[0], int(els[1]), els[2], int(els[3]), els[6]
+
+    try:
+        first_line = next(openfile)
+    except StopIteration:
+        first_line = ""
+
     cands = []
-    for line in openfile:
-        els = line.strip().split("\t")
-        if len(els) > 4:
-            cands.append([els[0], int(els[1]), els[3], int(els[4]), els[-1]])
+    if first_line.startswith("Chr1"):
+        cands = list(parse_naibr(openfile))
+    elif len(first_line.strip().split("\t")) > 4:
+        openfile = itertools.chain([first_line], openfile)
+        cands = list(parse_bedpe(openfile))
 
     n_total = len(cands)
     # Filter out short intrachromosomal candidates
