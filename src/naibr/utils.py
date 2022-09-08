@@ -519,6 +519,30 @@ def get_chrom_lengths(bam_file):
         yield chrom, length
 
 
+def build_vcf_header(chrom_lengths, sample=None):
+    if sample is None:
+        sample = "SAMPLE"
+    """Build a VCF header. Requires a list of tuples with chromsome names and lengths"""
+    header_string = """##fileformat=VCFv4.2
+    ##source=NAIBR"""
+
+    header_string += "".join([f"\n##contig=<ID={c},length={l}>" for c, l in chrom_lengths])
+
+    header_string += f"""
+    ##FILTER=<ID=PASS,Description="Passed the software filter">
+    ##FILTER=<ID=FAIL,Description="Failed the software filter">
+    ##INFO=<ID=END,Number=1,Type=Integer,Description="End position of the structural variant">
+    ##INFO=<ID=SVTYPE,Number=1,Type=String,Description="Type of SV:DEL=Deletion, DUP=Duplication, INV=Inversion">
+    ##INFO=<ID=SVLEN,Number=1,Type=Integer,Description="Difference in length between REF and ALT alleles">
+    ##INFO=<ID=SVSCORE,Number=1,Type=Float,Description="NAIBR Score for SV">
+    ##INFO=<ID=NUM_DISCORDANT_READS,Number=1,Type=Integer,Description="Number of supporting discordant reads">
+    ##INFO=<ID=NUM_SPLIT_MOLECULES,Number=1,Type=Integer,Description="Number of supporting split molecules">
+    ##INFO=<ID=HAPLOTYPE,Number=1,Type=String,Description="Haplotype string from NAIBR">
+    ##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype.">
+    #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	{sample}"""
+    return header_string
+
+
 def write_novel_adjacencies(novel_adjacencies, directory, bam_file):
     fname = "NAIBR_SVs.bedpe"
     logger.info(f"Writing results to {os.path.join(directory, fname)}")
@@ -552,25 +576,7 @@ def write_novel_adjacencies(novel_adjacencies, directory, bam_file):
     fname3 = "NAIBR_SVs.vcf"
     logger.info(f"Writing results to {os.path.join(directory, fname3)}")
     with open(os.path.join(directory, fname3), "w") as f:
-        # Build header
-        header_string = """##fileformat=VCFv4.2
-##source=NAIBR"""
-
-        header_string += "".join([f"\n##contig=<ID={c},length={l}>" for c, l in get_chrom_lengths(bam_file)])
-
-        header_string += """
-##FILTER=<ID=PASS,Description="Passed the software filter">
-##FILTER=<ID=FAIL,Description="Failed the software filter">
-##INFO=<ID=END,Number=1,Type=Integer,Description="End position of the structural variant">
-##INFO=<ID=SVTYPE,Number=1,Type=String,Description="Type of SV:DEL=Deletion, DUP=Duplication, INV=Inversion">
-##INFO=<ID=SVLEN,Number=1,Type=Integer,Description="Difference in length between REF and ALT alleles">
-##INFO=<ID=SVSCORE,Number=1,Type=Float,Description="NAIBR Score for SV">
-##INFO=<ID=NUM_DISCORDANT_READS,Number=1,Type=Integer,Description="Number of supporting discordant reads">
-##INFO=<ID=NUM_SPLIT_MOLECULES,Number=1,Type=Integer,Description="Number of supporting split molecules">
-##INFO=<ID=HAPLOTYPE,Number=1,Type=String,Description="Haplotype string from NAIBR">
-##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype, All set to 1/1.">
-#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	SAMPLE"""
-
+        header_string = build_vcf_header(get_chrom_lengths(bam_file))
         print(header_string, file=f)
         for nr, na in enumerate(novel_adjacencies, start=1):
             print(na.to_vcf(f"NAIBR_{nr:05}"), file=f)
