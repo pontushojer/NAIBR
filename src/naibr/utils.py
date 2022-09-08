@@ -449,11 +449,9 @@ def safe_log(x):
         return log(1e-300)
 
 
-def is_close(index, read_pos, orient, lmax):
-    if orient == "+":
-        return abs(index - read_pos) <= lmax
-    else:
-        return abs(index - read_pos) <= lmax
+def is_close(pos1, pos2, max_dist):
+    """True if read_pos is within lmax of break_pos"""
+    return abs(pos1 - pos2) <= max_dist
 
 
 def is_convergent(read, mate):

@@ -132,17 +132,19 @@ def spanning(linkedread, candidate):
 
 
 def discs(candidate, barcode, discs_by_barcode, lmax):
-    ds = discs_by_barcode[(candidate.chrm1, candidate.chrm2, barcode)]
-    ds = [
+    """Get list of mapq of discordant reads that have mates that map close to
+    the candidate breakpoints"""
+    disc_reads = discs_by_barcode[(candidate.chrm1, candidate.chrm2, barcode)]
+    disc_reads = [
         read.mean_mapq
-        for read in ds
+        for read in disc_reads
         if candidate.chrm1 == read.chrm
-        and not candidate.is_interchromosomal()
-        and is_close(candidate.break1, read.i, read.orient[0], lmax)
-        and is_close(candidate.break2, read.j, read.orient[1], lmax)
+        and candidate.chrm2 == read.nextchrm
+        and is_close(candidate.break1, read.i, max_dist=lmax)
+        and is_close(candidate.break2, read.j, max_dist=lmax)
         and candidate.orient == read.orient
     ]
-    return ds
+    return disc_reads
 
 
 def majority_vote(haps):
