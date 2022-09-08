@@ -126,38 +126,36 @@ class NovelAdjacency:
         best_haps = (0, 0)
         total = 0
         for hap in list(self.score_by_hap):
-            s = self.score_by_hap[hap]
-            d = self.discs_by_hap[hap]
+            hap_score = self.score_by_hap[hap]
 
             if self.pairs_by_hap[hap] > self.spans_by_hap[hap]:
-                total += s
+                total += hap_score
 
             if hap[0] != 0 and self.pairs_by_hap[(0, hap[1])] >= self.spans_by_hap[(0, hap[1])]:
-                s += max(0, self.score_by_hap[(0, hap[1])])
-                d += self.discs_by_hap[(0, hap[1])]
+                hap_score += max(0, self.score_by_hap[(0, hap[1])])
 
             if hap[1] != 0 and self.pairs_by_hap[(hap[0]), 0] >= self.spans_by_hap[(hap[0]), 0]:
-                s += max(0, self.score_by_hap[(hap[0]), 0])
-                d += self.discs_by_hap[(hap[0]), 0]
+                hap_score += max(0, self.score_by_hap[(hap[0]), 0])
 
             if hap[0] != 0 and hap[1] != 0 and self.pairs_by_hap[(0, 0)] >= self.spans_by_hap[(0, 0)]:
-                s += max(0, self.score_by_hap[(0, 0)])
-                d += self.discs_by_hap[(0, 0)]
+                hap_score += max(0, self.score_by_hap[(0, 0)])
 
             if (
-                s > best_score
+                hap_score > best_score
                 and self.pairs_by_hap[hap] > 0
                 and self.pairs_by_hap[hap] >= self.spans_by_hap[hap]
             ):
-                best_score = s
+                best_score = hap_score
                 best_haps = hap
 
         pairs = sum(self.pairs_by_hap.values())
         spans = sum(self.spans_by_hap.values())
         discs = sum(self.discs_by_hap.values())
 
+        # In this case there is good support from both haplotype pairs, (1,1) and (2,2)
+        # or (1,2) and (2,1), indicating a homozygous call.
         if (
-            -float("inf") < best_score < total
+            -float("inf") < best_score < total  # TODO - why exclude cases where the best_score == total?
             and pairs >= spans
             and (
                 (self.score_by_hap[(1, 1)] > 0 and self.score_by_hap[(2, 2)] > 0)
@@ -170,6 +168,8 @@ class NovelAdjacency:
             self.pairs = pairs
             self.spans = spans
 
+        # In this case there is good support from one haplotype pair, indicating a heterozygous
+        # call. Additional support from non-phased, haplotype=0, molecules counted towards call
         elif best_score > -float("inf"):
             self.haps = best_haps
             score = self.score_by_hap[best_haps]
