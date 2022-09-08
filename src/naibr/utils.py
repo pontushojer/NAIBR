@@ -121,6 +121,27 @@ class NovelAdjacency:
         else:
             return {"+-": "DEL", "++": "INV", "--": "INV", "-+": "DUP"}.get(self.orient, "UNK")
 
+    def homozygous(self) -> bool:
+        """Return True if the variant is homozygous"""
+        if self.haps == (3, 3) or 0 in set(self.haps):
+            return True
+        return False
+
+    def genotype(self) -> str:
+        """Return the genotype for the variant"""
+        if self.homozygous():
+            return "1/1"
+        else:
+            # TODO - Here we assume that if its the same haplotype on both sides of the
+            #  NA it is phased. We need to know if the belong to the same phase set to
+            #  acctually know this
+            if self.haps == (1, 1):
+                return "1|0"
+            elif self.haps == (2, 2):
+                return "0|1"
+            else:  # haps either (1,2) or (2,1)
+                return "0/1"
+
     def get_score(self):
         best_score = -float("inf")
         best_haps = (0, 0)
@@ -311,9 +332,7 @@ class NovelAdjacency:
                 "PASS" if self.pass_threshold else "FAIL",
                 info,
                 "GT",
-                # TODO - This is not the correct genotype, but using './.' corresponds to
-                #  a "non-called" variant in downstream applications.
-                "1/1",
+                self.genotype(),
             ]
         )
 
