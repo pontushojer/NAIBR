@@ -37,31 +37,27 @@ Citation:
     sequencing data. Bioinformatics. 2018 Jan 15;34(2):353-360.
     doi: 10.1093/bioinformatics/btx712
 """
+import collections
 import functools
+import logging
+import os
 import sys
 import time
-import os
-import pysam
-import collections
-import numpy as np
-import logging
 
-from .get_reads import (
-    parse_candidate_region,
-    parse_chromosome,
-    get_candidates,
-    get_interchrom_candidates,
-)
+import numpy as np
+import pysam
+
+from .get_reads import get_candidates, get_interchrom_candidates, parse_candidate_region, parse_chromosome
 from .global_vars import Configs
-from .utils import (
-    flatten,
-    parallel_execute,
-    is_proper_chrom,
-    write_novel_adjacencies,
-    ConditionalFormatter,
-    input_candidates,
-)
 from .rank import predict_novel_adjacencies
+from .utils import (
+    ConditionalFormatter,
+    flatten,
+    input_candidates,
+    is_proper_chrom,
+    parallel_execute,
+    write_novel_adjacencies,
+)
 
 logger = logging.getLogger(__name__)
 

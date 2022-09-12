@@ -1,18 +1,19 @@
 import collections
-from functools import partial, lru_cache
-import math
-import numpy as np
 import logging
+import math
+from functools import lru_cache, partial
+
+import numpy as np
 
 from .utils import (
-    safe_log,
     NovelAdjacency,
+    collapse_novel_adjacencies,
+    evaluate_threshold,
+    filter_chrY,
     is_close,
     roundto,
-    filter_chrY,
-    collapse_novel_adjacencies,
+    safe_log,
     threshold,
-    evaluate_threshold,
 )
 
 logger = logging.getLogger(__name__)

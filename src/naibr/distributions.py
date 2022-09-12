@@ -1,14 +1,15 @@
-import os
 import collections
 import itertools
+import os
+
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from pylab import rc
-import scipy.stats as scipy_stats
-import scipy.special as special
-import scipy.optimize as optimize
-import numpy as np
 import mpmath
+import numpy as np
+import scipy.optimize as optimize
+import scipy.special as special
+import scipy.stats as scipy_stats
+from pylab import rc
 
 from .utils import roundto
 

@@ -1,10 +1,11 @@
+import collections
 import os
 import sys
-import collections
-import pysam
-import numpy as np
 from dataclasses import dataclass
 from typing import Dict, List, Tuple
+
+import numpy as np
+import pysam
 
 
 def parse_blacklist(fname):

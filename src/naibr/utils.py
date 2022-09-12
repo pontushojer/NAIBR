@@ -1,9 +1,9 @@
-from math import log
-import os
-from collections import defaultdict
-import multiprocessing as mp
 import itertools
 import logging
+import multiprocessing as mp
+import os
+from collections import defaultdict
+from math import log
 
 import pysam
 

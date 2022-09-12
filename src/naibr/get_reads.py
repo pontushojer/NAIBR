@@ -1,14 +1,14 @@
-import sys
 import collections
-import time
 import logging
+import sys
+import time
 from itertools import cycle
 
 import numpy as np
 import pysam
 
-from .utils import roundto, is_proper_chrom, NovelAdjacency, PERead, get_tag_default
 from .distributions import get_distributions, get_linkedread_distributions
+from .utils import NovelAdjacency, PERead, get_tag_default, is_proper_chrom, roundto
 
 logger = logging.getLogger(__name__)
 
