@@ -522,22 +522,22 @@ def build_vcf_header(chrom_lengths, sample=None):
         sample = "SAMPLE"
     """Build a VCF header. Requires a list of tuples with chromsome names and lengths"""
     header_string = """##fileformat=VCFv4.2
-    ##source=NAIBR"""
+##source=NAIBR"""
 
     header_string += "".join([f"\n##contig=<ID={c},length={l}>" for c, l in chrom_lengths])
 
     header_string += f"""
-    ##FILTER=<ID=PASS,Description="Passed the software filter">
-    ##FILTER=<ID=FAIL,Description="Failed the software filter">
-    ##INFO=<ID=END,Number=1,Type=Integer,Description="End position of the structural variant">
-    ##INFO=<ID=SVTYPE,Number=1,Type=String,Description="Type of SV:DEL=Deletion, DUP=Duplication, INV=Inversion">
-    ##INFO=<ID=SVLEN,Number=1,Type=Integer,Description="Difference in length between REF and ALT alleles">
-    ##INFO=<ID=SVSCORE,Number=1,Type=Float,Description="NAIBR Score for SV">
-    ##INFO=<ID=NUM_DISCORDANT_READS,Number=1,Type=Integer,Description="Number of supporting discordant reads">
-    ##INFO=<ID=NUM_SPLIT_MOLECULES,Number=1,Type=Integer,Description="Number of supporting split molecules">
-    ##INFO=<ID=HAPLOTYPE,Number=1,Type=String,Description="Haplotype string from NAIBR">
-    ##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype.">
-    #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	{sample}"""
+##FILTER=<ID=PASS,Description="Passed the software filter">
+##FILTER=<ID=FAIL,Description="Failed the software filter">
+##INFO=<ID=END,Number=1,Type=Integer,Description="End position of the structural variant">
+##INFO=<ID=SVTYPE,Number=1,Type=String,Description="Type of SV:DEL=Deletion, DUP=Duplication, INV=Inversion">
+##INFO=<ID=SVLEN,Number=1,Type=Integer,Description="Difference in length between REF and ALT alleles">
+##INFO=<ID=SVSCORE,Number=1,Type=Float,Description="NAIBR Score for SV">
+##INFO=<ID=NUM_DISCORDANT_READS,Number=1,Type=Integer,Description="Number of supporting discordant reads">
+##INFO=<ID=NUM_SPLIT_MOLECULES,Number=1,Type=Integer,Description="Number of supporting split molecules">
+##INFO=<ID=HAPLOTYPE,Number=1,Type=String,Description="Haplotype string from NAIBR">
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype.">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	{sample}"""
     return header_string
 
 
