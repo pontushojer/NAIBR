@@ -95,32 +95,24 @@ def phred_probability(mapq: int) -> float:
     return math.pow(10, (mapq / -10.0))
 
 
-def near_i(x, candidate, configs):
-    chrm = x[0]
-    start = x[1]
-    end = x[2]
-    neari = (
-        (candidate.orient[0] == "+" and end - configs.LMAX < candidate.break1 < end + configs.MAX_LINKED_DIST)
-        or (
-            candidate.orient[0] == "-"
-            and start + configs.LMAX > candidate.break1 > start - configs.MAX_LINKED_DIST
-        )
-    ) and candidate.chrm1 == chrm
-    return neari
+def near_i(linkedread, candidate, configs):
+    chrm, start, end = linkedread[:3]
+    if candidate.chrm1 != chrm:
+        return False
+
+    if candidate.orient[0] == "+":
+        return end - configs.LMAX < candidate.break1 < end + configs.MAX_LINKED_DIST
+    return start + configs.LMAX > candidate.break1 > start - configs.MAX_LINKED_DIST
 
 
-def near_j(x, candidate, configs):
-    chrm = x[0]
-    start = x[1]
-    end = x[2]
-    nearj = (
-        (candidate.orient[1] == "+" and end - configs.LMAX < candidate.break2 < end + configs.MAX_LINKED_DIST)
-        or (
-            candidate.orient[1] == "-"
-            and start + configs.LMAX > candidate.break2 > start - configs.MAX_LINKED_DIST
-        )
-    ) and candidate.chrm2 == chrm
-    return nearj
+def near_j(linkedread, candidate, configs):
+    chrm, start, end = linkedread[:3]
+    if candidate.chrm2 != chrm:
+        return False
+
+    if candidate.orient[1] == "+":
+        return end - configs.LMAX < candidate.break2 < end + configs.MAX_LINKED_DIST
+    return start + configs.LMAX > candidate.break2 > start - configs.MAX_LINKED_DIST
 
 
 def spanning(linkedread, candidate):
