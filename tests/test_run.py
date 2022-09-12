@@ -37,6 +37,21 @@ def test_missing_config_raises_error():
         assert errorcode != 0
 
 
+def test_run_from_file(tmp_path):
+    configfile = tmp_path / "naibr.config"
+    outdir = tmp_path / "results"
+    with open(configfile, "w") as f:
+        print(f"bam_file={BAM}\ncandidates={CANDIDATES}\noutdir={outdir}\n", file=f)
+
+    errorcode = main([configfile])
+    assert errorcode == 0
+    assert outdir.exists() and outdir.is_dir()
+    assert Path(outdir / "NAIBR_SVs.bedpe").exists()
+    assert Path(outdir / "NAIBR_SVs.reformat.bedpe").exists()
+    assert Path(outdir / "NAIBR_SVs.vcf").exists()
+    assert Path(outdir / "log.txt").exists()
+
+
 def test_candidates(tmp_path):
     config_file = io.StringIO(f"bam_file={BAM}\ncandidates={CANDIDATES}\noutdir={tmp_path}\nDEBUG=True\n")
     configs = Configs.from_file(config_file)
