@@ -611,7 +611,7 @@ def input_candidates(openfile, min_sv: int = 1000):
         for line in lines:
             els = line.strip().split("\t")
             assert len(els) > 4
-            assert els[1].isnumeric() and els[2].isnumeric() and els[-1] in {"+-",  "++", "--", "-+"}
+            assert els[1].isnumeric() and els[2].isnumeric() and els[-1] in {"+-", "++", "--", "-+"}
             yield els[0], int(els[1]), els[3], int(els[4]), els[-1]
 
     def parse_naibr(lines):
