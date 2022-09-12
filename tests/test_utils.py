@@ -18,7 +18,10 @@ def test_input_candates_bepde_format():
 def test_input_candates_naibr_format():
     input_cands = [("chr1", 1000, "chr1", 4000, "+-"), ("chr1", 5000, "chr1", 13000, "+-")]
     # Convert to NAIBR format with header
-    input = "Chr1\tBreak1\tChr2\tBreak2\tSplit molecules\tDiscordant reads\tOrientation\tHaplotype\tScore\tPass filter\n"
+    input = (
+        "Chr1\tBreak1\tChr2\tBreak2\tSplit molecules\tDiscordant reads\tOrientation\tHaplotype\tScore\t"
+        "Pass filter\n"
+    )
     input += "\n".join(
         [f"{c[0]}\t{c[1]}\t{c[2]}\t{c[3]}\t30\t6\t{c[4]}\t2,2\t345.980\tPASS" for c in input_cands]
     )
