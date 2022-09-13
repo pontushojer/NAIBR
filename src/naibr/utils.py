@@ -412,20 +412,8 @@ class PERead:
         return int((self.i + self.j) / 2)
 
 
-def first_read(read):
-    chrom = read.reference_name
-    mate_chrom = read.next_reference_name
-    return (read.reference_start < read.next_reference_start and chrom == mate_chrom) or chrom < mate_chrom
-
-
 def is_proper_chrom(chrom):
     return "Un" not in chrom and "random" not in chrom and "hs37d5" not in chrom
-
-
-def get_read_orientation(read):
-    a = "-" if read.is_reverse else "+"
-    a += "-" if read.mate_is_reverse else "+"
-    return a
 
 
 def get_tag_default(read, tag, default=None):
@@ -433,13 +421,6 @@ def get_tag_default(read, tag, default=None):
         return read.get_tag(tag)
     except KeyError:
         return default
-
-
-def plog(x, num):
-    ret = 0
-    for i in range(num):
-        ret += safe_log(x)
-    return ret
 
 
 def safe_log(x):
@@ -452,10 +433,6 @@ def safe_log(x):
 def is_close(pos1, pos2, max_dist):
     """True if read_pos is within lmax of break_pos"""
     return abs(pos1 - pos2) <= max_dist
-
-
-def is_convergent(read, mate):
-    return not read.is_reverse and mate.is_reverse
 
 
 def flatten(list_of_lists):
