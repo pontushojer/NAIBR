@@ -490,8 +490,7 @@ def evaluate_threshold(novel_adjacencies, threshold_value):
 
 def get_chrom_lengths(bam_file):
     reads = pysam.AlignmentFile(bam_file, "rb")
-    for chrom, length in zip(reads.references, reads.lengths):
-        yield chrom, length
+    yield from zip(reads.references, reads.lengths)
 
 
 def build_vcf_header(chrom_lengths, sample=None):
