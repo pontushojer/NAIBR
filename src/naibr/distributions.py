@@ -16,7 +16,7 @@ from .utils import roundto
 mpl.use("Agg")
 
 
-class NegBin(object):
+class NegBin:
     def __init__(self, p=0.1, r=10):
         self.nbin = np.frompyfunc(self._nbin, 3, 1)
         self.p = p
