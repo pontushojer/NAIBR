@@ -134,7 +134,7 @@ Sample | Precision | Recall | F1 score | TP-base | TP-call | FP | FN
 
 This fork, i.e. `main_cbbdf01_pass`, had much higher F1 score of 87.0% than the master branch at 25.8%. Also the `main_cbbdf01_all` seems to include a lot of TP calls that are filtered out by NAIBR, possibly filtering should be re-optimized.
 
-### Citing
+## Citing
 Elyanow, Rebecca, Hsin-Ta Wu, and Benjamin J. Raphael. *Identifying 
 structural variants using linked-read sequencing data.* Bioinformatics (2017).
 ```
