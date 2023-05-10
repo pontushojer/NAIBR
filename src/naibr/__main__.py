@@ -150,11 +150,11 @@ def run_naibr(chrom, configs):
     )
 
 
-def chromosome_has_haplotyped_reads(chromosome, bam_file, max_iter=100_000):
-    """True if found BX and HP tagged read on chromsome within the first `max_iter` reads."""
+def chromosome_has_barcoded_reads(chromosome, bam_file, max_iter=100_000):
+    """True if found BX tagged read on chromsome within the first `max_iter` reads."""
     with pysam.AlignmentFile(bam_file, "rb") as reads:
         for nr, read in enumerate(reads.fetch(chromosome)):
-            if read.has_tag("BX") and read.has_tag("HP"):
+            if read.has_tag("BX"):
                 return True
 
             if nr > max_iter:
@@ -168,7 +168,7 @@ def get_chromosomes_with_reads(bam_file):
         all_chroms = reads.references
         all_chroms = [x for x in all_chroms if is_proper_chrom(x)]
 
-    chroms = [chrom for chrom in all_chroms if chromosome_has_haplotyped_reads(chrom, bam_file)]
+    chroms = [chrom for chrom in all_chroms if chromosome_has_barcoded_reads(chrom, bam_file)]
     return chroms
 
 
