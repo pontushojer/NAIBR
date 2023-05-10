@@ -5,3 +5,10 @@
 /src/naibr.egg-info/
 /.idea/
 /.vscode/
+__pycache__
+.DS_Store
+.coverage
+.pre-commit-config.yaml
+.snakemake_timestamp
+.tox/
+build
