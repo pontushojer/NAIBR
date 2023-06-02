@@ -291,7 +291,9 @@ def run(configs):
         else:
             logger.info("No interchromosomal candidates")
 
-    write_novel_adjacencies(novel_adjacencies, directory=configs.DIR, bam_file=configs.BAM_FILE, prefix=configs.PREFIX)
+    write_novel_adjacencies(
+        novel_adjacencies, directory=configs.DIR, bam_file=configs.BAM_FILE, prefix=configs.PREFIX
+    )
 
     logger.info(f"Finished in {(time.time() - starttime) / 60.0} minutes")
     return 0
