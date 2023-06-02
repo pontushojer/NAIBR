@@ -69,7 +69,7 @@ class NovelAdjacency:
             f"discs={self.discs}, pairs={self.pairs}, score={self.score}, "
             f"spans_by_hap={dict(self.spans_by_hap)}, discs_by_hap={dict(self.discs_by_hap)}, "
             f"pairs_by_hap={dict(self.pairs_by_hap)}, score_by_hap={dict(self.score_by_hap)}, "
-            f"pass_threshold={self.pass_threshold}"
+            f"pass_threshold={self.pass_threshold})"
         )
 
     def __eq__(self, other):
