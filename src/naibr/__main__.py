@@ -208,6 +208,7 @@ def run(configs):
     logger.info(f"  candidates = {configs.CANDIDATES}", extra={"nofmt": True})
     logger.info(f"  blacklist = {configs.BLACKLIST_FILE}", extra={"nofmt": True})
     logger.info(f"  outdir = {configs.DIR}", extra={"nofmt": True})
+    logger.info(f"  prefix = {configs.PREFIX}", extra={"nofmt": True})
     logger.info("PARAMETERS", extra={"nofmt": True})
     logger.info(f"  d =         {configs.MAX_LINKED_DIST:>9,}", extra={"nofmt": True})
     logger.info(f"  min_mapq =  {configs.MIN_MAPQ:>9}", extra={"nofmt": True})
@@ -290,7 +291,7 @@ def run(configs):
         else:
             logger.info("No interchromosomal candidates")
 
-    write_novel_adjacencies(novel_adjacencies, directory=configs.DIR, bam_file=configs.BAM_FILE)
+    write_novel_adjacencies(novel_adjacencies, directory=configs.DIR, bam_file=configs.BAM_FILE, prefix=configs.PREFIX)
 
     logger.info(f"Finished in {(time.time() - starttime) / 60.0} minutes")
     return 0

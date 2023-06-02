@@ -50,3 +50,16 @@ def test_missing_bam_file_raises_error(tmp_path):
     config_file_without_bam = StringIO("")
     with pytest.raises(SystemExit):
         _ = Configs.from_file(config_file_without_bam)
+
+
+def test_empty_prefix_is_set_to_bam_file_name(tmp_path):
+    config_file_without_prefix = StringIO(f"bam_file={BAM}\nprefix=\n")
+    configs = Configs.from_file(config_file_without_prefix)
+    assert configs.PREFIX == BAM.stem
+
+
+def test_set_prefix_in_config(tmp_path):
+    prefix = "my_prefix"
+    config_file_with_prefix = StringIO(f"bam_file={BAM}\nprefix={prefix}\n")
+    configs = Configs.from_file(config_file_with_prefix)
+    assert configs.PREFIX == prefix

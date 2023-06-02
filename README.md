@@ -41,6 +41,7 @@ A template config file can be found in example/example.config. The following par
 * `bam_file`: Input phased BAM file with `BX` and `HP` tagged reads (**REQUIRED**)
 * `min_mapq`: Minimum mapping quality for a read to be included in analysis (default: 40)
 * `outdir`: Output directory (default: `.` i.e. current workding directory)
+* `prefix`: Prefix for output files, set to empty sting to match `bam_file` name (default: `NAIBR_SVs`)
 * `d`: The maximum distance in basepairs between reads in a linked-read (default: 10000)
 * `blacklist`: BED-file with regions to be excluded from analysis
 * `candidates`: BEDPE-file with novel adjacencies to be scored by NAIBR. This will override automatic detection of candidate novel adjacencies 
@@ -62,7 +63,7 @@ will produce the files `example/NAIBR_SVs.bedpe`, `example/NAIBR_SVs.reformat.be
 
 Scored novel adjacencies are outputted in three different file formats to the output directory
 
-#### `NAIBR.bedpe` 
+#### `<prefix>.bedpe` 
 BEDPE-like file in same format as outputted in [raphael-group/NAIBR](https://github.com/raphael-group/NAIBR). Note that this file does not follow any actual BEDPE format. The file has a header with column descriptions.
 
 **Columns:**
@@ -77,11 +78,11 @@ BEDPE-like file in same format as outputted in [raphael-group/NAIBR](https://git
 9. Score: log-likelihood score for NA
 10. Pass filter: "PASS" if passes filter threshold, otherwice "FAIL"
 
-#### `NAIBR.reformat.bedpe`
+#### `<prefix>.reformat.bedpe`
 Reformatted BEDPE that follows the [10x Genomics BEDPE format](https://support.10xgenomics.com/genome-exome/software/pipelines/latest/output/bedpe) suitable for IGV visualization
 
 
-#### `NAIBR.vcf`
+#### `<prefix>.vcf`
 
 NAs translated to the VCF format. Useful for operation using e.g. [truvari](https://github.com/ACEnglish/truvari).
 

@@ -1,7 +1,6 @@
 import itertools
 import logging
 import multiprocessing as mp
-import os
 from collections import defaultdict
 from math import log
 
@@ -517,10 +516,10 @@ def build_vcf_header(chrom_lengths, sample=None):
     return header_string
 
 
-def write_novel_adjacencies(novel_adjacencies, directory, bam_file):
-    fname = "NAIBR_SVs.bedpe"
-    logger.info(f"Writing results to {os.path.join(directory, fname)}")
-    with open(os.path.join(directory, fname), "w") as f:
+def write_novel_adjacencies(novel_adjacencies, directory, bam_file, prefix=None):
+    fname = directory / f"{prefix}.bedpe"
+    logger.info(f"Writing results to {fname}")
+    with open(fname, "w") as f:
         print(
             "Chr1",
             "Break1",
@@ -538,18 +537,18 @@ def write_novel_adjacencies(novel_adjacencies, directory, bam_file):
         for na in novel_adjacencies:
             print(na.to_naibr(), file=f)
 
-    fname2 = "NAIBR_SVs.reformat.bedpe"
-    logger.info(f"Writing results to {os.path.join(directory, fname2)}")
-    with open(os.path.join(directory, fname2), "w") as f:
+    fname2 = directory / f"{prefix}.reformat.bedpe"
+    logger.info(f"Writing results to {fname2}")
+    with open(fname2, "w") as f:
         # This header is needed to recoginze it as a 10x-style BEDPE
         # see https://github.com/igvteam/igv/wiki/BedPE-Support
         print("#chrom1	start1	stop1	chrom2	start2	stop2	name	qual	strand1	strand2	filters	info", file=f)
         for nr, na in enumerate(novel_adjacencies, start=1):
             print(na.to_bedpe(f"NAIBR_{nr:05}"), file=f)
 
-    fname3 = "NAIBR_SVs.vcf"
-    logger.info(f"Writing results to {os.path.join(directory, fname3)}")
-    with open(os.path.join(directory, fname3), "w") as f:
+    fname3 = directory / f"{prefix}.vcf"
+    logger.info(f"Writing results to {fname3}")
+    with open(fname3, "w") as f:
         header_string = build_vcf_header(get_chrom_lengths(bam_file))
         print(header_string, file=f)
         for nr, na in enumerate(novel_adjacencies, start=1):

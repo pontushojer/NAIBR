@@ -1,11 +1,15 @@
 import collections
+import logging
 import os
+from pathlib import Path
 import sys
-from dataclasses import dataclass
-from typing import Dict, List, Tuple
+from dataclasses import dataclass, field
+from typing import Dict, List, Tuple, Optional
 
 import numpy as np
 import pysam
+
+logger = logging.getLogger(__name__)
 
 
 def parse_blacklist(fname):
@@ -74,9 +78,9 @@ def estimate_lmin_lmax(bam_file, sd_mult, debug=False):
 class Configs:
     MIN_MAPQ: int = 40
     MIN_BC_OVERLAP: int = 3
-    BAM_FILE: str = None
+    BAM_FILE: os.PathLike = None
     DEBUG: bool = False
-    DIR: str = ""
+    DIR: os.PathLike = field(default=Path.cwd())
     MAX_LINKED_DIST: int = 10_000
     NUM_THREADS: int = 1
     COMPRESSION_THREADS: int = 1
@@ -88,9 +92,20 @@ class Configs:
     MAX_LEN: int = 200000
     MIN_READS: int = 2
     MIN_DISCS: int = 2
-    CANDIDATES: str = None
-    BLACKLIST_FILE: str = None
+    CANDIDATES: Optional[os.PathLike] = None
+    BLACKLIST_FILE: Optional[os.PathLike] = None
     BLACKLIST: Dict[str, List[Tuple[int, int]]] = None
+    _PREFIX: str = field(default="NAIBR_SVs")
+
+    @property
+    def PREFIX(self):
+        return self._PREFIX
+
+    @PREFIX.setter
+    def PREFIX(self, value: str):
+        if value == "":
+            value = Path(self.BAM_FILE).stem
+        self._PREFIX = value
 
     def update(self, constants):
         if "min_mapq" in constants:
@@ -99,8 +114,8 @@ class Configs:
         if "k" in constants:
             self.MIN_BC_OVERLAP = int(constants["k"])
 
-        if "bam_file" in constants and os.path.exists(constants["bam_file"]):
-            self.BAM_FILE = constants["bam_file"]
+        if "bam_file" in constants and Path(constants["bam_file"]).exists():
+            self.BAM_FILE = Path(constants["bam_file"])
         else:
             sys.exit(
                 "Missing path to BAM file in config file. Please include this with the "
@@ -111,8 +126,11 @@ class Configs:
             self.DEBUG = bool(constants["DEBUG"])
 
         if "outdir" in constants:
-            self.DIR = constants["outdir"]
-            if not os.path.exists(self.DIR):
+            self.DIR = Path(constants["outdir"])
+            if self.DIR.exists() and not self.DIR.is_dir():
+                sys.exit(f"{self.DIR} exists and is not a directory.")
+
+            if not self.DIR.exists():
                 os.makedirs(self.DIR)
 
         if "d" in constants:
@@ -145,12 +163,15 @@ class Configs:
         if "min_discs" in constants:
             self.MIN_DISCS = int(constants["min_discs"])
 
-        if "candidates" in constants and os.path.exists(constants["candidates"]):
-            self.CANDIDATES = constants["candidates"]
+        if "candidates" in constants and Path(constants["candidates"]).exists():
+            self.CANDIDATES = Path(constants["candidates"])
 
-        if "blacklist" in constants and os.path.exists(constants["blacklist"]):
-            self.BLACKLIST_FILE = constants["blacklist"]
-            self.BLACKLIST = parse_blacklist(constants["blacklist"])
+        if "blacklist" in constants and Path(constants["blacklist"]).exists():
+            self.BLACKLIST_FILE = Path(constants["blacklist"])
+            self.BLACKLIST = parse_blacklist(self.BLACKLIST_FILE)
+
+        if "prefix" in constants:
+            self.PREFIX = constants["prefix"]
 
     @classmethod
     def from_file(cls, open_file):
