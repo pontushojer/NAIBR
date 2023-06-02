@@ -49,7 +49,7 @@ def test_run_from_file(tmp_path):
     assert Path(outdir / "NAIBR_SVs.bedpe").exists()
     assert Path(outdir / "NAIBR_SVs.reformat.bedpe").exists()
     assert Path(outdir / "NAIBR_SVs.vcf").exists()
-    assert Path(outdir / "log.txt").exists()
+    assert Path(outdir / "NAIBR_SVs.log").exists()
 
 
 def test_candidates(tmp_path):

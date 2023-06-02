@@ -316,8 +316,8 @@ def main(args=None):
     root.addHandler(streamhandler)
 
     # Any existing log file is overwritten
-    log_file = os.path.join(file_configs.DIR, "log.txt")
-    if os.path.exists(log_file):
+    log_file = file_configs.DIR / f"{file_configs.PREFIX}.log"
+    if log_file.exists():
         os.remove(log_file)
 
     # This prints to a log file in the output directory
