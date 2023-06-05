@@ -47,6 +47,7 @@ import time
 import numpy as np
 import pysam
 
+from . import __version__
 from .get_reads import get_candidates, get_interchrom_candidates, parse_candidate_region, parse_chromosome
 from .global_vars import Configs
 from .rank import predict_novel_adjacencies
@@ -188,6 +189,10 @@ def parse_args(args):
         print(__doc__)
         sys.exit(0)
 
+    if args[0] in {"version", "-v", "--version"}:
+        print(f"naibr {__version__}")
+        sys.exit(0)
+
     if not os.path.exists(args[0]):
         logger.error(f"Configs file '{args[0]}' does not exist")
         sys.exit(1)
@@ -202,6 +207,7 @@ def run(configs):
     starttime = time.time()
 
     logger.info("========= NAIBR =========", extra={"nofmt": True})
+    logger.info(f"version: {__version__}", extra={"nofmt": True})
     logger.info("-------- CONFIGS --------", extra={"nofmt": True})
     logger.info("FILES", extra={"nofmt": True})
     logger.info(f"  bam_file = {configs.BAM_FILE}", extra={"nofmt": True})
