@@ -185,7 +185,7 @@ def signj(disc, configs):
 
 
 def add_disc(peread, discs, lmax):
-    half_lmax = lmax / 2
+    half_lmax = lmax // 2
     norm_i = roundto(peread.i, lmax)
     norm_j = roundto(peread.j, lmax)
     for a in [-half_lmax, 0, half_lmax]:
