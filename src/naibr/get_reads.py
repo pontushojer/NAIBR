@@ -248,7 +248,7 @@ def get_candidates_from_discs(discs, barcode_overlap, configs):
 def get_candidates(discs, reads_by_barcode, configs):
     p_len, p_rate, barcode_overlap, barcode_linkedreads = get_distributions(reads_by_barcode, configs)
     if p_len is None or p_rate is None:
-        return None, None, None, None
+        return [], None, None, None
 
     candidates = get_candidates_from_discs(discs, barcode_overlap, configs)
     return candidates, p_len, p_rate, barcode_linkedreads
@@ -258,7 +258,7 @@ def get_interchrom_candidates(interchrom_discs, linkedreads_by_barcode, configs)
     p_len, p_rate, barcode_overlap = get_linkedread_distributions(linkedreads_by_barcode, configs)
 
     if p_len is None or p_rate is None:
-        return None, None, None
+        return [], None, None
 
     candidates = get_candidates_from_discs(interchrom_discs, barcode_overlap, configs)
     return candidates, p_len, p_rate

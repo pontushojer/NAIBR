@@ -126,7 +126,7 @@ def run_naibr(chrom, configs):
         logger.info(f"For chromsome {chrom} - found {len(discs):,} positions with discordant reads.")
         cands, p_len, p_rate, linkedreads_by_barcode = get_candidates(discs, reads_by_barcode, configs)
         logger.info(f"Got candidate noval adjacencies from data: {time.time() - t_get_candidates:.4f} s")
-        if cands is None:
+        if not cands:
             logger.info("No candidates from %s" % chrom)
         else:
             logger.info("Ranking %i candidates from %s" % (len(cands), chrom))
@@ -275,7 +275,7 @@ def run(configs):
                 novel_adjacencies += nas_chrom
 
         cands, p_len, p_rate = get_interchrom_candidates(interchrom_discs, linkedreads_by_barcode, configs)
-        if cands is not None:
+        if cands:
             logger.info("ranking %i interchromosomal candidates" % len(cands))
             novel_adjacencies += predict_novel_adjacencies(
                 linkedreads_by_barcode,
