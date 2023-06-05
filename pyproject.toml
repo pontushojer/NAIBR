@@ -1,6 +1,40 @@
 [build-system]
-requires = ["setuptools"]
+requires = ["setuptools>=65", "setuptools_scm[toml]>=3.4"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "naibr"
+authors = [
+    {name = "Rebecca Elyanow"},
+    {name = "Pontus Höjer"},
+]
+description = "Identifies novel adjacencies created by structural variations using linked-read data"
+requires-python = ">=3.7"
+readme = {file = "README.md", content-type = "text/markdown"}
+url = "https://github.com/pontushojer/NAIBR"
+license = {text = "MIT"}
+dependencies = [
+    "pysam>=0.15.0",
+    "mpmath",
+    "numpy",
+    "scipy",
+    "matplotlib",
+]
+dynamic = ["version"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[project.scripts]
+naibr = "naibr.__main__:main"
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[tool.setuptools_scm]
+
+[project.urls]
+Homepage = "https://github.com/pontushojer/NAIBR"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
