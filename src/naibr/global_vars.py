@@ -4,22 +4,15 @@ import os
 from pathlib import Path
 import sys
 from dataclasses import dataclass, field
-from typing import Mapping, Dict, List, Tuple, Optional, TYPE_CHECKING
+from typing import Mapping, Dict, List, Tuple, Optional
 
 import numpy as np
 import pysam
 
 logger = logging.getLogger(__name__)
 
-if TYPE_CHECKING:
-    PathType = os.PathLike[str]
-else:
-    # Remove when python >= 3.9 is required
-    # see https://mypy.readthedocs.io/en/latest/runtime_troubles.html#generic-builtins
-    PathType = os.PathLike
 
-
-def parse_blacklist(fname: PathType):
+def parse_blacklist(fname):
     blacklist = collections.defaultdict(list)
     with open(fname) as f:
         for line in f:
