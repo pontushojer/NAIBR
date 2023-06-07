@@ -11,7 +11,6 @@ authors = [
 description = "Identifies novel adjacencies created by structural variations using linked-read data"
 requires-python = ">=3.7"
 readme = {file = "README.md", content-type = "text/markdown"}
-url = "https://github.com/pontushojer/NAIBR"
 license = {text = "MIT"}
 dependencies = [
     "pysam>=0.15.0",
