@@ -175,7 +175,7 @@ def chromosome_has_barcoded_reads(chromosome, bam_file, max_iter=100_000):
 
 
 def get_chromosomes_with_reads(bam_file):
-    """Returns a list of chromosomes/contigs which has reads containing BX and HP tags"""
+    """Returns a list of chromosomes/contigs which has reads containing BX tags"""
     with pysam.AlignmentFile(bam_file, "rb") as reads:
         all_chroms = reads.references
         all_chroms = [x for x in all_chroms if is_proper_chrom(x)]
@@ -247,7 +247,7 @@ def run(configs):
     else:
         chromosomes = get_chromosomes_with_reads(bam_file=configs.BAM_FILE)
         if len(chromosomes) == 0:
-            logger.error("BAM does not contain BX and HP tagged reads.")
+            logger.error("BAM does not contain BX tagged reads.")
             sys.exit(1)
 
         logger.info(
