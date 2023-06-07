@@ -71,7 +71,9 @@ def test_run_from_file(tmp_path):
 
 @pytest.mark.parametrize("threads", [1, 2], ids=["singlethread", "multithread"])
 def test_candidates(tmp_path, threads):
-    config_file = io.StringIO(f"bam_file={BAM_INV}\ncandidates={CANDIDATES_INV}\noutdir={tmp_path}\nthreads={threads}\nDEBUG=True\n")
+    config_file = io.StringIO(
+        f"bam_file={BAM_INV}\ncandidates={CANDIDATES_INV}\noutdir={tmp_path}\nthreads={threads}\nDEBUG=True\n"
+    )
     configs = Configs.from_file(config_file)
 
     exitcode = run(configs)
