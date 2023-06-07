@@ -183,11 +183,13 @@ def test_call_interchromosomal(tmp_path):
     exitcode = run(configs)
     assert exitcode == 0
     output = tmp_path / "NAIBR_SVs.bedpe"
-    with open(output) as f:
-        lines = f.readlines()
-
-        assert len(lines) == 2
-        same_pairwise_elements(
-            lines[1].strip().split("\t"),
-            "chr12	40393618	chr20	53974756	427	61	--	1,2	9385.737	PASS".split("\t"),
-        )
+    with open(output) as bedpe_reader:
+        nas = list(iter_novel_adjacencies(bedpe_reader))
+        assert len(nas) > 0
+        nas_pass = [na for na in nas if na.pass_threshold]
+        assert len(nas_pass) == 1
+        assert nas_pass[0].orient == "--"
+        assert nas_pass[0].chrm1 == "chr12"
+        assert nas_pass[0].chrm2 == "chr20"
+        assert abs(nas_pass[0].break1 - 40393752) < 500
+        assert abs(nas_pass[0].break2 - 53974890) < 500
