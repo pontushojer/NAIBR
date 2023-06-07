@@ -26,6 +26,13 @@ def test_help_return_zero():
             assert errorcode == 0
 
 
+def test_version_return_zero():
+    for arg in ["version", "-v", "--version"]:
+        with pytest.raises(SystemExit):
+            errorcode = main([arg])
+            assert errorcode == 0
+
+
 def test_empty_return_zero():
     with pytest.raises(SystemExit):
         errorcode = main([])
