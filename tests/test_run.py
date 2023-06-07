@@ -10,6 +10,7 @@ BAM = Path("tests/data/example_chr21.bam").absolute()
 CANDIDATES = Path("tests/data/example_candidates.bedpe").absolute()
 CANDIDATES_REV = Path("tests/data/example_candidates_reversed.bedpe").absolute()
 BLACKLIST = Path("tests/data/example_blacklist.bed").absolute()
+BAM_TRA = Path("tests/data/HCC1954T_10xGenomics_chr_12_20_TRA.bam").absolute()
 
 
 def same_pairwise_elements(list1, list2):
@@ -183,3 +184,20 @@ def test_consistent(tmp_path):
     with open(output_rerun) as f:
         new_line = f.readlines()[1]
         same_pairwise_elements(line, new_line)
+
+
+def test_call_interchromosomal(tmp_path):
+    config_file = io.StringIO(f"bam_file={BAM_TRA}\noutdir={tmp_path}\nDEBUG=True\n")
+    configs = Configs.from_file(config_file)
+
+    exitcode = run(configs)
+    assert exitcode == 0
+    output = tmp_path / "NAIBR_SVs.bedpe"
+    with open(output) as f:
+        lines = f.readlines()
+
+        assert len(lines) == 2
+        same_pairwise_elements(
+            lines[1].strip().split("\t"),
+            "chr12	40393618	chr20	53974756	427	61	--	1,2	9385.737	PASS".split("\t"),
+        )

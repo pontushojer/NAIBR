@@ -32,8 +32,8 @@ class CandSplitMol:
     def calculate_score(self, candidate_split, plen, prate):
         linkedread_i, discs_mapqs, linkedread_j = candidate_split
         # chrm,start,end,num,hap,barcode
-        chrm_i, si, ei, mapq_i, hap_i, barcode_i = linkedread_i
-        chrm_j, sj, ej, mapq_j, hap_j, barcode_j = linkedread_j
+        chrm_i, si, ei, mapq_i, hap_i, *_ = linkedread_i
+        chrm_j, sj, ej, mapq_j, hap_j, *_ = linkedread_j
         num_i, num_j = len(mapq_i), len(mapq_j)
         hap_i = majority_vote(hap_i)
         hap_j = majority_vote(hap_j)
@@ -221,9 +221,7 @@ def get_linkedreads(candidate, barcodes, reads_by_barcode, discs_by_barcode, is_
         span = []
         if is_interchrom:
             # When is_interchrom reads_by_barcode is a map of chromosomes to barcodes to linkedreads.
-            linkedreads = reads_by_barcode[candidate.chrm1][barcode]
-            linkedreads2 = reads_by_barcode[candidate.chrm2][barcode]
-            linkedreads.extend(linkedreads2)
+            linkedreads = reads_by_barcode[barcode]
         else:
             linkedreads, s = linked_reads(barcode, candidate.chrm1, candidate, reads_by_barcode, configs)
             span.extend(s)

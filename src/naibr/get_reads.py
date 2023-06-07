@@ -237,7 +237,7 @@ def get_candidates_from_discs(discs, barcode_overlap, configs):
         cand = NovelAdjacency(chrm1=chrm, chrm2=nextchrm, indi=i, indj=j, orient=orient)
         norm_i = roundto(i, configs.MAX_LINKED_DIST)
         norm_j = roundto(j, configs.MAX_LINKED_DIST)
-        barcode_overlaps = barcode_overlap[(chrm, norm_i, nextchrm, norm_j)]
+        barcode_overlaps = barcode_overlap.get((chrm, norm_i, nextchrm, norm_j), 0)
         if (
             chrm == nextchrm and j - i < configs.MAX_LINKED_DIST
         ) or barcode_overlaps >= configs.MIN_BC_OVERLAP:
@@ -259,6 +259,10 @@ def get_interchrom_candidates(interchrom_discs, linkedreads_by_barcode, configs)
 
     if p_len is None or p_rate is None:
         return [], None, None
+
+    barcode_overlap = {
+        position: barcodes for position, barcodes in barcode_overlap.items() if position[0] != position[2]
+    }
 
     candidates = get_candidates_from_discs(interchrom_discs, barcode_overlap, configs)
     return candidates, p_len, p_rate

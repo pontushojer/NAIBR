@@ -85,8 +85,10 @@ def linked_reads(reads, chrom, configs):
         nr_reads = len(reads_group)
         start = reads_group["start"].min()
         end = reads_group["end"].max()
+        mapqs = list(reads_group["mapq"])
+        haps = list(reads_group["hap"])
         if nr_reads >= configs.MIN_READS and end - start >= configs.MIN_LEN:
-            linkedreads.append((chrom, start, end, nr_reads))
+            linkedreads.append((chrom, start, end, mapqs, haps))
 
     return linkedreads
 
@@ -142,7 +144,7 @@ def get_linkedread_distributions(linkedreads_by_barcode, configs):
     linkedreads = []
     barcode_overlap = collections.defaultdict(int)
 
-    for barcode, barcode_linkedreads in linkedreads_by_barcode.items():
+    for barcode_linkedreads in linkedreads_by_barcode.values():
         linkedreads.extend(barcode_linkedreads)
 
         get_internal_overlap(barcode_linkedreads, barcode_overlap, configs)
@@ -174,7 +176,7 @@ def get_length_distr(linkedreads):
 
 
 def get_rate_distr(linkedreads):
-    rate = [x[3] / float(x[2] - x[1]) for x in linkedreads]
+    rate = [len(x[3]) / float(x[2] - x[1]) for x in linkedreads]
     rate.sort()
     if len(rate) > 10:
         rate = rate[int(len(rate) / 10) : int(len(rate) / 10 * 9)]

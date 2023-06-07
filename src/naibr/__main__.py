@@ -203,6 +203,27 @@ def parse_args(args):
     return file_configs
 
 
+class UnionDict(collections.defaultdict):
+    """Extends defaultdict to allow combining with other UnionDicts or defaultdicts"""
+
+    def combine(self, other):
+        if not isinstance(other, type(self)) and not isinstance(other, collections.defaultdict):
+            raise TypeError(f"Can only combine with other UnionDicts or defaultdicts ({type(other)})")
+
+        if self.default_factory is not other.default_factory:
+            raise ValueError("Can only combine UnionDicts with the same default_factory")
+
+        if self.default_factory is list:
+            for k, v in other.items():
+                self[k].extend(v)
+
+        elif self.default_factory is set:
+            for k, v in other.items():
+                self[k].update(v)
+        else:
+            raise ValueError("Can only combine UnionDicts with default_factory of list or set")
+
+
 def run(configs):
     starttime = time.time()
 
@@ -257,10 +278,10 @@ def run(configs):
         configs.COMPRESSION_THREADS = 2 if configs.NUM_THREADS / len(chromosomes) > 2 else 1
         run_with_configs = functools.partial(run_naibr, configs=configs)
         chroms_data = parallel_execute(run_with_configs, chromosomes, threads=configs.NUM_THREADS)
-        linkedreads_by_barcode = collections.defaultdict(dict)
-        barcodes_by_pos = collections.defaultdict(list)
-        discs_by_barcode = collections.defaultdict(list)
-        interchrom_discs = collections.defaultdict(list)
+        linkedreads_by_barcode = UnionDict(list)
+        barcodes_by_pos = UnionDict(set)
+        discs_by_barcode = UnionDict(list)
+        interchrom_discs = UnionDict(list)
         coverage = []
         novel_adjacencies = []
         for data in chroms_data:
@@ -272,18 +293,17 @@ def run(configs):
                 cov_chrom,
                 nas_chrom,
             ) = data
-            if nas_chrom:
-                linkedreads_by_barcode.update(linkedreads_by_barcode_chrom)
-                barcodes_by_pos.update(barcodes_by_pos_chrom)
-                discs_by_barcode.update(discs_by_barcode_chrom)
-                interchrom_discs.update(interchrom_discs_chrom)
-                coverage.append(cov_chrom)
-                novel_adjacencies += nas_chrom
+            linkedreads_by_barcode.combine(linkedreads_by_barcode_chrom)
+            barcodes_by_pos.combine(barcodes_by_pos_chrom)
+            discs_by_barcode.combine(discs_by_barcode_chrom)
+            interchrom_discs.combine(interchrom_discs_chrom)
+            coverage.append(cov_chrom)
+            novel_adjacencies += nas_chrom
 
         cands, p_len, p_rate = get_interchrom_candidates(interchrom_discs, linkedreads_by_barcode, configs)
         if cands:
             logger.info("ranking %i interchromosomal candidates" % len(cands))
-            novel_adjacencies += predict_novel_adjacencies(
+            interchrom_novel_adjacencies = predict_novel_adjacencies(
                 linkedreads_by_barcode,
                 barcodes_by_pos,
                 discs_by_barcode,
@@ -294,6 +314,14 @@ def run(configs):
                 True,
                 configs,
             )
+            if interchrom_novel_adjacencies:
+                n_pass = sum([na.pass_threshold for na in interchrom_novel_adjacencies])
+                n_total = len(interchrom_novel_adjacencies)
+                logger.info(
+                    f"Found {n_total:,} interchromosomal SVs of which {n_pass:,} "
+                    f"({n_pass / n_total:.1%}) passed the threshold"
+                )
+                novel_adjacencies += interchrom_novel_adjacencies
         else:
             logger.info("No interchromosomal candidates")
 
