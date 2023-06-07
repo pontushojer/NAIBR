@@ -12,7 +12,7 @@ import pysam
 logger = logging.getLogger(__name__)
 
 
-def parse_blacklist(fname):
+def parse_blacklist(fname: "os.PathLike[str]"):
     blacklist = collections.defaultdict(list)
     with open(fname) as f:
         for line in f:
@@ -80,7 +80,7 @@ def estimate_lmin_lmax(bam_file, sd_mult: int, debug: bool = False) -> Tuple[int
 class Configs:
     MIN_MAPQ: int = 40
     MIN_BC_OVERLAP: int = 3
-    BAM_FILE: Optional[os.PathLike[str]] = None
+    BAM_FILE: Optional["os.PathLike[str]"] = None
     DEBUG: bool = False
     DIR: os.PathLike = field(default=Path.cwd())
     MAX_LINKED_DIST: int = 10_000
@@ -94,8 +94,8 @@ class Configs:
     MAX_LEN: int = 200000
     MIN_READS: int = 2
     MIN_DISCS: int = 2
-    CANDIDATES: Optional[os.PathLike[str]] = None
-    BLACKLIST_FILE: Optional[os.PathLike[str]] = None
+    CANDIDATES: Optional["os.PathLike[str]"] = None
+    BLACKLIST_FILE: Optional["os.PathLike[str]"] = None
     BLACKLIST: Optional[Dict[str, List[Tuple[int, int]]]] = None
     _PREFIX: str = field(default="NAIBR_SVs")
 
