@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 import sys
 from dataclasses import dataclass, field
-from typing import Dict, List, Tuple, Optional
+from typing import Mapping, Dict, List, Tuple, Optional
 
 import numpy as np
 import pysam
@@ -12,7 +12,7 @@ import pysam
 logger = logging.getLogger(__name__)
 
 
-def parse_blacklist(fname):
+def parse_blacklist(fname: os.PathLike[str]):
     blacklist = collections.defaultdict(list)
     with open(fname) as f:
         for line in f:
@@ -35,7 +35,7 @@ def parse_read_pairs(iterator):
             mates[read.query_name] = read
 
 
-def estimate_lmin_lmax(bam_file, sd_mult, debug=False):
+def estimate_lmin_lmax(bam_file, sd_mult: int, debug: bool = False) -> Tuple[int, int]:
     """
     Estmate the upper and lower bounds for insert sizes by looing at up to
     the first million read pairs.
@@ -58,16 +58,18 @@ def estimate_lmin_lmax(bam_file, sd_mult, debug=False):
                 reads_lengths.extend([read.query_length, mate.query_length])
                 pair_spans.append(dist)
 
-    pair_spans = np.array(pair_spans)
-    mean_dist = pair_spans.mean()
-    std_dist = pair_spans.std()
+    pair_spans_array = np.array(pair_spans)
+    mean_dist = pair_spans_array.mean()
+    std_dist = pair_spans_array.std()
 
     lmin = max(int(mean_dist - std_dist * sd_mult), int(np.mean(reads_lengths)))
     lmax = max(int(mean_dist + std_dist * sd_mult), 100)
 
     if debug:
         # Estimate how large a percentage of reads have span within [lmin, lmax].
-        reads_included = len(pair_spans[(pair_spans < lmax) & (pair_spans > lmin)]) / len(pair_spans)
+        reads_included = len(pair_spans_array[(pair_spans_array < lmax) & (pair_spans_array > lmin)]) / len(
+            pair_spans_array
+        )
         print(
             f"lmax = {lmax}, lmin = {lmin}, reads_included = {reads_included:.1%}",
         )
@@ -78,36 +80,39 @@ def estimate_lmin_lmax(bam_file, sd_mult, debug=False):
 class Configs:
     MIN_MAPQ: int = 40
     MIN_BC_OVERLAP: int = 3
-    BAM_FILE: os.PathLike = None
+    BAM_FILE: Optional[os.PathLike[str]] = None
     DEBUG: bool = False
     DIR: os.PathLike = field(default=Path.cwd())
     MAX_LINKED_DIST: int = 10_000
     NUM_THREADS: int = 1
     COMPRESSION_THREADS: int = 1
     SD_MULT: int = 2
-    LMIN: int = None
-    LMAX: int = None
-    MIN_SV: int = None
-    MIN_LEN: int = None
+    LMIN: Optional[int] = None
+    LMAX: Optional[int] = None
+    MIN_SV: Optional[int] = None
+    MIN_LEN: Optional[int] = None
     MAX_LEN: int = 200000
     MIN_READS: int = 2
     MIN_DISCS: int = 2
-    CANDIDATES: Optional[os.PathLike] = None
-    BLACKLIST_FILE: Optional[os.PathLike] = None
-    BLACKLIST: Dict[str, List[Tuple[int, int]]] = None
+    CANDIDATES: Optional[os.PathLike[str]] = None
+    BLACKLIST_FILE: Optional[os.PathLike[str]] = None
+    BLACKLIST: Optional[Dict[str, List[Tuple[int, int]]]] = None
     _PREFIX: str = field(default="NAIBR_SVs")
 
     @property
-    def PREFIX(self):
+    def PREFIX(self) -> str:
         return self._PREFIX
 
     @PREFIX.setter
     def PREFIX(self, value: str):
         if value == "":
-            value = Path(self.BAM_FILE).stem
+            if self.BAM_FILE is not None:
+                value = Path(self.BAM_FILE).stem
+            else:
+                value = self.PREFIX
         self._PREFIX = value
 
-    def update(self, constants):
+    def update(self, constants: Mapping[str, str]):
         if "min_mapq" in constants:
             self.MIN_MAPQ = int(constants["min_mapq"])
 

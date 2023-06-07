@@ -3,6 +3,7 @@ import logging
 import multiprocessing as mp
 from collections import defaultdict
 from math import log
+from typing import Optional, Tuple, Mapping
 
 import pysam
 
@@ -35,11 +36,11 @@ class NovelAdjacency:
         indi,
         indj,
         orient,
-        score: float = None,
-        haps=None,
-        spans: int = None,
-        discs: int = None,
-        pairs: int = None,
+        score: Optional[float] = None,
+        haps: Optional[Tuple[int, int]] = None,
+        spans: Optional[int] = None,
+        discs: Optional[int] = None,
+        pairs: Optional[int] = None,
         pass_threshold: bool = False,
     ):
         self.chrm1 = chrm1
@@ -49,22 +50,22 @@ class NovelAdjacency:
         self.orient = orient
 
         self.score = -float("inf") if score is None else score
-        self.score_by_hap = defaultdict(int)
+        self.score_by_hap: Mapping[Tuple[int, int], int] = defaultdict(int)
 
         self.haps = (0, 0) if haps is None else haps
         self.spans = 0 if spans is None else spans
         self.discs = 0 if discs is None else discs
         self.pairs = 0 if pairs is None else pairs
-        self.spans_by_hap = defaultdict(int)
-        self.discs_by_hap = defaultdict(int)
-        self.pairs_by_hap = defaultdict(int)
+        self.spans_by_hap: Mapping[Tuple[int, int], int] = defaultdict(int)
+        self.discs_by_hap: Mapping[Tuple[int, int], int] = defaultdict(int)
+        self.pairs_by_hap: Mapping[Tuple[int, int], int] = defaultdict(int)
 
         self.pass_threshold = pass_threshold
 
     def __repr__(self):
         return (
             f"NovelAdjacency(chrm1={self.chrm1}, break1={self.break1}, chrm2={self.chrm2}, "
-            f"break2={self.break2}, orient={self.orient}, haps={self.haps}, spans{self.spans}, "
+            f"break2={self.break2}, orient={self.orient}, haps={self.haps}, spans={self.spans}, "
             f"discs={self.discs}, pairs={self.pairs}, score={self.score}, "
             f"spans_by_hap={dict(self.spans_by_hap)}, discs_by_hap={dict(self.discs_by_hap)}, "
             f"pairs_by_hap={dict(self.pairs_by_hap)}, score_by_hap={dict(self.score_by_hap)}, "
@@ -240,7 +241,7 @@ class NovelAdjacency:
             orient=els[6],
             pairs=int(els[4]),
             discs=int(els[5]),
-            haps=tuple(int(hap) for hap in els[7].split(",")),
+            haps=(int(els[7].split(",")[0]), int(els[7].split(",")[1])),
             score=float(els[8]),
             pass_threshold=els[9] == "PASS",
         )
