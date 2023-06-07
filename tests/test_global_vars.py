@@ -5,7 +5,7 @@ import pytest
 
 from naibr.global_vars import Configs
 
-BAM = Path("tests/data/example_chr21.bam").absolute()
+BAM = Path("tests/data/HCC1954T_10xGenomics_chr21_INV.bam").absolute()
 
 
 def test_configs_from_file():
