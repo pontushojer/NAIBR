@@ -25,3 +25,11 @@ bam="https://s3-us-west-2.amazonaws.com/10x.files/samples/genome/HCC1954T_WGS_21
 region="chr21:18,709,465-18,956,782"
 samtools view "${bam}" "${region}" -o HCC1954T_10xGenomics_chr21_INV.bam
 samtools index HCC1954T_10xGenomics_chr21_INV.bam
+
+# DELETION ON CHROMOSOME 1 (NA24385)
+# GRCh38: chr1  115686862    115690219
+# source: CMRG benchmark,  https://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/AshkenazimTrio/HG002_NA24385_son/CMRG_v1.00/GRCh38/StructuralVariant/
+bam="https://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/data/AshkenazimTrio/analysis/10XGenomics_ChromiumGenome_LongRanger2.2_Supernova2.0.1_04122018/GRCh38/NA24385.GRCh38.phased_possorted_bam.bam"
+region="chr1:115,620,601-115,756,835"
+samtools view "${bam}" "${region}" -o NA24385_10xGenomics_chr1_DEL.bam
+samtools index NA24385_10xGenomics_chr1_DEL.bam

@@ -10,6 +10,7 @@ from naibr.utils import NovelAdjacency
 BAM_INV = Path("tests/data/HCC1954T_10xGenomics_chr21_INV.bam").absolute()
 CANDIDATES_INV = Path("tests/data/HCC1954T_10xGenomics_chr21_INV.candidates.bedpe").absolute()
 CANDIDATES_REV_INV = Path("tests/data/HCC1954T_10xGenomics_chr21_INV.candidates_reversed.bedpe").absolute()
+BAM_DEL = Path("tests/data/NA24385_10xGenomics_chr1_DEL.bam").absolute()
 BAM_TRA = Path("tests/data/HCC1954T_10xGenomics_chr_12_20_TRA.bam").absolute()
 
 
@@ -174,6 +175,24 @@ def test_consistent(tmp_path):
     with open(output_rerun) as f:
         new_line = f.readlines()[1]
         same_pairwise_elements(line, new_line)
+
+
+def test_call_deletion(tmp_path):
+    config_file = io.StringIO(f"bam_file={BAM_DEL}\noutdir={tmp_path}\nDEBUG=True\n")
+    configs = Configs.from_file(config_file)
+
+    exitcode = run(configs)
+    assert exitcode == 0
+    output = tmp_path / "NAIBR_SVs.bedpe"
+    with open(output) as bedpe_reader:
+        nas = list(iter_novel_adjacencies(bedpe_reader))
+        assert len(nas) > 0
+        nas_pass = [na for na in nas if na.pass_threshold]
+        assert len(nas_pass) == 1
+        assert nas_pass[0].orient == "+-"
+        assert nas_pass[0].chrm1 == nas_pass[0].chrm2 == "chr1"
+        assert abs(nas_pass[0].break1 - 115686862) < 500
+        assert abs(nas_pass[0].break2 - 115690219) < 500
 
 
 def test_call_interchromosomal(tmp_path):
