@@ -33,3 +33,11 @@ bam="https://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/data/AshkenazimTrio/analysis/10
 region="chr1:115,620,601-115,756,835"
 samtools view "${bam}" "${region}" -o NA24385_10xGenomics_chr1_DEL.bam
 samtools index NA24385_10xGenomics_chr1_DEL.bam
+
+# DUPLICATION ON CHROMOSOME 3 (HCC1954T)
+# GRCh38: chr3  101569210   101663759
+# source: LongRanger calls
+bam="https://s3-us-west-2.amazonaws.com/10x.files/samples/genome/HCC1954T_WGS_210/HCC1954T_WGS_210_phased_possorted_bam.bam"
+region="chr3:101,508,502-101,725,227"
+samtools view "${bam}" "${region}" -o HCC1954T_10xGenomics_chr3_DUP.bam
+samtools index HCC1954T_10xGenomics_chr3_DUP.bam
