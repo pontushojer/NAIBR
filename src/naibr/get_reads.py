@@ -197,7 +197,7 @@ def add_disc(peread, discs, lmax):
 
 
 def disc_intersection(disc_reads, configs):
-    intersection = [0, float("Inf"), 0, float("Inf")]
+    intersection = [0, float("inf"), 0, float("inf")]
     disc_reads.sort(key=lambda x: x.i)
     for disc_read in disc_reads:
         starti, endi = signi(disc_read, configs)
