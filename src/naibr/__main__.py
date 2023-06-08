@@ -63,7 +63,23 @@ from .utils import (
 logger = logging.getLogger(__name__)
 
 
-def run_naibr_candidate(cand, configs):
+def run_naibr_on_candidates(configs):
+    """Run NAIBR on user input candidate novel adjacencies"""
+    with open(configs.CANDIDATES) as f:
+        cands = input_candidates(f, min_sv=configs.MIN_SV)
+
+    if len(cands) == 0:
+        logger.warning(f"No valid candidates in file {configs.CANDIDATES}.")
+        return []
+
+    configs.COMPRESSION_THREADS = 2 if configs.NUM_THREADS / len(cands) > 2 else 1
+    run_with_configs = functools.partial(evaluate_candidate, configs=configs)
+    novel_adjacencies = flatten(parallel_execute(run_with_configs, cands, threads=configs.NUM_THREADS))
+    logger.info(f"Evaluation yielded {len(novel_adjacencies)} viable novel adjacencies")
+    return novel_adjacencies
+
+
+def evaluate_candidate(cand, configs):
     """
     use user input candidate novel adjacencies
     """
@@ -78,7 +94,7 @@ def run_naibr_candidate(cand, configs):
     # See if there are other candidates in close proximity
     cand_name = f"{cand.chrm1}:{cand.break1}-{cand.chrm2}:{cand.break2}"
     logger.info(f"For {cand.svtype()} {cand_name} - found {len(discs):,} discordant positions")
-    candidates, p_len, p_rate, barcode_linkedreads = get_candidates(discs, reads_by_barcode, configs)
+    candidates, p_len, p_rate, _ = get_candidates(discs, reads_by_barcode, configs)
 
     if candidates:
         candidates = [c for c in candidates if max(c.distance(cand)) < configs.LMAX]
@@ -103,7 +119,72 @@ def run_naibr_candidate(cand, configs):
     return scores
 
 
-def run_naibr(chrom, configs):
+def run_naibr_on_chromosomes(chromosomes, configs):
+    # Setup
+    configs.COMPRESSION_THREADS = 2 if configs.NUM_THREADS / len(chromosomes) > 2 else 1
+    run_with_configs = functools.partial(run_naibr_on_chromosome, configs=configs)
+
+    # Run
+    chroms_data = parallel_execute(run_with_configs, chromosomes, threads=configs.NUM_THREADS)
+
+    # Collect NAs and data from chromosomes
+    linkedreads_by_barcode = UnionDict(list)
+    barcodes_by_pos = UnionDict(set)
+    discs_by_barcode = UnionDict(list)
+    interchrom_discs = UnionDict(list)
+    coverage = []
+    novel_adjacencies = []
+    for data in chroms_data:
+        (
+            linkedreads_by_barcode_chrom,
+            barcodes_by_pos_chrom,
+            discs_by_barcode_chrom,
+            interchrom_discs_chrom,
+            cov_chrom,
+            nas_chrom,
+        ) = data
+        linkedreads_by_barcode.combine(linkedreads_by_barcode_chrom)
+        barcodes_by_pos.combine(barcodes_by_pos_chrom)
+        discs_by_barcode.combine(discs_by_barcode_chrom)
+        interchrom_discs.combine(interchrom_discs_chrom)
+        coverage.append(cov_chrom)
+        novel_adjacencies += nas_chrom
+
+    if len(chromosomes) == 1:
+        return novel_adjacencies
+
+    # Get interchromosomal candidates
+    cands, p_len, p_rate = get_interchrom_candidates(interchrom_discs, linkedreads_by_barcode, configs)
+
+    if not cands:
+        logger.info("No interchromosomal candidates")
+        return novel_adjacencies
+
+    logger.info("ranking %i interchromosomal candidates" % len(cands))
+    interchrom_novel_adjacencies = predict_novel_adjacencies(
+        linkedreads_by_barcode,
+        barcodes_by_pos,
+        discs_by_barcode,
+        cands,
+        p_len,
+        p_rate,
+        np.mean(coverage),
+        True,
+        configs,
+    )
+    if interchrom_novel_adjacencies:
+        n_pass = sum([na.pass_threshold for na in interchrom_novel_adjacencies])
+        n_total = len(interchrom_novel_adjacencies)
+        logger.info(
+            f"Found {n_total:,} interchromosomal SVs of which {n_pass:,} "
+            f"({n_pass / n_total:.1%}) passed the threshold"
+        )
+        novel_adjacencies += interchrom_novel_adjacencies
+
+    return novel_adjacencies
+
+
+def run_naibr_on_chromosome(chrom, configs):
     """
     automatically identify candidate novel adjacencies
     """
@@ -185,6 +266,7 @@ def get_chromosomes_with_reads(bam_file):
 
 
 def parse_args(args):
+    """Parse command line arguments"""
     if len(args) != 1 or args[0] in {"help", "-h", "--help"}:
         print(__doc__)
         sys.exit(0)
@@ -253,18 +335,7 @@ def run(configs):
     novel_adjacencies = []
     if configs.CANDIDATES:
         logger.info("Using user defined candidates")
-        with open(configs.CANDIDATES) as f:
-            cands = input_candidates(f, min_sv=configs.MIN_SV)
-
-        if len(cands) > 0:
-            configs.COMPRESSION_THREADS = 2 if configs.NUM_THREADS / len(cands) > 2 else 1
-            run_with_configs = functools.partial(run_naibr_candidate, configs=configs)
-            novel_adjacencies = flatten(
-                parallel_execute(run_with_configs, cands, threads=configs.NUM_THREADS)
-            )
-            logger.info(f"Evaluation yielded {len(novel_adjacencies)} viable novel adjacencies")
-        else:
-            logger.warning(f"No valid candidates in file {configs.CANDIDATES}.")
+        novel_adjacencies = run_naibr_on_candidates(configs)
     else:
         chromosomes = get_chromosomes_with_reads(bam_file=configs.BAM_FILE)
         if len(chromosomes) == 0:
@@ -275,55 +346,7 @@ def run(configs):
             f"Found {len(chromosomes)} chromosome{'s' if len(chromosomes) > 1 else ''} with data in BAM"
         )
 
-        configs.COMPRESSION_THREADS = 2 if configs.NUM_THREADS / len(chromosomes) > 2 else 1
-        run_with_configs = functools.partial(run_naibr, configs=configs)
-        chroms_data = parallel_execute(run_with_configs, chromosomes, threads=configs.NUM_THREADS)
-        linkedreads_by_barcode = UnionDict(list)
-        barcodes_by_pos = UnionDict(set)
-        discs_by_barcode = UnionDict(list)
-        interchrom_discs = UnionDict(list)
-        coverage = []
-        novel_adjacencies = []
-        for data in chroms_data:
-            (
-                linkedreads_by_barcode_chrom,
-                barcodes_by_pos_chrom,
-                discs_by_barcode_chrom,
-                interchrom_discs_chrom,
-                cov_chrom,
-                nas_chrom,
-            ) = data
-            linkedreads_by_barcode.combine(linkedreads_by_barcode_chrom)
-            barcodes_by_pos.combine(barcodes_by_pos_chrom)
-            discs_by_barcode.combine(discs_by_barcode_chrom)
-            interchrom_discs.combine(interchrom_discs_chrom)
-            coverage.append(cov_chrom)
-            novel_adjacencies += nas_chrom
-
-        cands, p_len, p_rate = get_interchrom_candidates(interchrom_discs, linkedreads_by_barcode, configs)
-        if cands:
-            logger.info("ranking %i interchromosomal candidates" % len(cands))
-            interchrom_novel_adjacencies = predict_novel_adjacencies(
-                linkedreads_by_barcode,
-                barcodes_by_pos,
-                discs_by_barcode,
-                cands,
-                p_len,
-                p_rate,
-                np.mean(coverage),
-                True,
-                configs,
-            )
-            if interchrom_novel_adjacencies:
-                n_pass = sum([na.pass_threshold for na in interchrom_novel_adjacencies])
-                n_total = len(interchrom_novel_adjacencies)
-                logger.info(
-                    f"Found {n_total:,} interchromosomal SVs of which {n_pass:,} "
-                    f"({n_pass / n_total:.1%}) passed the threshold"
-                )
-                novel_adjacencies += interchrom_novel_adjacencies
-        else:
-            logger.info("No interchromosomal candidates")
+        novel_adjacencies = run_naibr_on_chromosomes(chromosomes, configs)
 
     write_novel_adjacencies(
         novel_adjacencies, directory=configs.DIR, bam_file=configs.BAM_FILE, prefix=configs.PREFIX
