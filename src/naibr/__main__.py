@@ -22,6 +22,7 @@ options:
     min_reads  - int  - Minimum reads in linked read fragment. Default: 2
     min_discs  - int  - Minimum number of discordant reads. Default: 2
     threads    - int  - Threads to use. Default: 1
+    prefix     - str  - Prefix for output files. Default: NAIBR_SVs
     DEBUG      - bool - Run in debug mode. Default: False
 
 About:
