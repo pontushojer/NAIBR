@@ -212,7 +212,6 @@ def test_call_duplication(tmp_path):
         assert nas_pass[0].chrm1 == nas_pass[0].chrm2 == "chr3"
         assert abs(nas_pass[0].break1 - 101569210) < 500
         assert abs(nas_pass[0].break2 - 101663759) < 500
-        assert False
 
 
 def test_call_interchromosomal(tmp_path):
