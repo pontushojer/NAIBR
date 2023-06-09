@@ -413,7 +413,8 @@ class PERead:
 
 
 def is_proper_chrom(chrom):
-    return "Un" not in chrom and "random" not in chrom and "hs37d5" not in chrom
+    # TODO - Make this configurable to work with non-human genomes
+    return "Un" not in chrom and "random" not in chrom and "hs37d5" != chrom and "chrY" != chrom
 
 
 def get_tag_default(read, tag, default=None):
@@ -445,15 +446,6 @@ def threshold(cov):
     if cov < 10:
         logger.warning(f"Low coverage ({cov:.3f}X < 10X), the threshold value might not be accurate.")
     return round(6.943 * cov - 37.33, 3)
-
-
-def filter_chrY(novel_adjacencies):
-    filtered = []
-    for na in novel_adjacencies:
-        # TODO - Make this configurable to work with non-human genomes
-        if "Y" not in na.chrm1 and "Y" not in na.chrm2:
-            filtered.append(na)
-    return filtered
 
 
 def collapse_novel_adjacencies(novel_adjacencies, lmax):

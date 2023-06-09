@@ -9,7 +9,6 @@ from .utils import (
     NovelAdjacency,
     collapse_novel_adjacencies,
     evaluate_threshold,
-    filter_chrY,
     is_close,
     roundto,
     safe_log,
@@ -333,7 +332,6 @@ def predict_novel_adjacencies(
     novel_adjacencies = get_cand_score(
         candidates, interchrom, plen, prate, discs_by_barcode, barcodes_by_pos, reads_by_barcode, configs
     )
-    novel_adjacencies = filter_chrY(novel_adjacencies)
     novel_adjacencies = collapse_novel_adjacencies(novel_adjacencies, lmax=configs.LMAX)
     evaluate_threshold(novel_adjacencies, threshold(cov))
     return novel_adjacencies
