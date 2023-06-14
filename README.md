@@ -27,6 +27,11 @@ Install using pip:
 pip install git+https://github.com/pontushojer/NAIBR.git
 ```
 
+This fork of NAIBR is also available from binconda under the name `naibr-plus`. Install using conda:
+```
+conda install naibr-plus
+```
+
 ## Running NAIBR
 
 NAIBR can be run using the following command:
