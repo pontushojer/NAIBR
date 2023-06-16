@@ -10,6 +10,7 @@
 - [Running NAIBR](#Running-NAIBR)
 - [Converting BEDPE to VCF](#Converting-BEDPE-to-VCF)
 - [Benchmarks](#Benchmarks)
+- [Development](#Development)
 - [Citing](#Citing)
 
 ## Overview
@@ -139,6 +140,33 @@ Sample | Precision | Recall | F1 score | TP-base | TP-call | FP | FN
 
 This fork, i.e. `main_cbbdf01_pass`, had much higher F1 score of 87.0% than the master branch at 25.8%. Also the `main_cbbdf01_all` seems to include a lot of TP calls that are filtered out by NAIBR, possibly filtering should be re-optimized.
 
+## Development
+
+### Create a new release
+
+Tag the commit with the new version number, e.g. `v0.1.0`:
+
+```
+git tag <version>
+```
+
+Push tag
+
+```
+git push origin <version>
+```
+
+Build package
+
+```
+python3 -m pip install --upgrade build
+python3 -m build
+```
+
+This generates a file `dist/NAIBR-<version>.tar.gz`.
+
+Create a release on GitHub and upload the `dist/NAIBR-<version>.tar.gz` for the new version.
+
 ## Citing
 Elyanow, Rebecca, Hsin-Ta Wu, and Benjamin J. Raphael. *Identifying 
 structural variants using linked-read sequencing data.* Bioinformatics (2017).
@@ -150,5 +178,3 @@ structural variants using linked-read sequencing data.* Bioinformatics (2017).
   year={2017}
 }
 ```
-
-
