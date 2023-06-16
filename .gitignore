@@ -7,8 +7,12 @@
 /.vscode/
 __pycache__
 .DS_Store
-.coverage
+.coverage*
 .pre-commit-config.yaml
 .snakemake_timestamp
 .tox/
 build
+dist
+eggs
+.mypy_cache
+.pytest_cache
