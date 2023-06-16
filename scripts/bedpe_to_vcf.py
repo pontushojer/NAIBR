@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Convert NAIBR BEDPE files to VCF
 """
@@ -35,7 +36,25 @@ def get_chrom_lengths(reference):
     return chrom_lengths
 
 
-def main(args):
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    arg = parser.add_argument
+    arg("bedpe", help="NAIBR-style BEDPE.")
+    arg("-r", "--ref", required=True, help="List of chromosome lengths e.g. `*.fai`")
+    arg("-o", "--output-vcf", default="-", help="Output VCF. Default: write to stdout")
+    arg("--add-chr", action="store_true", help="Prepend 'chr' to chromsome names")
+    arg(
+        "-s",
+        "--sample-name",
+        type=lambda x: str(x).upper(),
+        default="SAMPLE",
+        help="Sample name. Default: %(default)s",
+    )
+    run(parser.parse_args())
+    sys.exit(0)
+
+
+def run(args):
     chrom_lengths = get_chrom_lengths(args.ref)
 
     vcf_header = build_vcf_header(chrom_lengths, sample=args.sample_name)
@@ -55,17 +74,4 @@ def main(args):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description=__doc__)
-    arg = parser.add_argument
-    arg("bedpe", help="NAIBR-style BEDPE.")
-    arg("-r", "--ref", required=True, help="List of chromosome lengths e.g. `*.fai`")
-    arg("-o", "--output-vcf", default="-", help="Output VCF. Default: write to stdout")
-    arg("--add-chr", action="store_true", help="Prepend 'chr' to chromsome names")
-    arg(
-        "-s",
-        "--sample-name",
-        type=lambda x: str(x).upper(),
-        default="SAMPLE",
-        help="Sample name. Default: %(default)s",
-    )
-    main(parser.parse_args())
+    main()

@@ -21,6 +21,9 @@ dependencies = [
 ]
 dynamic = ["version"]
 
+[tool.setuptools]
+script-files = ["scripts/bedpe_to_vcf.py"]
+
 [tool.setuptools.packages.find]
 where = ["src"]
 

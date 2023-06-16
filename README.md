@@ -92,10 +92,10 @@ NAs translated to the VCF format. Useful for operation using e.g. [truvari](http
 
 ## Converting BEDPE to VCF
 
-The repository includes a utility script `scripts/bedpe_to_vcf.py` for converting from NAIBR's BEDPE format to a VCF. For detail on how to use it run:
+The repository includes a utility script `bedpe_to_vcf.py` for converting from NAIBR's BEDPE format to a VCF. For detail on how to use it run:
 
 ```
-python scripts/bedpe_to_vcf.py --help
+bedpe_to_vcf.py --help
 ```
 
 ## Benchmarks
