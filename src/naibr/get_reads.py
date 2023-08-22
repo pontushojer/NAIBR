@@ -248,7 +248,7 @@ def get_candidates_from_discs(discs, barcode_overlap, configs):
 def get_candidates(discs, reads_by_barcode, configs):
     p_len, p_rate, barcode_overlap, barcode_linkedreads = get_distributions(reads_by_barcode, configs)
     if p_len is None or p_rate is None:
-        return [], None, None, None
+        return [], None, None, collections.defaultdict(list)
 
     candidates = get_candidates_from_discs(discs, barcode_overlap, configs)
     return candidates, p_len, p_rate, barcode_linkedreads

@@ -1,5 +1,6 @@
 import collections
 import itertools
+import logging
 import os
 
 import matplotlib as mpl
@@ -14,6 +15,8 @@ from pylab import rc
 from .utils import roundto
 
 mpl.use("Agg")
+
+logger = logging.getLogger(__name__)
 
 
 class NegBin:
@@ -152,6 +155,7 @@ def get_linkedread_distributions(linkedreads_by_barcode, configs):
             get_pairwise_overlap(barcode_linkedreads, barcode_overlap, configs)
 
     if len(linkedreads) < 100:
+        logger.warning("Too few linked reads to estimate distributions")
         return None, None, None
 
     p_rate = get_rate_distr(linkedreads)
