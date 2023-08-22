@@ -13,6 +13,7 @@ CANDIDATES_REV_INV = Path("tests/data/HCC1954T_10xGenomics_chr21_INV.candidates_
 BAM_DEL = Path("tests/data/NA24385_10xGenomics_chr1_DEL.bam").absolute()
 BAM_DUP = Path("tests/data/HCC1954T_10xGenomics_chr3_DUP.bam").absolute()
 BAM_TRA = Path("tests/data/HCC1954T_10xGenomics_chr_12_20_TRA.bam").absolute()
+BAM_SMALL = Path("tests/data/HCC1954T_10xGenomics_chr21_INV.one_barcode.bam").absolute()
 
 
 def same_pairwise_elements(list1, list2):
@@ -231,3 +232,15 @@ def test_call_interchromosomal(tmp_path):
         assert nas_pass[0].chrm2 == "chr20"
         assert abs(nas_pass[0].break1 - 40393752) < 500
         assert abs(nas_pass[0].break2 - 53974890) < 500
+
+
+def test_too_few_barcodes(tmp_path):
+    config_file = io.StringIO(f"bam_file={BAM_SMALL}\noutdir={tmp_path}\nDEBUG=True\n")
+    configs = Configs.from_file(config_file)
+
+    exitcode = run(configs)
+    assert exitcode == 0
+    output = tmp_path / "NAIBR_SVs.bedpe"
+    with open(output) as bedpe_reader:
+        nas = list(iter_novel_adjacencies(bedpe_reader))
+        assert len(nas) == 0

@@ -41,3 +41,8 @@ bam="https://s3-us-west-2.amazonaws.com/10x.files/samples/genome/HCC1954T_WGS_21
 region="chr3:101,508,502-101,725,227"
 samtools view "${bam}" "${region}" -o HCC1954T_10xGenomics_chr3_DUP.bam
 samtools index HCC1954T_10xGenomics_chr3_DUP.bam
+
+
+# Subsample BAM to contain only a single barcode
+samtools view -d BX:AACGGTTCACGAAACG-1 tests/data/HCC1954T_10xGenomics_chr21_INV.bam -bh -o tests/data/HCC1954T_10xGenomics_chr21_INV.one_barcode.bam
+samtools index tests/data/HCC1954T_10xGenomics_chr21_INV.one_barcode.bam
