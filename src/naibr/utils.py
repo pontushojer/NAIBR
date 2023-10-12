@@ -606,3 +606,24 @@ def input_candidates(openfile, min_sv: int = 1000):
     cands = [c for c in cands if abs(c[1] - c[3]) > min_sv or c[0] != c[2]]
     logger.info(f"Found {n_total:,} candidates in file of which {len(cands):,} are long enough")
     return cands
+
+
+class UnionDict(defaultdict):
+    """Extends defaultdict to allow combining with other UnionDicts or defaultdicts"""
+
+    def combine(self, other):
+        if not isinstance(other, type(self)) and not isinstance(other, defaultdict):
+            raise TypeError(f"Can only combine with other UnionDicts or defaultdicts ({type(other)})")
+
+        if self.default_factory is not other.default_factory:
+            raise ValueError("Can only combine UnionDicts with the same default_factory")
+
+        if self.default_factory is list:
+            for k, v in other.items():
+                self[k].extend(v)
+
+        elif self.default_factory is set:
+            for k, v in other.items():
+                self[k].update(v)
+        else:
+            raise ValueError("Can only combine UnionDicts with default_factory of list or set")

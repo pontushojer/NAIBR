@@ -58,6 +58,7 @@ from .utils import (
     input_candidates,
     is_proper_chrom,
     parallel_execute,
+    UnionDict,
     write_novel_adjacencies,
 )
 
@@ -284,27 +285,6 @@ def parse_args(args):
         file_configs = Configs.from_file(f)
 
     return file_configs
-
-
-class UnionDict(collections.defaultdict):
-    """Extends defaultdict to allow combining with other UnionDicts or defaultdicts"""
-
-    def combine(self, other):
-        if not isinstance(other, type(self)) and not isinstance(other, collections.defaultdict):
-            raise TypeError(f"Can only combine with other UnionDicts or defaultdicts ({type(other)})")
-
-        if self.default_factory is not other.default_factory:
-            raise ValueError("Can only combine UnionDicts with the same default_factory")
-
-        if self.default_factory is list:
-            for k, v in other.items():
-                self[k].extend(v)
-
-        elif self.default_factory is set:
-            for k, v in other.items():
-                self[k].update(v)
-        else:
-            raise ValueError("Can only combine UnionDicts with default_factory of list or set")
 
 
 def run(configs):

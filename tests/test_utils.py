@@ -1,6 +1,8 @@
 from io import StringIO
 
-from naibr.utils import input_candidates
+import pytest
+
+from naibr.utils import input_candidates, UnionDict
 
 
 def test_input_candates_bepde_format():
@@ -40,3 +42,47 @@ def test_input_candates_filter_too_short():
     s += "chr1\t10000\t10000\tchr1\t14000\t14000\t-+\n"
     with StringIO(s) as f:
         assert len(input_candidates(f, min_sv=1000)) == 2
+
+
+def test_union_dict_combine_lists():
+    d1 = UnionDict(list)
+    d1["a"].extend([1, 2, 3])
+    d1["b"].extend([7, 8, 9])
+
+    d2 = UnionDict(list)
+    d2["a"].extend([3, 4, 5])
+    d2["b"].extend([8, 9, 10])
+
+    d1.combine(d2)
+    assert sorted(d1["a"]) == sorted([1, 2, 3, 3, 4, 5])
+    assert sorted(d1["b"]) == sorted([7, 8, 8, 9, 9, 10])
+
+
+def test_union_dict_combine_sets():
+    d1 = UnionDict(set)
+    d1["a"].union({1, 2, 3})
+    d1["b"].union({7, 8, 9})
+
+    d2 = UnionDict(set)
+    d2["a"].union({3, 4, 5})
+    d2["b"].union({8, 9, 10})
+
+    d1.combine(d2)
+    assert d1["a"] - {1, 2, 3, 4, 5} == set()
+    assert d1["b"] - {7, 8, 9, 10} == set()
+
+
+def test_union_dict_combine_different_fails():
+    d1 = UnionDict(set)
+    d1["a"].union({1, 2, 3})
+    d1["b"].union({7, 8, 9})
+
+    d2 = UnionDict(list)
+    d2["a"].extend([3, 4, 5])
+    d2["b"].extend([8, 9, 10])
+
+    with pytest.raises(ValueError):
+        d1.combine(d2)
+
+    with pytest.raises(ValueError):
+        d2.combine(d1)
