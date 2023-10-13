@@ -86,3 +86,25 @@ def test_union_dict_combine_different_fails():
 
     with pytest.raises(ValueError):
         d2.combine(d1)
+
+
+def test_union_dict_combine_wrong_type_fails():
+    d1 = UnionDict(set)
+    d1["a"].union({1, 2, 3})
+    d1["b"].union({7, 8, 9})
+
+    with pytest.raises(TypeError):
+        d1.combine(None)
+
+
+def test_union_dict_combine_wrong_default_factory_fails():
+    d1 = UnionDict(set)
+    d1["a"].union({1, 2, 3})
+    d1["b"].union({7, 8, 9})
+
+    d2 = UnionDict(int)
+    d2["a"] = 1
+    d2["b"] = 2
+
+    with pytest.raises(ValueError):
+        d1.combine(d2)
