@@ -131,7 +131,7 @@ def get_pairwise_overlap(barcode_linkedreads, barcode_overlap, configs):
                 barcode_overlap[(chr1, id1, chr2, id2)] += 1
 
 
-def get_distributions(reads_by_barcode, configs):
+def get_linked_reads(reads_by_barcode, configs):
     linkedreads_by_barcode = collections.defaultdict(list)
     for (chrom, barcode), reads in reads_by_barcode.items():
         barcode_linkedreads = linked_reads(reads, chrom, configs)
@@ -139,6 +139,11 @@ def get_distributions(reads_by_barcode, configs):
         if barcode_linkedreads:
             linkedreads_by_barcode[barcode].extend(barcode_linkedreads)
 
+    return linkedreads_by_barcode
+
+
+def get_distributions(reads_by_barcode, configs):
+    linkedreads_by_barcode = get_linked_reads(reads_by_barcode, configs)
     p_len, p_rate, barcode_overlap = get_linkedread_distributions(linkedreads_by_barcode, configs)
     return p_len, p_rate, barcode_overlap, linkedreads_by_barcode
 
