@@ -149,9 +149,10 @@ def test_call_inversion(tmp_path, threads):
         assert abs(nas_pass[0].break2 - 18906782) < 500
 
 
-def test_consistent(tmp_path):
+@pytest.mark.parametrize("bam", [BAM_INV, BAM_DEL, BAM_DUP, BAM_TRA], ids=["INV", "DEL", "DUP", "TRA"])
+def test_consistent(tmp_path, bam):
     # Run without candidates
-    config_file = io.StringIO(f"bam_file={BAM_INV}\noutdir={tmp_path / 'novel'}\nthreads=2\n")
+    config_file = io.StringIO(f"bam_file={bam}\noutdir={tmp_path / 'novel'}\nthreads=2\n")
     configs = Configs.from_file(config_file)
 
     exitcode = run(configs)
@@ -167,7 +168,7 @@ def test_consistent(tmp_path):
 
     # Run with generated candidates
     rerun_config_file = io.StringIO(
-        f"bam_file={BAM_INV}\ncandidates={new_candidates}\noutdir={tmp_path / 'rerun'}\nthreads=2\n"
+        f"bam_file={bam}\ncandidates={new_candidates}\noutdir={tmp_path / 'rerun'}\nthreads=2\n"
     )
     rerun_configs = Configs.from_file(rerun_config_file)
 

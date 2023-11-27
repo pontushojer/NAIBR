@@ -49,6 +49,7 @@ import numpy as np
 import pysam
 
 from . import __version__
+from .distributions import get_linked_reads
 from .get_reads import get_candidates, get_interchrom_candidates, parse_candidate_region, parse_chromosome
 from .global_vars import Configs
 from .rank import predict_novel_adjacencies
@@ -85,7 +86,7 @@ def evaluate_candidate(cand, configs):
     """
     use user input candidate novel adjacencies
     """
-    reads_by_barcode, barcodes_by_pos, discs_by_barcode, discs, cand, coverage = parse_candidate_region(
+    reads_by_barcode, barcodes_by_pos, discs_by_barcode, discs, cand, interchrom_discs, coverage = parse_candidate_region(
         cand, configs
     )
 
@@ -94,9 +95,17 @@ def evaluate_candidate(cand, configs):
         reads_by_barcode = {k: v for k, v in reads_by_barcode.items() if len(v) >= configs.MIN_READS}
 
     # See if there are other candidates in close proximity
-    cand_name = f"{cand.chrm1}:{cand.break1}-{cand.chrm2}:{cand.break2}"
-    logger.info(f"For {cand.svtype()} {cand_name} - found {len(discs):,} discordant positions")
-    candidates, p_len, p_rate, _ = get_candidates(discs, reads_by_barcode, configs)
+    if not cand.is_interchromosomal():
+        cand_name = f"{cand.chrm1}:{cand.break1}-{cand.break2}"
+        logger.info(f"For {cand.svtype()} {cand_name} - found {len(discs):,} discordant positions")
+        candidates, p_len, p_rate, _ = get_candidates(discs, reads_by_barcode, configs)
+    else:
+        cand_name = f"{cand.chrm1}:{cand.break1}-{cand.chrm2}:{cand.break2}"
+        logger.info(f"For {cand.svtype()} {cand_name} - found {len(interchrom_discs):,} discordant positions")
+        linkedreads_by_barcode = get_linked_reads(reads_by_barcode, configs)
+        candidates, p_len, p_rate = get_interchrom_candidates(
+            interchrom_discs, linkedreads_by_barcode, configs
+        )
 
     if candidates:
         candidates = [c for c in candidates if max(c.distance(cand)) < configs.LMAX]
@@ -107,17 +116,31 @@ def evaluate_candidate(cand, configs):
     if p_len is None:
         return []
 
-    scores = predict_novel_adjacencies(
-        reads_by_barcode,
-        barcodes_by_pos,
-        discs_by_barcode,
-        candidates,
-        p_len,
-        p_rate,
-        coverage,
-        False,
-        configs,
-    )
+    logger.info(f"ranking {len(candidates)} candidates for {cand_name}")
+    if not cand.is_interchromosomal():
+        scores = predict_novel_adjacencies(
+            reads_by_barcode,
+            barcodes_by_pos,
+            discs_by_barcode,
+            candidates,
+            p_len,
+            p_rate,
+            coverage,
+            False,
+            configs,
+        )
+    else:
+        scores = predict_novel_adjacencies(
+            linkedreads_by_barcode,
+            barcodes_by_pos,
+            discs_by_barcode,
+            candidates,
+            p_len,
+            p_rate,
+            coverage,
+            True,
+            configs,
+        )
     return scores
 
 
