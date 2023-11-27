@@ -91,53 +91,52 @@ def parse_chromosome(chrom, configs):
     """
     logger.info("Getting candidates for chromosome %s" % chrom)
     cov = 0
-    reads = pysam.AlignmentFile(configs.BAM_FILE, "rb", threads=configs.COMPRESSION_THREADS)
-
     reads_by_barcode = collections.defaultdict(list)
     discs_by_barcode = collections.defaultdict(list)
     discs = collections.defaultdict(list)
     interchrom_discs = collections.defaultdict(list)
     barcodes_by_pos = collections.defaultdict(set)
-    iterator = reads.fetch(chrom)
     n_disc = 0
     n_conc = 0
     n_total = 0
-    for read, mate in progress(
-        parse_mapped_pairs(iterator, min_mapq=configs.MIN_MAPQ), desc=f"Processing {chrom}", unit="pairs"
-    ):
-        if mate is not None:
-            cov += read.query_alignment_length + mate.query_alignment_length
-        else:
-            cov += read.query_alignment_length
-
-        barcode = get_tag_default(read, "BX")
-        if barcode is None:
-            continue
-
-        n_total += 1
-        peread = PERead(read, barcode, mate=mate)
-        if peread.is_discordant(min_sv=configs.MIN_SV):
-            n_disc += 1
-            discs_by_barcode[(peread.chrm, peread.nextchrm, peread.barcode)].append(peread)
-            if peread.chrm == peread.nextchrm:
-                add_disc(peread, discs, lmax=configs.LMAX)
+    with pysam.AlignmentFile(configs.BAM_FILE, "rb", threads=configs.COMPRESSION_THREADS) as reads:
+        iterator = reads.fetch(chrom)
+        for read, mate in progress(
+            parse_mapped_pairs(iterator, min_mapq=configs.MIN_MAPQ), desc=f"Processing {chrom}", unit="pairs"
+        ):
+            if mate is not None:
+                cov += read.query_alignment_length + mate.query_alignment_length
             else:
-                interchrom_discs[
-                    (
-                        peread.chrm,
-                        roundto(peread.i, configs.LMAX),
-                        peread.nextchrm,
-                        roundto(peread.j, configs.LMAX),
-                        peread.orient,
-                    )
-                ].append(peread)
-        elif peread.is_concordant(lmin=configs.LMIN):
-            n_conc += 1
-            reads_by_barcode[(peread.chrm, peread.barcode)].append(
-                (peread.start, peread.nextend, peread.hap, peread.mean_mapq)
-            )
-            norm_mid = roundto(peread.mid(), configs.MAX_LINKED_DIST)
-            barcodes_by_pos[(peread.chrm, norm_mid)].add(peread.barcode)
+                cov += read.query_alignment_length
+
+            barcode = get_tag_default(read, "BX")
+            if barcode is None:
+                continue
+
+            n_total += 1
+            peread = PERead(read, barcode, mate=mate)
+            if peread.is_discordant(min_sv=configs.MIN_SV):
+                n_disc += 1
+                discs_by_barcode[(peread.chrm, peread.nextchrm, peread.barcode)].append(peread)
+                if peread.chrm == peread.nextchrm:
+                    add_disc(peread, discs, lmax=configs.LMAX)
+                else:
+                    interchrom_discs[
+                        (
+                            peread.chrm,
+                            roundto(peread.i, configs.LMAX),
+                            peread.nextchrm,
+                            roundto(peread.j, configs.LMAX),
+                            peread.orient,
+                        )
+                    ].append(peread)
+            elif peread.is_concordant(lmin=configs.LMIN):
+                n_conc += 1
+                reads_by_barcode[(peread.chrm, peread.barcode)].append(
+                    (peread.start, peread.nextend, peread.hap, peread.mean_mapq)
+                )
+                norm_mid = roundto(peread.mid(), configs.MAX_LINKED_DIST)
+                barcodes_by_pos[(peread.chrm, norm_mid)].add(peread.barcode)
 
     reads_start = float("inf")
     reads_end = 0
@@ -277,7 +276,6 @@ def parse_candidate_region(candidate, configs):
     """
     w = configs.MAX_LEN - configs.MAX_LINKED_DIST
     cov = 0
-    reads = pysam.AlignmentFile(configs.BAM_FILE, "rb", threads=configs.COMPRESSION_THREADS)
     reads_by_barcode = collections.defaultdict(list)
     discs_by_barcode = collections.defaultdict(list)
     barcodes_by_pos = collections.defaultdict(set)
@@ -296,34 +294,35 @@ def parse_candidate_region(candidate, configs):
     else:
         window = [(chrm1, break1 - w, break2 + w)]
 
-    for chrm, s, e in window:
-        lengths += e - s
-        iterator = reads.fetch(chrm, max(0, s), e)
-        for read, mate in progress(
-            parse_mapped_pairs(iterator, min_mapq=configs.MIN_MAPQ),
-            desc=f"Readning {chrm}:{s}-{e}",
-            unit="pairs",
-        ):
-            if mate is not None:
-                cov += read.query_alignment_length + mate.query_alignment_length
-            else:
-                cov += read.query_alignment_length
+    with pysam.AlignmentFile(configs.BAM_FILE, "rb", threads=configs.COMPRESSION_THREADS) as reads:
+        for chrm, s, e in window:
+            lengths += e - s
+            iterator = reads.fetch(chrm, max(0, s), e)
+            for read, mate in progress(
+                parse_mapped_pairs(iterator, min_mapq=configs.MIN_MAPQ),
+                desc=f"Readning {chrm}:{s}-{e}",
+                unit="pairs",
+            ):
+                if mate is not None:
+                    cov += read.query_alignment_length + mate.query_alignment_length
+                else:
+                    cov += read.query_alignment_length
 
-            barcode = get_tag_default(read, "BX")
-            if barcode is None:
-                continue
+                barcode = get_tag_default(read, "BX")
+                if barcode is None:
+                    continue
 
-            peread = PERead(read, barcode, mate=mate)
-            if peread.is_discordant(min_sv=configs.MIN_SV):
-                discs_by_barcode[(peread.chrm, peread.nextchrm, peread.barcode)].append(peread)
-                if peread.chrm == peread.nextchrm:
-                    add_disc(peread, discs, lmax=configs.LMAX)
-            elif peread.is_concordant(lmin=configs.LMIN):
-                reads_by_barcode[(peread.chrm, peread.barcode)].append(
-                    (peread.start, peread.nextend, peread.hap, peread.mean_mapq)
-                )
-                norm_mid = roundto(peread.mid(), configs.MAX_LINKED_DIST)
-                barcodes_by_pos[(peread.chrm, norm_mid)].add(peread.barcode)
+                peread = PERead(read, barcode, mate=mate)
+                if peread.is_discordant(min_sv=configs.MIN_SV):
+                    discs_by_barcode[(peread.chrm, peread.nextchrm, peread.barcode)].append(peread)
+                    if peread.chrm == peread.nextchrm:
+                        add_disc(peread, discs, lmax=configs.LMAX)
+                elif peread.is_concordant(lmin=configs.LMIN):
+                    reads_by_barcode[(peread.chrm, peread.barcode)].append(
+                        (peread.start, peread.nextend, peread.hap, peread.mean_mapq)
+                    )
+                    norm_mid = roundto(peread.mid(), configs.MAX_LINKED_DIST)
+                    barcodes_by_pos[(peread.chrm, norm_mid)].add(peread.barcode)
 
     readarray_by_barcode = {}
     dtype = [("start", int), ("end", int), ("hap", np.uint), ("mapq", int)]
