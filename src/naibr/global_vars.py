@@ -40,23 +40,23 @@ def estimate_lmin_lmax(bam_file, sd_mult: int, debug: bool = False) -> Tuple[int
     Estmate the upper and lower bounds for insert sizes by looing at up to
     the first million read pairs.
     """
-    reads = pysam.AlignmentFile(bam_file, "rb")
     pair_spans = []
     reads_lengths = []
     num = 0
-    for chrm in reads.references:
-        for read, mate in parse_read_pairs(reads.fetch(chrm)):
-            num += 2
-            if num > 1_000_000:
-                break
+    with pysam.AlignmentFile(bam_file, "rb") as reads:
+        for chrm in reads.references:
+            for read, mate in parse_read_pairs(reads.fetch(chrm)):
+                num += 2
+                if num > 1_000_000:
+                    break
 
-            start = min(read.reference_start, mate.reference_start)
-            end = max(read.reference_end, mate.reference_end)
-            dist = end - start
+                start = min(read.reference_start, mate.reference_start)
+                end = max(read.reference_end, mate.reference_end)
+                dist = end - start
 
-            if abs(dist) < 2000:
-                reads_lengths.extend([read.query_length, mate.query_length])
-                pair_spans.append(dist)
+                if abs(dist) < 2000:
+                    reads_lengths.extend([read.query_length, mate.query_length])
+                    pair_spans.append(dist)
 
     pair_spans_array = np.array(pair_spans)
     mean_dist = pair_spans_array.mean()
