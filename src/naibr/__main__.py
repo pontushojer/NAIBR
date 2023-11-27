@@ -86,10 +86,15 @@ def evaluate_candidate(cand, configs):
     """
     use user input candidate novel adjacencies
     """
-    reads_by_barcode, barcodes_by_pos, discs_by_barcode, discs, cand, interchrom_discs, coverage = parse_candidate_region(
-        cand, configs
-    )
-
+    (
+        reads_by_barcode,
+        barcodes_by_pos,
+        discs_by_barcode,
+        discs,
+        cand,
+        interchrom_discs,
+        coverage,
+    ) = parse_candidate_region(cand, configs)
     # Filter out barcodes with too few reads
     if configs.MIN_READS > 1:
         reads_by_barcode = {k: v for k, v in reads_by_barcode.items() if len(v) >= configs.MIN_READS}
