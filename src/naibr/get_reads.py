@@ -154,8 +154,8 @@ def parse_chromosome(chrom, configs):
     #      - Otherwise calculate accurately across each chromosome (or subsection).
     coverage = cov / (reads_end - reads_start)
     logger.info(f"Done reading chromosome {chrom}: coverage = {coverage:.3f}X")
-    fraction_conc = n_conc/n_total if n_total != 0 else 0
-    fraction_disc = n_disc/n_total if n_total != 0 else 0
+    fraction_conc = n_conc / n_total if n_total != 0 else 0
+    fraction_disc = n_disc / n_total if n_total != 0 else 0
     logger.info(
         f"{chrom}: total pairs: {n_total:,}, discordant: {n_disc:,} ({fraction_disc:.2%}), "
         f"concordant: {n_conc:,} ({fraction_conc:.2%})"
