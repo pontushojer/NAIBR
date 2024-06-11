@@ -43,7 +43,7 @@ naibr <configfile>
 
 A template config file can be found in example/example.config. The following parameters can be set in the config file:
 
-* `bam_file`: Input phased BAM file with `BX` (and `HP`) tagged reads (**REQUIRED**)
+* `bam_file`: Input phased BAM file with barcode tagged (`BX` tag) reads (**REQUIRED**)
 * `min_mapq`: Minimum mapping quality for a read to be included in analysis (default: 40)
 * `outdir`: Output directory (default: `.` i.e. current workding directory)
 * `prefix`: Prefix for output files, set to empty sting to match `bam_file` name (default: `NAIBR_SVs`)
