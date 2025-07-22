@@ -6,8 +6,8 @@ Usage: naibr input.config
 Running requires a config file with "=" separated parameters and values.
 
 required:
-    bam_file   - str  - Path to BAM file with barcode-linked (BX tag) paired-end reads. To get haplotyped 
-                        SVs provided phased read (HP tag). 
+    bam_file   - str  - Path to BAM file with barcode-linked (BX tag) paired-end reads. To get haplotyped
+                        SVs provided phased read (HP tag).
 
 options:
     outdir     - str  - Path to output directory. Default: CWD
