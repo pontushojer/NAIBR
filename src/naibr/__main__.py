@@ -6,7 +6,7 @@ Usage: naibr input.config
 Running requires a config file with "=" separated parameters and values.
 
 required:
-    bam_file   - str  - Path to BAM file with phased linked reads, i.e. has BX and HP tags.
+    bam_file   - str  - Path to BAM file with (phased) linked paired-end reads, i.e. has BX and possibly HP tags.
 
 options:
     outdir     - str  - Path to output directory. Default: CWD

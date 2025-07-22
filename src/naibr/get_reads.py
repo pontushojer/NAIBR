@@ -25,6 +25,9 @@ def inblacklist(chrom, pos, blacklist):
 def parse_mapped_pairs(iterator, min_mapq):
     mates = {}
     for read in iterator:
+        if not read.is_paired:
+            continue
+
         if read.mapping_quality < min_mapq:
             continue
 
